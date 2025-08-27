@@ -937,9 +937,12 @@
                 { id: 'group', icon: 'fas fa-object-group', text: 'Group', action: () => this.groupSelected() },
                 { id: 'ungroup', icon: 'fas fa-object-ungroup', text: 'Ungroup', action: () => this.ungroupSelected() },
                 { id: 'separator2', type: 'separator' },
+                { id: 'lock', icon: 'fas fa-lock', text: 'Lock', action: () => this.lockSelected() },
+                { id: 'unlock', icon: 'fas fa-unlock', text: 'Unlock', action: () => this.unlockSelected() },
+                { id: 'separator3', type: 'separator' },
                 { id: 'bring-to-front', icon: 'fas fa-arrow-up', text: 'Bring to Front', action: () => this.bringToFront() },
                 { id: 'send-to-back', icon: 'fas fa-arrow-down', text: 'Send to Back', action: () => this.sendToBack() },
-                { id: 'separator3', type: 'separator' },
+                { id: 'separator4', type: 'separator' },
                 { id: 'edit', icon: 'fas fa-edit', text: 'Edit', action: () => this.editSelected() }
             ];
             
@@ -2049,12 +2052,16 @@
             const hasTextSelection = Array.from(this.selectedElements).some(el => el.type === 'text');
             const canGroup = this.selectedElements.size > 1;
             const hasGroupedSelection = Array.from(this.selectedElements).some(el => el.groupId);
+            const hasLockedSelection = Array.from(this.selectedElements).some(el => el.locked);
+            const hasUnlockedSelection = Array.from(this.selectedElements).some(el => !el.locked);
             
             // Update menu item states
             const copyItem = this.contextMenu.querySelector('[data-action="copy"]');
             const pasteItem = this.contextMenu.querySelector('[data-action="paste"]');
             const groupItem = this.contextMenu.querySelector('[data-action="group"]');
             const ungroupItem = this.contextMenu.querySelector('[data-action="ungroup"]');
+            const lockItem = this.contextMenu.querySelector('[data-action="lock"]');
+            const unlockItem = this.contextMenu.querySelector('[data-action="unlock"]');
             const bringToFrontItem = this.contextMenu.querySelector('[data-action="bring-to-front"]');
             const sendToBackItem = this.contextMenu.querySelector('[data-action="send-to-back"]');
             const editItem = this.contextMenu.querySelector('[data-action="edit"]');
@@ -2063,6 +2070,8 @@
             if (pasteItem) pasteItem.disabled = !hasClipboard;
             if (groupItem) groupItem.disabled = !canGroup;
             if (ungroupItem) ungroupItem.disabled = !hasGroupedSelection;
+            if (lockItem) lockItem.disabled = !hasSelection || !hasUnlockedSelection;
+            if (unlockItem) unlockItem.disabled = !hasSelection || !hasLockedSelection;
             if (bringToFrontItem) bringToFrontItem.disabled = !hasSelection;
             if (sendToBackItem) sendToBackItem.disabled = !hasSelection;
             if (editItem) editItem.disabled = !hasTextSelection;
@@ -2122,6 +2131,39 @@
             if (textElement) {
                 this.startTextEditing(textElement);
             }
+        }
+        
+        // Lock/Unlock specific methods for context menu
+        lockSelected() {
+            if (this.selectedElements.size === 0) return;
+            
+            this.selectedElements.forEach(element => {
+                if (!element.locked) {
+                    element.locked = true;
+                    // Update visual indication using CSS classes
+                    const currentClass = element.svgElement.getAttribute('class') || '';
+                    if (!currentClass.includes('sww-locked')) {
+                        element.svgElement.setAttribute('class', currentClass + ' sww-locked');
+                    }
+                }
+            });
+            
+            console.log(`Locked ${this.selectedElements.size} elements`);
+        }
+        
+        unlockSelected() {
+            if (this.selectedElements.size === 0) return;
+            
+            this.selectedElements.forEach(element => {
+                if (element.locked) {
+                    element.locked = false;
+                    // Remove visual indication using CSS classes
+                    const currentClass = element.svgElement.getAttribute('class') || '';
+                    element.svgElement.setAttribute('class', currentClass.replace('sww-locked', '').trim());
+                }
+            });
+            
+            console.log(`Unlocked ${this.selectedElements.size} elements`);
         }
         
         // Layer Management Methods
