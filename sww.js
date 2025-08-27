@@ -354,6 +354,17 @@
                 .sww-align-button i {
                     font-size: 12px;
                 }
+                
+                /* Locked and Grouped elements styling */
+                .sww-locked {
+                    opacity: 0.7 !important;
+                    filter: grayscale(50%) !important;
+                }
+                
+                .sww-grouped {
+                    stroke-dasharray: 2,2 !important;
+                    stroke-dashoffset: 0 !important;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -367,6 +378,7 @@
             this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             this.svg.setAttribute('class', 'sww-canvas');
             this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
+            this.svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
             
             // Create background
             this.createBackground();
@@ -478,6 +490,9 @@
             actionGroup.className = 'sww-tool-group';
             
             const actions = [
+                { id: 'lock', icon: 'fas fa-lock', title: 'Lock/Unlock Selected', action: () => this.toggleLockSelected() },
+                { id: 'group', icon: 'fas fa-object-group', title: 'Group Selected', action: () => this.groupSelected() },
+                { id: 'ungroup', icon: 'fas fa-object-ungroup', title: 'Ungroup Selected', action: () => this.ungroupSelected() },
                 { id: 'snap-grid', icon: 'fas fa-border-all', title: 'Toggle Grid Snap', action: () => this.toggleGridSnapButton() },
                 { id: 'clear', icon: 'fas fa-trash', title: 'Clear All', action: () => this.clearAll() },
                 { id: 'export-svg', icon: 'fas fa-file-code', title: 'Export SVG', action: () => this.exportToSVG() },
@@ -842,6 +857,12 @@
             const point = this.getPointerPosition(e);
             this.lastPointerPosition = point;
             
+            // Debug: Show click position (remove in production)
+            if (window.SWW_DEBUG) {
+                console.log('Click at:', point);
+                this.showDebugPoint(point);
+            }
+            
             if (e.button === 1 || (e.button === 0 && e.altKey)) {
                 // Middle mouse or Alt+click for panning
                 this.isPanning = true;
@@ -960,8 +981,22 @@
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             
-            const x = (clientX - rect.left) / rect.width * this.viewBox.width + this.viewBox.x;
-            const y = (clientY - rect.top) / rect.height * this.viewBox.height + this.viewBox.y;
+            // Use SVG's built-in coordinate transformation for more accuracy
+            if (this.svg.getScreenCTM) {
+                const point = this.svg.createSVGPoint();
+                point.x = clientX;
+                point.y = clientY;
+                const transformedPoint = point.matrixTransform(this.svg.getScreenCTM().inverse());
+                return { x: transformedPoint.x, y: transformedPoint.y };
+            }
+            
+            // Fallback method with improved calculation
+            const relativeX = clientX - rect.left;
+            const relativeY = clientY - rect.top;
+            
+            // Transform from screen coordinates to SVG coordinates
+            const x = (relativeX / rect.width) * this.viewBox.width + this.viewBox.x;
+            const y = (relativeY / rect.height) * this.viewBox.height + this.viewBox.y;
             
             return { x, y };
         }
@@ -986,10 +1021,26 @@
             const element = this.getElementAtPoint(point);
             
             if (element) {
+                // Check if element is locked
+                if (element.locked) {
+                    // Allow selection but prevent manipulation
+                    if (!e.shiftKey && !this.selectedElements.has(element)) {
+                        this.clearSelection();
+                    }
+                    this.selectElement(element);
+                    return; // Don't start dragging
+                }
+                
                 if (!e.shiftKey && !this.selectedElements.has(element)) {
                     this.clearSelection();
                 }
                 this.selectElement(element);
+                
+                // Check if any selected elements are locked
+                const hasLockedElements = Array.from(this.selectedElements).some(el => el.locked);
+                if (hasLockedElements) {
+                    return; // Don't start dragging if any elements are locked
+                }
                 
                 // Start dragging the selected element(s)
                 this.isDraggingElement = true;
@@ -1072,7 +1123,9 @@
                 fontSize: this.toolSettings.fontSize,
                 fontFamily: this.toolSettings.fontFamily,
                 textAlign: this.toolSettings.textAlign,
-                rotation: 0
+                rotation: 0,
+                locked: false,
+                groupId: null
             };
             
             element.svgElement = this.createSVGElement(element);
@@ -1618,10 +1671,22 @@
         
         // Selection methods
         selectElement(element) {
-            this.selectedElements.add(element);
-            const currentClass = element.svgElement.getAttribute('class') || '';
-            if (!currentClass.includes('selected')) {
-                element.svgElement.setAttribute('class', currentClass + ' selected');
+            // If element is in a group, select all elements in the group
+            if (element.groupId) {
+                const groupElements = this.elements.filter(el => el.groupId === element.groupId);
+                groupElements.forEach(groupElement => {
+                    this.selectedElements.add(groupElement);
+                    const currentClass = groupElement.svgElement.getAttribute('class') || '';
+                    if (!currentClass.includes('selected')) {
+                        groupElement.svgElement.setAttribute('class', currentClass + ' selected');
+                    }
+                });
+            } else {
+                this.selectedElements.add(element);
+                const currentClass = element.svgElement.getAttribute('class') || '';
+                if (!currentClass.includes('selected')) {
+                    element.svgElement.setAttribute('class', currentClass + ' selected');
+                }
             }
             this.updateSelectionHandles();
             this.syncPropertiesPanel();
@@ -1704,15 +1769,24 @@
         }
         
         deleteSelectedElements() {
-            this.selectedElements.forEach(element => {
+            // Filter out locked elements
+            const elementsToDelete = Array.from(this.selectedElements).filter(element => !element.locked);
+            
+            elementsToDelete.forEach(element => {
                 const index = this.elements.indexOf(element);
                 if (index > -1) {
                     this.elements.splice(index, 1);
                 }
                 element.svgElement.remove();
+                this.selectedElements.delete(element);
             });
-            this.selectedElements.clear();
-            this.clearSelectionHandles();
+            
+            // Update selection handles for remaining elements
+            if (this.selectedElements.size > 0) {
+                this.updateSelectionHandles();
+            } else {
+                this.clearSelectionHandles();
+            }
             this.updateTextPropertiesVisibility();
         }
         
@@ -1869,6 +1943,12 @@
         }
         
         startResize(handleType, point) {
+            // Check if any selected elements are locked
+            const hasLockedElements = Array.from(this.selectedElements).some(el => el.locked);
+            if (hasLockedElements) {
+                return; // Don't allow resizing locked elements
+            }
+            
             this.isResizing = true;
             this.manipulationMode = 'resize';
             this.resizeHandle = handleType;
@@ -2404,12 +2484,113 @@
             img.src = url;
         }
         
+        // Lock/Unlock functionality
+        toggleLockSelected() {
+            if (this.selectedElements.size === 0) return;
+            
+            // Check if any elements are unlocked
+            const hasUnlocked = Array.from(this.selectedElements).some(element => !element.locked);
+            
+            // If any are unlocked, lock all. If all are locked, unlock all.
+            const shouldLock = hasUnlocked;
+            
+            this.selectedElements.forEach(element => {
+                element.locked = shouldLock;
+                // Update visual indication using CSS classes
+                const currentClass = element.svgElement.getAttribute('class') || '';
+                if (element.locked) {
+                    if (!currentClass.includes('sww-locked')) {
+                        element.svgElement.setAttribute('class', currentClass + ' sww-locked');
+                    }
+                } else {
+                    element.svgElement.setAttribute('class', currentClass.replace('sww-locked', '').trim());
+                }
+            });
+            
+            // Update lock button state
+            const lockButton = this.container.querySelector('[data-action="lock"]');
+            if (lockButton) {
+                const icon = lockButton.querySelector('i');
+                if (shouldLock) {
+                    icon.className = 'fas fa-lock';
+                    lockButton.title = 'Unlock Selected';
+                    lockButton.classList.add('active');
+                } else {
+                    icon.className = 'fas fa-unlock';
+                    lockButton.title = 'Lock Selected';
+                    lockButton.classList.remove('active');
+                }
+            }
+        }
+        
+        // Group functionality
+        groupSelected() {
+            if (this.selectedElements.size < 2) return;
+            
+            const groupId = this.generateId();
+            
+            this.selectedElements.forEach(element => {
+                element.groupId = groupId;
+                // Add visual indication for grouped elements using CSS class
+                const currentClass = element.svgElement.getAttribute('class') || '';
+                if (!currentClass.includes('sww-grouped')) {
+                    element.svgElement.setAttribute('class', currentClass + ' sww-grouped');
+                }
+            });
+            
+            console.log(`Grouped ${this.selectedElements.size} elements with ID: ${groupId}`);
+        }
+        
+        ungroupSelected() {
+            if (this.selectedElements.size === 0) return;
+            
+            this.selectedElements.forEach(element => {
+                if (element.groupId) {
+                    // Find all elements in the same group
+                    const groupElements = this.elements.filter(el => el.groupId === element.groupId);
+                    
+                    // Remove group from all elements in the group
+                    groupElements.forEach(groupEl => {
+                        groupEl.groupId = null;
+                        // Remove visual indication using CSS class
+                        const currentClass = groupEl.svgElement.getAttribute('class') || '';
+                        groupEl.svgElement.setAttribute('class', currentClass.replace('sww-grouped', '').trim());
+                    });
+                }
+            });
+            
+            console.log('Ungrouped selected elements');
+        }
+        
         clearAll() {
             this.elements = [];
             this.selectedElements.clear();
             this.elementsGroup.innerHTML = '';
             this.clearSelectionHandles();
             this.updateTextPropertiesVisibility();
+        }
+        
+        // Debug method to visualize click positions
+        showDebugPoint(point) {
+            // Remove previous debug point
+            const existingDebug = this.svg.querySelector('.debug-point');
+            if (existingDebug) existingDebug.remove();
+            
+            // Create debug point
+            const debugPoint = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            debugPoint.setAttribute('class', 'debug-point');
+            debugPoint.setAttribute('cx', point.x);
+            debugPoint.setAttribute('cy', point.y);
+            debugPoint.setAttribute('r', '3');
+            debugPoint.setAttribute('fill', 'red');
+            debugPoint.setAttribute('stroke', 'white');
+            debugPoint.setAttribute('stroke-width', '1');
+            this.svg.appendChild(debugPoint);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                if (debugPoint.parentNode) debugPoint.remove();
+            }, 2000);
         }
     }
     
