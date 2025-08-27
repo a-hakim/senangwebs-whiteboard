@@ -442,6 +442,246 @@
                 .sww-properties-panel.visible {
                     display: block;
                 }
+                
+                /* New Element Types Styles */
+                .sww-website-element {
+                    border: 2px solid #007bff;
+                    border-radius: 4px;
+                    overflow: hidden;
+                    padding: 0;
+                    box-sizing: border-box;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .sww-website-address-bar {
+                    background: #f8f9fa;
+                    border-bottom: 1px solid #dee2e6;
+                    padding: 8px 12px;
+                    font-size: 12px;
+                    color: #6c757d;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    min-height: 32px;
+                    box-sizing: border-box;
+                }
+                
+                .sww-website-address-bar .sww-website-controls {
+                    display: flex;
+                    gap: 4px;
+                }
+                
+                .sww-website-address-bar .sww-website-control {
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 50%;
+                    background: #dee2e6;
+                }
+                
+                .sww-website-address-bar .sww-website-control.close {
+                    background: #dc3545;
+                }
+                
+                .sww-website-address-bar .sww-website-control.minimize {
+                    background: #ffc107;
+                }
+                
+                .sww-website-address-bar .sww-website-control.maximize {
+                    background: #28a745;
+                }
+                
+                .sww-website-address-bar .sww-website-url {
+                    flex: 1;
+                    background: white;
+                    border: 1px solid #ced4da;
+                    border-radius: 4px;
+                    padding: 4px 8px;
+                    font-size: 11px;
+                    color: #495057;
+                    cursor: pointer;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+                
+                .sww-website-content {
+                    flex: 1;
+                    overflow: hidden;
+                }
+                
+                .sww-website-element iframe {
+                    width: 100%;
+                    height: 100%;
+                    border: none;
+                    display: block;
+                }
+                
+                .sww-website-placeholder {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: #f8f9fa;
+                    color: #6c757d;
+                    font-size: 14px;
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    padding: calc(1rem + 20px);
+                    border: 2px dashed #dee2e6;
+                    border-radius: 4px;
+                }
+                
+                .sww-image-element {
+                    overflow: hidden;
+                    padding: 8px;
+                    box-sizing: border-box;
+                }
+                
+                .sww-image-element img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block;
+                }
+                
+                .sww-image-placeholder {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: #f8f9fa;
+                    color: #6c757d;
+                    font-size: 14px;
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    padding: calc(1rem + 20px);
+                    border: 2px dashed #dee2e6;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                
+                .sww-markdown-element {
+                    border: 2px solid #28a745;
+                    border-radius: 4px;
+                    overflow: hidden;
+                    background: white;
+                    box-sizing: border-box;
+                    pointer-events: all;
+                }
+                
+                .sww-markdown-editor {
+                    width: 100%;
+                    height: 100%;
+                    border: none;
+                    resize: none;
+                    padding: 10px;
+                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    outline: none;
+                    background: white;
+                    box-sizing: border-box;
+                    pointer-events: all;
+                }
+                
+                .sww-markdown-placeholder {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: #f8f9fa;
+                    color: #6c757d;
+                    font-size: 14px;
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    padding: calc(1rem + 20px);
+                    border: 2px dashed #dee2e6;
+                    border-radius: 4px;
+                }
+                
+                /* Element configuration dialogs */
+                .sww-config-dialog {
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    z-index: 3000;
+                    padding: 20px;
+                    min-width: 300px;
+                    max-width: 500px;
+                }
+                
+                .sww-config-dialog h3 {
+                    margin: 0 0 15px 0;
+                    color: #333;
+                    font-size: 16px;
+                }
+                
+                .sww-config-dialog label {
+                    display: block;
+                    margin-bottom: 5px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    color: #333;
+                }
+                
+                .sww-config-dialog input,
+                .sww-config-dialog textarea {
+                    width: 100%;
+                    padding: 8px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    margin-bottom: 15px;
+                    box-sizing: border-box;
+                }
+                
+                .sww-config-dialog textarea {
+                    height: 100px;
+                    resize: vertical;
+                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                }
+                
+                .sww-config-dialog-buttons {
+                    display: flex;
+                    gap: 10px;
+                    justify-content: flex-end;
+                }
+                
+                .sww-config-dialog button {
+                    padding: 8px 16px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    background: white;
+                    cursor: pointer;
+                    font-size: 12px;
+                }
+                
+                .sww-config-dialog button.primary {
+                    background: #007bff;
+                    color: white;
+                    border-color: #0056b3;
+                }
+                
+                .sww-config-dialog button:hover {
+                    background: #f8f9fa;
+                }
+                
+                .sww-config-dialog button.primary:hover {
+                    background: #0056b3;
+                }
+                
+                .sww-config-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 2999;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -548,7 +788,10 @@
                 { id: 'line', icon: 'fas fa-minus', title: 'Line' },
                 { id: 'arrow', icon: 'fas fa-arrow-right', title: 'Arrow' },
                 { id: 'draw', icon: 'fas fa-pen', title: 'Draw' },
-                { id: 'text', icon: 'fas fa-font', title: 'Text' }
+                { id: 'text', icon: 'fas fa-font', title: 'Text' },
+                { id: 'website', icon: 'fas fa-globe', title: 'Website (iframe)' },
+                { id: 'image', icon: 'fas fa-image', title: 'Image' },
+                { id: 'markdown', icon: 'fab fa-markdown', title: 'Markdown Document' }
             ];
             
             const toolGroup = document.createElement('div');
@@ -1042,6 +1285,15 @@
                 case 'text':
                     this.handleTextStart(point);
                     break;
+                case 'website':
+                    this.handleWebsiteStart(point);
+                    break;
+                case 'image':
+                    this.handleImageStart(point);
+                    break;
+                case 'markdown':
+                    this.handleMarkdownStart(point);
+                    break;
             }
         }
         
@@ -1163,9 +1415,22 @@
             const point = this.getPointerPosition(e);
             const element = this.getElementAtPoint(point);
             
-            // Only handle double-click for text elements when in select mode
-            if (element && element.type === 'text' && this.currentTool === 'select') {
-                this.startTextEditing(element);
+            // Handle double-click for editable elements when in select mode
+            if (element && this.currentTool === 'select') {
+                if (element.type === 'text') {
+                    this.startTextEditing(element);
+                } else if (element.type === 'image') {
+                    this.editImageElement(element);
+                } else if (element.type === 'website') {
+                    this.editWebsiteElement(element);
+                } else if (element.type === 'markdown') {
+                    // Focus the textarea for markdown editing
+                    const textarea = element.svgElement.querySelector('.sww-markdown-editor');
+                    if (textarea) {
+                        textarea.focus();
+                        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                    }
+                }
             }
         }
         
@@ -1259,6 +1524,59 @@
             this.startTextEditing(element);
         }
         
+        handleWebsiteStart(point) {
+            const snappedPoint = this.snapToGridPoint(point);
+            const element = this.createElement('website', snappedPoint);
+            
+            // Add element to the scene
+            this.elementsGroup.appendChild(element.svgElement);
+            this.elements.push(element);
+            this.updateSVGElement(element);
+            
+            // Select the element and show configuration dialog
+            this.clearSelection();
+            this.selectElement(element);
+            this.editWebsiteElement(element);
+            
+            // Switch back to select tool
+            this.setTool('select');
+        }
+        
+        handleImageStart(point) {
+            const snappedPoint = this.snapToGridPoint(point);
+            const element = this.createElement('image', snappedPoint);
+            
+            // Add element to the scene
+            this.elementsGroup.appendChild(element.svgElement);
+            this.elements.push(element);
+            this.updateSVGElement(element);
+            
+            // Select the element and show configuration dialog
+            this.clearSelection();
+            this.selectElement(element);
+            this.editImageElement(element);
+            
+            // Switch back to select tool
+            this.setTool('select');
+        }
+        
+        handleMarkdownStart(point) {
+            const snappedPoint = this.snapToGridPoint(point);
+            const element = this.createElement('markdown', snappedPoint);
+            
+            // Add element to the scene
+            this.elementsGroup.appendChild(element.svgElement);
+            this.elements.push(element);
+            this.updateSVGElement(element);
+            
+            // Select the element
+            this.clearSelection();
+            this.selectElement(element);
+            
+            // Switch back to select tool
+            this.setTool('select');
+        }
+        
         // Element creation and manipulation
         createElement(type, point) {
             const element = {
@@ -1266,8 +1584,8 @@
                 type: type,
                 x: point.x,
                 y: point.y,
-                width: 0,
-                height: 0,
+                width: type === 'website' || type === 'image' || type === 'markdown' ? 300 : 0,
+                height: type === 'website' || type === 'image' || type === 'markdown' ? 200 : 0,
                 strokeColor: this.toolSettings.strokeColor,
                 strokeWidth: this.toolSettings.strokeWidth,
                 fillColor: this.toolSettings.fillColor,
@@ -1281,6 +1599,18 @@
                 locked: false,
                 groupId: null
             };
+            
+            // Add specific properties for new element types
+            if (type === 'website') {
+                element.url = '';
+                element.text = 'Click to set URL';
+            } else if (type === 'image') {
+                element.imageUrl = '';
+                element.text = 'Click to set image';
+            } else if (type === 'markdown') {
+                element.markdown = '# Markdown Document\n\nClick to edit...';
+                element.text = 'Markdown Document';
+            }
             
             element.svgElement = this.createSVGElement(element);
             return element;
@@ -1308,6 +1638,11 @@
                     break;
                 case 'text':
                     svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    break;
+                case 'website':
+                case 'image':
+                case 'markdown':
+                    svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
                     break;
                 default:
                     svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -1483,6 +1818,162 @@
                         svg.parentNode.insertBefore(rect, svg);
                         element.boundaryRect = rect;
                     }
+                    break;
+                    
+                case 'website':
+                    svg.setAttribute('x', element.x);
+                    svg.setAttribute('y', element.y);
+                    svg.setAttribute('width', Math.abs(element.width));
+                    svg.setAttribute('height', Math.abs(element.height));
+                    
+                    // Clear existing content
+                    svg.innerHTML = '';
+                    
+                    if (element.url && element.url.trim()) {
+                        // Create website container with address bar
+                        const container = document.createElement('div');
+                        container.className = 'sww-website-element';
+                        container.style.width = '100%';
+                        container.style.height = '100%';
+                        
+                        // Create address bar
+                        const addressBar = document.createElement('div');
+                        addressBar.className = 'sww-website-address-bar';
+                        
+                        // Window controls
+                        const controls = document.createElement('div');
+                        controls.className = 'sww-website-controls';
+                        
+                        const closeBtn = document.createElement('div');
+                        closeBtn.className = 'sww-website-control close';
+                        const minimizeBtn = document.createElement('div');
+                        minimizeBtn.className = 'sww-website-control minimize';
+                        const maximizeBtn = document.createElement('div');
+                        maximizeBtn.className = 'sww-website-control maximize';
+                        
+                        controls.appendChild(closeBtn);
+                        controls.appendChild(minimizeBtn);
+                        controls.appendChild(maximizeBtn);
+                        
+                        // URL display
+                        const urlDisplay = document.createElement('div');
+                        urlDisplay.className = 'sww-website-url';
+                        urlDisplay.textContent = element.url;
+                        urlDisplay.onclick = () => this.editWebsiteElement(element);
+                        
+                        addressBar.appendChild(controls);
+                        addressBar.appendChild(urlDisplay);
+                        
+                        // Create content area
+                        const content = document.createElement('div');
+                        content.className = 'sww-website-content';
+                        
+                        const iframe = document.createElement('iframe');
+                        iframe.src = element.url;
+                        iframe.style.width = '100%';
+                        iframe.style.height = '100%';
+                        iframe.style.border = 'none';
+                        
+                        content.appendChild(iframe);
+                        container.appendChild(addressBar);
+                        container.appendChild(content);
+                        svg.appendChild(container);
+                    } else {
+                        // Show placeholder
+                        const div = document.createElement('div');
+                        div.className = 'sww-website-placeholder';
+                        div.style.width = '100%';
+                        div.style.height = '100%';
+                        div.innerHTML = '<i class="fas fa-globe"></i><br>Click to set URL';
+                        div.onclick = () => this.editWebsiteElement(element);
+                        svg.appendChild(div);
+                    }
+                    break;
+                    
+                case 'image':
+                    svg.setAttribute('x', element.x);
+                    svg.setAttribute('y', element.y);
+                    svg.setAttribute('width', Math.abs(element.width));
+                    svg.setAttribute('height', Math.abs(element.height));
+                    
+                    // Clear existing content
+                    svg.innerHTML = '';
+                    
+                    if (element.imageUrl && element.imageUrl.trim()) {
+                        // Create image container
+                        const div = document.createElement('div');
+                        div.className = 'sww-image-element';
+                        div.style.width = '100%';
+                        div.style.height = '100%';
+                        
+                        const img = document.createElement('img');
+                        img.src = element.imageUrl;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        // Remove single click handler - only allow double-click and right-click edit
+                        
+                        div.appendChild(img);
+                        svg.appendChild(div);
+                    } else {
+                        // Show placeholder (keep click for initial setup)
+                        const div = document.createElement('div');
+                        div.className = 'sww-image-placeholder';
+                        div.style.width = '100%';
+                        div.style.height = '100%';
+                        div.innerHTML = '<i class="fas fa-image"></i><br>Click to set image';
+                        div.onclick = () => this.editImageElement(element);
+                        svg.appendChild(div);
+                    }
+                    break;
+                    
+                case 'markdown':
+                    svg.setAttribute('x', element.x);
+                    svg.setAttribute('y', element.y);
+                    svg.setAttribute('width', Math.abs(element.width));
+                    svg.setAttribute('height', Math.abs(element.height));
+                    
+                    // Clear existing content
+                    svg.innerHTML = '';
+                    
+                    // Create markdown editor container
+                    const div = document.createElement('div');
+                    div.className = 'sww-markdown-element';
+                    div.style.width = '100%';
+                    div.style.height = '100%';
+                    
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'sww-markdown-editor';
+                    textarea.value = element.markdown || '# Markdown Document\n\nClick to edit...';
+                    textarea.placeholder = 'Enter markdown here...';
+                    
+                    // Handle textarea events
+                    textarea.addEventListener('input', (e) => {
+                        element.markdown = e.target.value;
+                    });
+                    
+                    textarea.addEventListener('blur', () => {
+                        // Update element text for display purposes
+                        const lines = textarea.value.split('\n');
+                        element.text = lines[0] || 'Markdown Document';
+                    });
+                    
+                    // Prevent event bubbling to allow proper text editing
+                    textarea.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                    });
+                    
+                    textarea.addEventListener('mouseup', (e) => {
+                        e.stopPropagation();
+                    });
+                    
+                    textarea.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        textarea.focus();
+                    });
+                    
+                    div.appendChild(textarea);
+                    svg.appendChild(div);
                     break;
             }
             
@@ -2049,7 +2540,9 @@
         updateContextMenuState() {
             const hasSelection = this.selectedElements.size > 0;
             const hasClipboard = this.clipboard.length > 0;
-            const hasTextSelection = Array.from(this.selectedElements).some(el => el.type === 'text');
+            const hasEditableSelection = Array.from(this.selectedElements).some(el => 
+                el.type === 'text' || el.type === 'website' || el.type === 'image' || el.type === 'markdown'
+            );
             const canGroup = this.selectedElements.size > 1;
             const hasGroupedSelection = Array.from(this.selectedElements).some(el => el.groupId);
             const hasLockedSelection = Array.from(this.selectedElements).some(el => el.locked);
@@ -2074,7 +2567,7 @@
             if (unlockItem) unlockItem.disabled = !hasSelection || !hasLockedSelection;
             if (bringToFrontItem) bringToFrontItem.disabled = !hasSelection;
             if (sendToBackItem) sendToBackItem.disabled = !hasSelection;
-            if (editItem) editItem.disabled = !hasTextSelection;
+            if (editItem) editItem.disabled = !hasEditableSelection;
         }
         
         // Clipboard Methods
@@ -2126,10 +2619,32 @@
         }
         
         editSelected() {
-            // Find first text element in selection
-            const textElement = Array.from(this.selectedElements).find(el => el.type === 'text');
-            if (textElement) {
-                this.startTextEditing(textElement);
+            if (this.selectedElements.size === 0) return;
+            
+            // Find first editable element in selection
+            const editableElement = Array.from(this.selectedElements).find(el => 
+                el.type === 'text' || el.type === 'website' || el.type === 'image' || el.type === 'markdown'
+            );
+            
+            if (editableElement) {
+                switch (editableElement.type) {
+                    case 'text':
+                        this.startTextEditing(editableElement);
+                        break;
+                    case 'website':
+                        this.editWebsiteElement(editableElement);
+                        break;
+                    case 'image':
+                        this.editImageElement(editableElement);
+                        break;
+                    case 'markdown':
+                        // For markdown, just focus the textarea
+                        const textarea = editableElement.svgElement.querySelector('.sww-markdown-editor');
+                        if (textarea) {
+                            textarea.focus();
+                        }
+                        break;
+                }
             }
         }
         
@@ -2164,6 +2679,108 @@
             });
             
             console.log(`Unlocked ${this.selectedElements.size} elements`);
+        }
+        
+        // Edit methods for new element types
+        editWebsiteElement(element) {
+            this.showConfigDialog('Website Configuration', [
+                { label: 'URL:', type: 'text', key: 'url', value: element.url || '', placeholder: 'https://example.com' }
+            ], (values) => {
+                element.url = values.url;
+                this.updateSVGElement(element);
+            });
+        }
+        
+        editImageElement(element) {
+            this.showConfigDialog('Image Configuration', [
+                { label: 'Image URL:', type: 'text', key: 'imageUrl', value: element.imageUrl || '', placeholder: 'https://example.com/image.jpg' }
+            ], (values) => {
+                element.imageUrl = values.imageUrl;
+                this.updateSVGElement(element);
+            });
+        }
+        
+        showConfigDialog(title, fields, onSave) {
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'sww-config-overlay';
+            
+            // Create dialog
+            const dialog = document.createElement('div');
+            dialog.className = 'sww-config-dialog';
+            
+            // Title
+            const titleEl = document.createElement('h3');
+            titleEl.textContent = title;
+            dialog.appendChild(titleEl);
+            
+            // Fields
+            const form = document.createElement('div');
+            const inputs = {};
+            
+            fields.forEach(field => {
+                const label = document.createElement('label');
+                label.textContent = field.label;
+                form.appendChild(label);
+                
+                let input;
+                if (field.type === 'textarea') {
+                    input = document.createElement('textarea');
+                } else {
+                    input = document.createElement('input');
+                    input.type = field.type || 'text';
+                }
+                
+                input.value = field.value || '';
+                input.placeholder = field.placeholder || '';
+                inputs[field.key] = input;
+                form.appendChild(input);
+            });
+            
+            dialog.appendChild(form);
+            
+            // Buttons
+            const buttons = document.createElement('div');
+            buttons.className = 'sww-config-dialog-buttons';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.onclick = () => {
+                overlay.remove();
+            };
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.className = 'primary';
+            saveBtn.onclick = () => {
+                const values = {};
+                Object.keys(inputs).forEach(key => {
+                    values[key] = inputs[key].value;
+                });
+                onSave(values);
+                overlay.remove();
+            };
+            
+            buttons.appendChild(cancelBtn);
+            buttons.appendChild(saveBtn);
+            dialog.appendChild(buttons);
+            
+            // Add to page
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            
+            // Focus first input
+            const firstInput = Object.values(inputs)[0];
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
+            }
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
         }
         
         // Layer Management Methods
