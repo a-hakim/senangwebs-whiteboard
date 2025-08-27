@@ -1509,41 +1509,80 @@
                 const startWidth = element.resizeStartWidth;
                 const startHeight = element.resizeStartHeight;
                 
-                switch (this.resizeHandle) {
-                    case 'se': // Southeast handle
-                        element.width = startWidth + dx;
-                        element.height = startHeight + dy;
-                        break;
-                    case 'sw': // Southwest handle
-                        element.x = startX + dx;
-                        element.width = startWidth - dx;
-                        element.height = startHeight + dy;
-                        break;
-                    case 'ne': // Northeast handle
-                        element.width = startWidth + dx;
-                        element.y = startY + dy;
-                        element.height = startHeight - dy;
-                        break;
-                    case 'nw': // Northwest handle
-                        element.x = startX + dx;
-                        element.y = startY + dy;
-                        element.width = startWidth - dx;
-                        element.height = startHeight - dy;
-                        break;
-                    case 'e': // East handle
-                        element.width = startWidth + dx;
-                        break;
-                    case 'w': // West handle
-                        element.x = startX + dx;
-                        element.width = startWidth - dx;
-                        break;
-                    case 'n': // North handle
-                        element.y = startY + dy;
-                        element.height = startHeight - dy;
-                        break;
-                    case 's': // South handle
-                        element.height = startHeight + dy;
-                        break;
+                // Special handling for lines and arrows
+                if (element.type === 'line' || element.type === 'arrow') {
+                    // For lines/arrows, we need to handle resize differently
+                    // The element represents a line from (x,y) to (x+width, y+height)
+                    switch (this.resizeHandle) {
+                        case 'se': // Moving end point
+                            element.width = startWidth + dx;
+                            element.height = startHeight + dy;
+                            break;
+                        case 'nw': // Moving start point
+                            element.x = startX + dx;
+                            element.y = startY + dy;
+                            element.width = startWidth - dx;
+                            element.height = startHeight - dy;
+                            break;
+                        // For lines, we only allow two handles: start and end
+                        case 'sw':
+                        case 'ne':
+                        case 'e':
+                        case 'w':
+                        case 'n':
+                        case 's':
+                            // Map other handles to the two main ones
+                            if (['w', 'nw', 'sw', 'n'].includes(this.resizeHandle)) {
+                                // Move start point
+                                element.x = startX + dx;
+                                element.y = startY + dy;
+                                element.width = startWidth - dx;
+                                element.height = startHeight - dy;
+                            } else {
+                                // Move end point
+                                element.width = startWidth + dx;
+                                element.height = startHeight + dy;
+                            }
+                            break;
+                    }
+                } else {
+                    // Standard resize for rectangles, ellipses, diamonds, etc.
+                    switch (this.resizeHandle) {
+                        case 'se': // Southeast handle
+                            element.width = startWidth + dx;
+                            element.height = startHeight + dy;
+                            break;
+                        case 'sw': // Southwest handle
+                            element.x = startX + dx;
+                            element.width = startWidth - dx;
+                            element.height = startHeight + dy;
+                            break;
+                        case 'ne': // Northeast handle
+                            element.width = startWidth + dx;
+                            element.y = startY + dy;
+                            element.height = startHeight - dy;
+                            break;
+                        case 'nw': // Northwest handle
+                            element.x = startX + dx;
+                            element.y = startY + dy;
+                            element.width = startWidth - dx;
+                            element.height = startHeight - dy;
+                            break;
+                        case 'e': // East handle
+                            element.width = startWidth + dx;
+                            break;
+                        case 'w': // West handle
+                            element.x = startX + dx;
+                            element.width = startWidth - dx;
+                            break;
+                        case 'n': // North handle
+                            element.y = startY + dy;
+                            element.height = startHeight - dy;
+                            break;
+                        case 's': // South handle
+                            element.height = startHeight + dy;
+                            break;
+                    }
                 }
                 
                 // Ensure minimum size
@@ -1893,8 +1932,54 @@
                 selectionBox.setAttribute('height', bounds.height + 4);
                 this.selectionGroup.appendChild(selectionBox);
                 
-                // Add resize handles
-                this.addResizeHandles(bounds);
+                // Add appropriate resize handles based on element type
+                if (element.type === 'line' || element.type === 'arrow') {
+                    this.addLineResizeHandles(element);
+                } else {
+                    this.addResizeHandles(bounds);
+                }
+            });
+        }
+        
+        addLineResizeHandles(element) {
+            const handleSize = 8;
+            
+            // For lines and arrows, only show start and end point handles
+            const startX = element.x;
+            const startY = element.y;
+            const endX = element.x + element.width;
+            const endY = element.y + element.height;
+            
+            const handles = [
+                { x: startX - handleSize/2, y: startY - handleSize/2, cursor: 'move', type: 'nw' }, // Start point
+                { x: endX - handleSize/2, y: endY - handleSize/2, cursor: 'move', type: 'se' }    // End point
+            ];
+            
+            handles.forEach(handle => {
+                const handleRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                handleRect.setAttribute('class', 'sww-handle');
+                handleRect.setAttribute('x', handle.x);
+                handleRect.setAttribute('y', handle.y);
+                handleRect.setAttribute('width', handleSize);
+                handleRect.setAttribute('height', handleSize);
+                handleRect.setAttribute('data-handle-type', handle.type);
+                handleRect.style.cursor = handle.cursor;
+                
+                // Add event listeners for resize
+                handleRect.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    this.startResize(handle.type, this.getPointerPosition(e));
+                });
+                
+                handleRect.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.startResize(handle.type, this.getPointerPosition(touch));
+                });
+                
+                this.selectionGroup.appendChild(handleRect);
             });
         }
         
@@ -2036,6 +2121,28 @@
                         height: bounds.height + (padding * 2)
                     };
                 }
+            } else if (element.type === 'line' || element.type === 'arrow') {
+                // For lines and arrows, create bounding box from start and end points
+                const startX = element.x;
+                const startY = element.y;
+                const endX = element.x + element.width;
+                const endY = element.y + element.height;
+                
+                // Calculate the actual bounding rectangle
+                const minX = Math.min(startX, endX);
+                const minY = Math.min(startY, endY);
+                const maxX = Math.max(startX, endX);
+                const maxY = Math.max(startY, endY);
+                
+                // Add some padding for easier selection
+                const padding = 5;
+                
+                return {
+                    x: minX - padding,
+                    y: minY - padding,
+                    width: (maxX - minX) + (padding * 2),
+                    height: (maxY - minY) + (padding * 2)
+                };
             } else {
                 // For other elements, use their width/height
                 return {
