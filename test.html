@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWW Context Menu Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+        }
+        
+        .test-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .test-sidebar {
+            width: 250px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .test-canvas {
+            flex: 1;
+            height: 100%;
+        }
+        
+        .test-instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .test-instructions h3 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+        
+        .test-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .test-button:hover {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-sidebar">
+            <h2 style="margin-top: 0; color: #333;">Context Menu Test</h2>
+            
+            <div class="test-instructions">
+                <h3>Test Instructions:</h3>
+                <ol>
+                    <li>Create some shapes using the toolbar</li>
+                    <li>Right-click on empty space to see the context menu</li>
+                    <li>Select elements and right-click to see context options</li>
+                    <li>Test Copy/Paste functionality</li>
+                    <li>Test Group/Ungroup with multiple selected elements</li>
+                    <li>Create text elements and test Edit option</li>
+                    <li>Notice that properties panel only shows when elements are selected</li>
+                </ol>
+            </div>
+            
+            <button class="test-button" onclick="createTestShapes()">Create Test Shapes</button>
+            <button class="test-button" onclick="selectAllShapes()">Select All</button>
+            <button class="test-button" onclick="clearCanvas()">Clear Canvas</button>
+            
+            <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                <h4 style="margin: 0 0 10px 0;">Expected Behavior:</h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 12px;">
+                    <li>Properties panel hidden by default</li>
+                    <li>Properties panel shows when elements selected</li>
+                    <li>Right-click shows context menu</li>
+                    <li>Context menu items enabled/disabled appropriately</li>
+                    <li>Copy/Paste works for duplicating elements</li>
+                    <li>Group/Ungroup works with multiple selection</li>
+                    <li>Edit option available only for text elements</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-canvas" id="drawing-canvas"></div>
+    </div>
+
+    <script src="sww.js"></script>
+    <script>
+        let swwInstance;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('drawing-canvas');
+            
+            // Initialize SWW
+            swwInstance = sww.init(container, {
+                backgroundColor: '#ffffff',
+                gridSize: 20,
+                showGrid: true
+            });
+            
+            console.log('SWW Context Menu Test initialized!');
+        });
+        
+        function createTestShapes() {
+            // Create a sample scene with different types of elements
+            const testScene = {
+                elements: [
+                    {
+                        id: 'test-rect-1',
+                        type: 'rectangle',
+                        x: 100,
+                        y: 100,
+                        width: 150,
+                        height: 100,
+                        strokeColor: '#007bff',
+                        strokeWidth: 2,
+                        fillColor: '#e3f2fd',
+                        fillStyle: 'solid',
+                        opacity: 0.8,
+                        rotation: 0
+                    },
+                    {
+                        id: 'test-ellipse-1',
+                        type: 'ellipse',
+                        x: 300,
+                        y: 120,
+                        width: 120,
+                        height: 80,
+                        strokeColor: '#28a745',
+                        strokeWidth: 2,
+                        fillColor: '#d4edda',
+                        fillStyle: 'solid',
+                        opacity: 0.9,
+                        rotation: 0
+                    },
+                    {
+                        id: 'test-text-1',
+                        type: 'text',
+                        x: 150,
+                        y: 250,
+                        width: 0,
+                        height: 0,
+                        strokeColor: '#333333',
+                        strokeWidth: 1,
+                        fillColor: 'transparent',
+                        fillStyle: 'transparent',
+                        opacity: 1,
+                        fontSize: 18,
+                        fontFamily: 'Arial',
+                        text: 'Test Text Element',
+                        rotation: 0
+                    }
+                ],
+                viewBox: { x: 0, y: 0, width: 1000, height: 1000 },
+                zoom: 1
+            };
+            
+            swwInstance.loadScene(testScene);
+        }
+        
+        function selectAllShapes() {
+            swwInstance.selectAll();
+        }
+        
+        function clearCanvas() {
+            swwInstance.clearAll();
+        }
+        
+        // Expose functions globally
+        window.createTestShapes = createTestShapes;
+        window.selectAllShapes = selectAllShapes;
+        window.clearCanvas = clearCanvas;
+    </script>
+</body>
+</html>

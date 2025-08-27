@@ -70,6 +70,10 @@
             // Grid snapping
             this.snapToGrid = true; // Enable by default
             
+            // Context menu state
+            this.contextMenu = null;
+            this.clipboard = []; // For copy/paste functionality
+            
             // Canvas properties
             this.viewBox = { x: 0, y: 0, width: 1000, height: 1000 };
             this.zoom = 1;
@@ -366,6 +370,78 @@
                     stroke-dasharray: 2,2 !important;
                     stroke-dashoffset: 0 !important;
                 }
+                
+                /* Context Menu Styles */
+                .sww-context-menu {
+                    position: absolute;
+                    background: white;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 6px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 2000;
+                    min-width: 150px;
+                    padding: 4px 0;
+                    font-size: 14px;
+                    display: none;
+                }
+                
+                .sww-context-menu-item {
+                    padding: 8px 16px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    color: #333;
+                    border: none;
+                    background: none;
+                    width: 100%;
+                    text-align: left;
+                    font-size: 14px;
+                }
+                
+                .sww-context-menu-item:hover {
+                    background: #f8f9fa;
+                }
+                
+                .sww-context-menu-item:disabled {
+                    color: #aaa;
+                    cursor: not-allowed;
+                }
+                
+                .sww-context-menu-item:disabled:hover {
+                    background: none;
+                }
+                
+                .sww-context-menu-item i {
+                    margin-right: 10px;
+                    width: 16px;
+                    text-align: center;
+                    font-size: 13px;
+                }
+                
+                .sww-context-menu-separator {
+                    height: 1px;
+                    background: #e9ecef;
+                    margin: 4px 0;
+                }
+                
+                /* Hidden properties panel by default */
+                .sww-properties-panel {
+                    position: absolute;
+                    top: 20px;
+                    right: 20px;
+                    width: 200px;
+                    background: white;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 8px;
+                    padding: 15px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    z-index: 1000;
+                    display: none;
+                }
+                
+                .sww-properties-panel.visible {
+                    display: block;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -401,6 +477,9 @@
             
             // Create properties panel
             this.createPropertiesPanel();
+            
+            // Create context menu
+            this.createContextMenu();
         }
         
         createBackground() {
@@ -413,19 +492,29 @@
             bg.setAttribute('fill', this.options.backgroundColor);
             this.svg.appendChild(bg);
             
-            // Grid pattern (if enabled)
-            if (this.options.showGrid) {
-                this.createGrid();
-            }
+            // Create grid pattern but only show if snap is enabled
+            this.createGrid();
+            this.updateGridVisibility();
         }
         
         createGrid() {
-            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-            pattern.setAttribute('id', 'sww-grid');
-            pattern.setAttribute('width', this.options.gridSize);
-            pattern.setAttribute('height', this.options.gridSize);
-            pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+            // Remove existing grid if it exists
+            if (this.gridPattern) {
+                this.gridPattern.remove();
+            }
+            if (this.gridRect) {
+                this.gridRect.remove();
+            }
+            if (this.gridDefs) {
+                this.gridDefs.remove();
+            }
+            
+            this.gridDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            this.gridPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+            this.gridPattern.setAttribute('id', 'sww-grid');
+            this.gridPattern.setAttribute('width', this.options.gridSize);
+            this.gridPattern.setAttribute('height', this.options.gridSize);
+            this.gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
             
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', `M ${this.options.gridSize} 0 L 0 0 0 ${this.options.gridSize}`);
@@ -433,17 +522,17 @@
             path.setAttribute('stroke', '#e0e0e0');
             path.setAttribute('stroke-width', '1');
             
-            pattern.appendChild(path);
-            defs.appendChild(pattern);
-            this.svg.appendChild(defs);
+            this.gridPattern.appendChild(path);
+            this.gridDefs.appendChild(this.gridPattern);
+            this.svg.appendChild(this.gridDefs);
             
-            const gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            gridRect.setAttribute('x', this.viewBox.x - 5000);
-            gridRect.setAttribute('y', this.viewBox.y - 5000);
-            gridRect.setAttribute('width', 10000);
-            gridRect.setAttribute('height', 10000);
-            gridRect.setAttribute('fill', 'url(#sww-grid)');
-            this.svg.appendChild(gridRect);
+            this.gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            this.gridRect.setAttribute('x', this.viewBox.x - 5000);
+            this.gridRect.setAttribute('y', this.viewBox.y - 5000);
+            this.gridRect.setAttribute('width', 10000);
+            this.gridRect.setAttribute('height', 10000);
+            this.gridRect.setAttribute('fill', 'url(#sww-grid)');
+            this.svg.appendChild(this.gridRect);
         }
         
         createToolbar() {
@@ -837,12 +926,57 @@
             this.propertiesPanel = panel;
         }
         
+        createContextMenu() {
+            const menu = document.createElement('div');
+            menu.className = 'sww-context-menu';
+            
+            const menuItems = [
+                { id: 'copy', icon: 'fas fa-copy', text: 'Copy', action: () => this.copySelected() },
+                { id: 'paste', icon: 'fas fa-paste', text: 'Paste', action: () => this.pasteClipboard() },
+                { id: 'separator1', type: 'separator' },
+                { id: 'group', icon: 'fas fa-object-group', text: 'Group', action: () => this.groupSelected() },
+                { id: 'ungroup', icon: 'fas fa-object-ungroup', text: 'Ungroup', action: () => this.ungroupSelected() },
+                { id: 'separator2', type: 'separator' },
+                { id: 'bring-to-front', icon: 'fas fa-arrow-up', text: 'Bring to Front', action: () => this.bringToFront() },
+                { id: 'send-to-back', icon: 'fas fa-arrow-down', text: 'Send to Back', action: () => this.sendToBack() },
+                { id: 'separator3', type: 'separator' },
+                { id: 'edit', icon: 'fas fa-edit', text: 'Edit', action: () => this.editSelected() }
+            ];
+            
+            menuItems.forEach(item => {
+                if (item.type === 'separator') {
+                    const separator = document.createElement('div');
+                    separator.className = 'sww-context-menu-separator';
+                    menu.appendChild(separator);
+                } else {
+                    const menuItem = document.createElement('button');
+                    menuItem.className = 'sww-context-menu-item';
+                    menuItem.innerHTML = `<i class="${item.icon}"></i>${item.text}`;
+                    menuItem.onclick = () => {
+                        this.hideContextMenu();
+                        item.action();
+                    };
+                    menuItem.dataset.action = item.id;
+                    menu.appendChild(menuItem);
+                }
+            });
+            
+            this.container.appendChild(menu);
+            this.contextMenu = menu;
+        }
+        
         setupEventListeners() {
             // Mouse events
             this.svg.addEventListener('mousedown', (e) => this.handlePointerDown(e));
             this.svg.addEventListener('mousemove', (e) => this.handlePointerMove(e));
             this.svg.addEventListener('mouseup', (e) => this.handlePointerUp(e));
             this.svg.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
+            
+            // Context menu (right-click)
+            this.svg.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this.showContextMenu(e);
+            });
             
             // Touch events
             this.svg.addEventListener('touchstart', (e) => this.handlePointerDown(e));
@@ -852,16 +986,24 @@
             // Keyboard events
             document.addEventListener('keydown', (e) => this.handleKeyDown(e));
             
+            // Global click to hide context menu
+            document.addEventListener('click', (e) => {
+                if (!this.contextMenu.contains(e.target)) {
+                    this.hideContextMenu();
+                }
+            });
+            
             // Wheel event for zooming
             this.svg.addEventListener('wheel', (e) => this.handleWheel(e));
-            
-            // Prevent context menu
-            this.svg.addEventListener('contextmenu', (e) => e.preventDefault());
         }
         
         // Event handlers will be implemented in the next part...
         handlePointerDown(e) {
             e.preventDefault();
+            
+            // Hide context menu on any click
+            this.hideContextMenu();
+            
             const point = this.getPointerPosition(e);
             this.lastPointerPosition = point;
             
@@ -1689,7 +1831,16 @@
                 const currentAngle = Math.atan2(point.y - centerY, point.x - centerX);
                 const deltaAngle = (currentAngle - startAngle) * (180 / Math.PI);
                 
-                element.rotation = (element.rotateStartAngle + deltaAngle) % 360;
+                // Calculate the new rotation angle
+                let newRotation = (element.rotateStartAngle + deltaAngle) % 360;
+                
+                // Snap to 5-degree increments
+                newRotation = Math.round(newRotation / 5) * 5;
+                
+                // Ensure angle is between 0 and 360
+                if (newRotation < 0) newRotation += 360;
+                
+                element.rotation = newRotation;
                 this.updateSVGElement(element);
             });
             
@@ -1769,6 +1920,18 @@
         syncPropertiesPanel() {
             if (!this.propertiesPanel) return;
             
+            // Hide properties panel if no selection, multiple elements, or grouped elements
+            const hasGroupedSelection = Array.from(this.selectedElements).some(el => el.groupId);
+            const hasMultipleSelection = this.selectedElements.size > 1;
+            
+            if (this.selectedElements.size === 0 || hasMultipleSelection || hasGroupedSelection) {
+                this.propertiesPanel.classList.remove('visible');
+                return;
+            }
+            
+            // Show properties panel for single, non-grouped element
+            this.propertiesPanel.classList.add('visible');
+            
             // Get the first selected element to sync properties
             const firstElement = this.selectedElements.values().next().value;
             
@@ -1845,6 +2008,176 @@
                 this.clearSelectionHandles();
             }
             this.updateTextPropertiesVisibility();
+        }
+        
+        // Context Menu Methods
+        showContextMenu(e) {
+            const rect = this.container.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Update menu item states based on current selection and clipboard
+            this.updateContextMenuState();
+            
+            // Position and show the context menu
+            this.contextMenu.style.left = x + 'px';
+            this.contextMenu.style.top = y + 'px';
+            this.contextMenu.style.display = 'block';
+            
+            // Ensure menu doesn't go off screen
+            const menuRect = this.contextMenu.getBoundingClientRect();
+            const containerRect = this.container.getBoundingClientRect();
+            
+            if (x + menuRect.width > containerRect.width) {
+                this.contextMenu.style.left = (x - menuRect.width) + 'px';
+            }
+            
+            if (y + menuRect.height > containerRect.height) {
+                this.contextMenu.style.top = (y - menuRect.height) + 'px';
+            }
+        }
+        
+        hideContextMenu() {
+            if (this.contextMenu) {
+                this.contextMenu.style.display = 'none';
+            }
+        }
+        
+        updateContextMenuState() {
+            const hasSelection = this.selectedElements.size > 0;
+            const hasClipboard = this.clipboard.length > 0;
+            const hasTextSelection = Array.from(this.selectedElements).some(el => el.type === 'text');
+            const canGroup = this.selectedElements.size > 1;
+            const hasGroupedSelection = Array.from(this.selectedElements).some(el => el.groupId);
+            
+            // Update menu item states
+            const copyItem = this.contextMenu.querySelector('[data-action="copy"]');
+            const pasteItem = this.contextMenu.querySelector('[data-action="paste"]');
+            const groupItem = this.contextMenu.querySelector('[data-action="group"]');
+            const ungroupItem = this.contextMenu.querySelector('[data-action="ungroup"]');
+            const bringToFrontItem = this.contextMenu.querySelector('[data-action="bring-to-front"]');
+            const sendToBackItem = this.contextMenu.querySelector('[data-action="send-to-back"]');
+            const editItem = this.contextMenu.querySelector('[data-action="edit"]');
+            
+            if (copyItem) copyItem.disabled = !hasSelection;
+            if (pasteItem) pasteItem.disabled = !hasClipboard;
+            if (groupItem) groupItem.disabled = !canGroup;
+            if (ungroupItem) ungroupItem.disabled = !hasGroupedSelection;
+            if (bringToFrontItem) bringToFrontItem.disabled = !hasSelection;
+            if (sendToBackItem) sendToBackItem.disabled = !hasSelection;
+            if (editItem) editItem.disabled = !hasTextSelection;
+        }
+        
+        // Clipboard Methods
+        copySelected() {
+            if (this.selectedElements.size === 0) return;
+            
+            this.clipboard = [];
+            this.selectedElements.forEach(element => {
+                // Create a deep copy of the element
+                const elementCopy = {
+                    ...element,
+                    id: this.generateId(), // Generate new ID for paste
+                    x: element.x + 20, // Offset for paste
+                    y: element.y + 20
+                };
+                delete elementCopy.svgElement; // Remove SVG reference
+                this.clipboard.push(elementCopy);
+            });
+            
+            console.log(`Copied ${this.clipboard.length} elements to clipboard`);
+        }
+        
+        pasteClipboard() {
+            if (this.clipboard.length === 0) return;
+            
+            // Clear current selection
+            this.clearSelection();
+            
+            // Create new elements from clipboard
+            this.clipboard.forEach(elementData => {
+                const newElement = {
+                    ...elementData,
+                    id: this.generateId(),
+                    x: elementData.x + 20, // Additional offset each time
+                    y: elementData.y + 20
+                };
+                
+                // Create SVG element and add to canvas
+                const svgElement = this.createSVGElement(newElement);
+                newElement.svgElement = svgElement;
+                this.elements.push(newElement);
+                this.elementsGroup.appendChild(svgElement);
+                
+                // Select the new element
+                this.selectElement(newElement);
+            });
+            
+            console.log(`Pasted ${this.clipboard.length} elements from clipboard`);
+        }
+        
+        editSelected() {
+            // Find first text element in selection
+            const textElement = Array.from(this.selectedElements).find(el => el.type === 'text');
+            if (textElement) {
+                this.startTextEditing(textElement);
+            }
+        }
+        
+        // Layer Management Methods
+        bringToFront() {
+            if (this.selectedElements.size === 0) return;
+            
+            // Convert to array and sort by current position in elements array
+            const selectedArray = Array.from(this.selectedElements);
+            const elementsToMove = selectedArray.map(element => {
+                const index = this.elements.indexOf(element);
+                return { element, index };
+            }).sort((a, b) => a.index - b.index);
+            
+            // Remove elements from their current positions (from back to front to maintain indices)
+            for (let i = elementsToMove.length - 1; i >= 0; i--) {
+                const { element, index } = elementsToMove[i];
+                this.elements.splice(index, 1);
+                
+                // Move SVG element to end (top layer)
+                element.svgElement.remove();
+                this.elementsGroup.appendChild(element.svgElement);
+            }
+            
+            // Add elements to the end of the array (top layer)
+            elementsToMove.forEach(({ element }) => {
+                this.elements.push(element);
+            });
+            
+            console.log(`Brought ${selectedArray.length} elements to front`);
+        }
+        
+        sendToBack() {
+            if (this.selectedElements.size === 0) return;
+            
+            // Convert to array and sort by current position in elements array
+            const selectedArray = Array.from(this.selectedElements);
+            const elementsToMove = selectedArray.map(element => {
+                const index = this.elements.indexOf(element);
+                return { element, index };
+            }).sort((a, b) => b.index - a.index); // Sort in reverse order
+            
+            // Remove elements from their current positions (from front to back to maintain indices)
+            elementsToMove.forEach(({ element, index }) => {
+                this.elements.splice(index, 1);
+                
+                // Move SVG element to beginning (bottom layer)
+                element.svgElement.remove();
+                this.elementsGroup.insertBefore(element.svgElement, this.elementsGroup.firstChild);
+            });
+            
+            // Add elements to the beginning of the array (bottom layer)
+            elementsToMove.reverse().forEach(({ element }) => {
+                this.elements.unshift(element);
+            });
+            
+            console.log(`Sent ${selectedArray.length} elements to back`);
         }
         
         startSelectionBox(startPoint) {
@@ -2586,6 +2919,35 @@
                     button.classList.remove('active');
                     button.title = 'Grid Snap: OFF (Click to enable)';
                 }
+            }
+            
+            // Show/hide grid based on snap state
+            this.updateGridVisibility();
+        }
+        
+        updateGridVisibility() {
+            if (this.snapToGrid) {
+                this.showGrid();
+            } else {
+                this.hideGrid();
+            }
+        }
+        
+        showGrid() {
+            if (!this.gridRect && !this.gridDefs && !this.gridPattern) {
+                this.createGrid();
+            } else if (this.gridRect && this.gridDefs) {
+                this.gridRect.style.display = 'block';
+                this.gridDefs.style.display = 'block';
+            }
+        }
+        
+        hideGrid() {
+            if (this.gridRect) {
+                this.gridRect.style.display = 'none';
+            }
+            if (this.gridDefs) {
+                this.gridDefs.style.display = 'none';
             }
         }
         
