@@ -82,7 +82,8 @@
                 fillStyle: 'solid',
                 opacity: 1,
                 fontSize: 16,
-                fontFamily: 'Arial'
+                fontFamily: 'Arial',
+                textAlign: 'left'
             };
             
             this.init();
@@ -96,6 +97,15 @@
         
         injectCSS() {
             if (document.getElementById('sww-styles')) return;
+            
+            // Add Font Awesome CSS if not already present
+            if (!document.querySelector('link[href*="font-awesome"]') && !document.getElementById('sww-fontawesome')) {
+                const fontAwesome = document.createElement('link');
+                fontAwesome.id = 'sww-fontawesome';
+                fontAwesome.rel = 'stylesheet';
+                fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+                document.head.appendChild(fontAwesome);
+            }
             
             const style = document.createElement('style');
             style.id = 'sww-styles';
@@ -150,6 +160,12 @@
                     transition: all 0.2s;
                 }
                 
+                .sww-tool-button i {
+                    font-size: 16px;
+                    color: #333;
+                    transition: color 0.2s;
+                }
+                
                 .sww-tool-button:hover {
                     background: #f0f0f0;
                     border-color: #999;
@@ -159,6 +175,10 @@
                     background: #007bff;
                     color: white;
                     border-color: #0056b3;
+                }
+                
+                .sww-tool-button.active i {
+                    color: white;
                 }
                 
                 .sww-properties-panel {
@@ -241,6 +261,18 @@
                     overflow: visible;
                 }
                 
+                /* Text boundary styling */
+                .sww-text-boundary {
+                    pointer-events: none;
+                    opacity: 0.8;
+                }
+                
+                .sww-element.selected .sww-text-boundary {
+                    opacity: 1;
+                    stroke: #007bff;
+                    stroke-width: 1.5;
+                }
+                
                 .sww-selection-box {
                     fill: none;
                     stroke: #007bff;
@@ -292,6 +324,35 @@
                     font-weight: 500;
                     min-width: 30px;
                     text-align: right;
+                }
+                
+                .sww-align-button {
+                    padding: 4px 8px;
+                    border: 1px solid #ddd;
+                    background: #f8f9fa;
+                    cursor: pointer;
+                    font-size: 12px;
+                    border-radius: 3px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s;
+                    margin-right: 2px;
+                }
+                
+                .sww-align-button:hover {
+                    background: #e9ecef;
+                    border-color: #adb5bd;
+                }
+                
+                .sww-align-button.active {
+                    background: #007bff;
+                    color: white;
+                    border-color: #0056b3;
+                }
+                
+                .sww-align-button i {
+                    font-size: 12px;
                 }
             `;
             document.head.appendChild(style);
@@ -378,14 +439,14 @@
             
             // Tool groups
             const tools = [
-                { id: 'select', icon: '↖', title: 'Select' },
-                { id: 'rectangle', icon: '▭', title: 'Rectangle' },
-                { id: 'ellipse', icon: '○', title: 'Ellipse' },
-                { id: 'diamond', icon: '◇', title: 'Diamond' },
-                { id: 'line', icon: '/', title: 'Line' },
-                { id: 'arrow', icon: '→', title: 'Arrow' },
-                { id: 'draw', icon: '✏', title: 'Draw' },
-                { id: 'text', icon: 'T', title: 'Text' }
+                { id: 'select', icon: 'fas fa-mouse-pointer', title: 'Select' },
+                { id: 'rectangle', icon: 'far fa-square', title: 'Rectangle' },
+                { id: 'ellipse', icon: 'far fa-circle', title: 'Ellipse' },
+                { id: 'diamond', icon: 'far fa-gem', title: 'Diamond' },
+                { id: 'line', icon: 'fas fa-minus', title: 'Line' },
+                { id: 'arrow', icon: 'fas fa-arrow-right', title: 'Arrow' },
+                { id: 'draw', icon: 'fas fa-pen', title: 'Draw' },
+                { id: 'text', icon: 'fas fa-font', title: 'Text' }
             ];
             
             const toolGroup = document.createElement('div');
@@ -395,7 +456,11 @@
                 const button = document.createElement('button');
                 button.className = 'sww-tool-button';
                 button.setAttribute('data-tool', tool.id);
-                button.textContent = tool.icon;
+                
+                const icon = document.createElement('i');
+                icon.className = tool.icon;
+                button.appendChild(icon);
+                
                 button.title = tool.title;
                 button.addEventListener('click', () => this.setTool(tool.id));
                 
@@ -413,17 +478,21 @@
             actionGroup.className = 'sww-tool-group';
             
             const actions = [
-                { id: 'snap-grid', icon: '⊞', title: 'Toggle Grid Snap', action: () => this.toggleGridSnapButton() },
-                { id: 'clear', icon: '🗑', title: 'Clear All', action: () => this.clearAll() },
-                { id: 'export-svg', icon: '📄', title: 'Export SVG', action: () => this.exportToSVG() },
-                { id: 'export-png', icon: '🖼', title: 'Export PNG', action: () => this.exportToPNG() }
+                { id: 'snap-grid', icon: 'fas fa-border-all', title: 'Toggle Grid Snap', action: () => this.toggleGridSnapButton() },
+                { id: 'clear', icon: 'fas fa-trash', title: 'Clear All', action: () => this.clearAll() },
+                { id: 'export-svg', icon: 'fas fa-file-code', title: 'Export SVG', action: () => this.exportToSVG() },
+                { id: 'export-png', icon: 'fas fa-file-image', title: 'Export PNG', action: () => this.exportToPNG() }
             ];
             
             actions.forEach(action => {
                 const button = document.createElement('button');
                 button.className = 'sww-tool-button';
                 button.setAttribute('data-action', action.id);
-                button.textContent = action.icon;
+                
+                const icon = document.createElement('i');
+                icon.className = action.icon;
+                button.appendChild(icon);
+                
                 button.title = action.title;
                 button.addEventListener('click', action.action);
                 
@@ -567,6 +636,7 @@
             textSection.style.borderTop = '1px solid #ddd';
             textSection.style.marginTop = '10px';
             textSection.style.paddingTop = '10px';
+            textSection.style.display = 'none'; // Initially hidden
             
             const textSectionTitle = document.createElement('h4');
             textSectionTitle.textContent = 'Text Properties';
@@ -672,9 +742,66 @@
             textColorGroup.appendChild(textColorLabel);
             textColorGroup.appendChild(textColorInput);
             
+            // Text alignment
+            const textAlignGroup = document.createElement('div');
+            textAlignGroup.className = 'sww-property-group';
+            
+            const textAlignLabel = document.createElement('label');
+            textAlignLabel.className = 'sww-property-label';
+            textAlignLabel.textContent = 'Text Align';
+            
+            const textAlignContainer = document.createElement('div');
+            textAlignContainer.className = 'sww-align-buttons';
+            textAlignContainer.style.display = 'flex';
+            textAlignContainer.style.gap = '4px';
+            
+            const alignments = [
+                { value: 'left', icon: 'fas fa-align-left', title: 'Align Left' },
+                { value: 'center', icon: 'fas fa-align-center', title: 'Align Center' },
+                { value: 'right', icon: 'fas fa-align-right', title: 'Align Right' }
+            ];
+            
+            alignments.forEach(align => {
+                const button = document.createElement('button');
+                button.className = 'sww-align-button';
+                button.setAttribute('data-align', align.value);
+                
+                const icon = document.createElement('i');
+                icon.className = align.icon;
+                button.appendChild(icon);
+                
+                button.title = align.title;
+                
+                if (align.value === (this.toolSettings.textAlign || 'left')) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+                
+                button.addEventListener('click', () => {
+                    // Update all align buttons
+                    textAlignContainer.querySelectorAll('.sww-align-button').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    
+                    // Highlight selected button
+                    button.classList.add('active');
+                    
+                    // Update setting
+                    this.toolSettings.textAlign = align.value;
+                    this.updateSelectedElements();
+                });
+                
+                textAlignContainer.appendChild(button);
+            });
+            
+            textAlignGroup.appendChild(textAlignLabel);
+            textAlignGroup.appendChild(textAlignContainer);
+            
             textSection.appendChild(fontSizeGroup);
             textSection.appendChild(fontFamilyGroup);
             textSection.appendChild(textColorGroup);
+            textSection.appendChild(textAlignGroup);
             
             panel.appendChild(strokeGroup);
             panel.appendChild(widthGroup);
@@ -913,6 +1040,10 @@
             const element = this.createElement('text', snappedPoint);
             element.text = 'Click to edit text';
             
+            // Don't set width/height initially - let it auto-size
+            element.width = undefined;
+            element.height = undefined;
+            
             // Add element to the scene
             this.elementsGroup.appendChild(element.svgElement);
             this.elements.push(element);
@@ -940,6 +1071,7 @@
                 opacity: this.toolSettings.opacity,
                 fontSize: this.toolSettings.fontSize,
                 fontFamily: this.toolSettings.fontFamily,
+                textAlign: this.toolSettings.textAlign,
                 rotation: 0
             };
             
@@ -1059,12 +1191,82 @@
                     break;
                     
                 case 'text':
-                    svg.setAttribute('x', element.x);
-                    svg.setAttribute('y', element.y);
+                    // Handle multi-line text with proper positioning
+                    const textContent = element.text || '';
+                    const lines = textContent.split('\n');
+                    
+                    // Position text within boundary if it has been resized
+                    let textX = element.x;
+                    let textY = element.y;
+                    
+                    if (element.width && element.height) {
+                        // Position text with padding inside the boundary
+                        textX = element.x + 10; // Left padding
+                        textY = element.y + element.fontSize + 10; // Top padding + baseline
+                    }
+                    
+                    svg.setAttribute('x', textX);
+                    svg.setAttribute('y', textY);
                     svg.setAttribute('font-size', element.fontSize);
                     svg.setAttribute('font-family', element.fontFamily);
                     svg.setAttribute('fill', element.strokeColor);
-                    svg.textContent = element.text || '';
+                    
+                    // Clear existing content
+                    svg.innerHTML = '';
+                    
+                    // Add each line as a tspan with proper alignment
+                    lines.forEach((line, index) => {
+                        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                        
+                        // Calculate X position based on alignment
+                        let lineX = textX;
+                        if (element.width && element.height && element.textAlign) {
+                            const lineWidth = this.measureText(line, element.fontSize, element.fontFamily).width;
+                            const availableWidth = element.width - 20; // Account for padding
+                            
+                            switch (element.textAlign) {
+                                case 'center':
+                                    lineX = element.x + (element.width / 2) - (lineWidth / 2);
+                                    break;
+                                case 'right':
+                                    lineX = element.x + element.width - 10 - lineWidth;
+                                    break;
+                                case 'left':
+                                default:
+                                    lineX = textX; // Already set above
+                                    break;
+                            }
+                        }
+                        
+                        tspan.setAttribute('x', lineX);
+                        tspan.setAttribute('dy', index === 0 ? '0' : `${element.fontSize * 1.3}px`);
+                        tspan.textContent = line;
+                        svg.appendChild(tspan);
+                    });
+                    
+                    // Add text boundary visualization if text has been resized
+                    if (element.width && element.height) {
+                        // Remove existing boundary rect
+                        if (element.boundaryRect) {
+                            element.boundaryRect.remove();
+                        }
+                        
+                        // Create new boundary rect
+                        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        rect.setAttribute('x', element.x);
+                        rect.setAttribute('y', element.y);
+                        rect.setAttribute('width', element.width);
+                        rect.setAttribute('height', element.height);
+                        rect.setAttribute('fill', 'rgba(240, 240, 240, 0.05)');
+                        rect.setAttribute('stroke', 'rgba(200, 200, 200, 0.3)');
+                        rect.setAttribute('stroke-width', '1');
+                        rect.setAttribute('stroke-dasharray', '3,3');
+                        rect.setAttribute('class', 'sww-text-boundary');
+                        
+                        // Insert the rect before the text
+                        svg.parentNode.insertBefore(rect, svg);
+                        element.boundaryRect = rect;
+                    }
                     break;
             }
             
@@ -1291,10 +1493,76 @@
                     element.height = this.snapToGridValue(element.height);
                 }
                 
+                // Special handling for text elements
+                if (element.type === 'text') {
+                    this.adjustTextToFitBounds(element);
+                }
+                
                 this.updateSVGElement(element);
             });
             
             this.updateSelectionHandles();
+        }
+        
+        adjustTextToFitBounds(element) {
+            if (element.type !== 'text') return;
+            
+            const originalText = element.originalText || element.text || 'Text';
+            element.originalText = originalText; // Store original text for re-wrapping
+            
+            const targetWidth = Math.abs(element.width) - 20; // Leave padding
+            const targetHeight = Math.abs(element.height) - 20; // Leave padding
+            
+            if (targetWidth <= 0 || targetHeight <= 0) return;
+            
+            // Maintain the current font size - don't scale it down
+            const fontSize = element.fontSize;
+            
+            // Just wrap the text to fit the width, maintaining font size
+            const wrappedText = this.wrapText(originalText, targetWidth, fontSize, element.fontFamily);
+            
+            // Update element text with wrapped version
+            element.text = wrappedText;
+        }
+        
+        wrapText(text, maxWidth, fontSize, fontFamily) {
+            if (!text || maxWidth <= 0) return text;
+            
+            const words = text.split(/(\s+)/); // Keep whitespace
+            const lines = [];
+            let currentLine = '';
+            
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const testLine = currentLine + word;
+                const testBounds = this.measureText(testLine, fontSize, fontFamily);
+                
+                if (testBounds.width <= maxWidth || currentLine === '') {
+                    currentLine = testLine;
+                } else {
+                    // Current line is full, start new line
+                    if (currentLine.trim()) {
+                        lines.push(currentLine.trim());
+                    }
+                    currentLine = word;
+                    
+                    // If single word is too long, try to break it
+                    if (this.measureText(currentLine, fontSize, fontFamily).width > maxWidth) {
+                        // For very long words, just keep them (better than breaking)
+                        if (currentLine.trim()) {
+                            lines.push(currentLine.trim());
+                            currentLine = '';
+                        }
+                    }
+                }
+            }
+            
+            // Add remaining text
+            if (currentLine.trim()) {
+                lines.push(currentLine.trim());
+            }
+            
+            return lines.join('\n');
         }
         
         updateRotation(point) {
@@ -1417,8 +1685,22 @@
                     
                     const textColorInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="color"]');
                     if (textColorInput) textColorInput.value = firstElement.strokeColor;
+                    
+                    // Update text alignment buttons
+                    const alignButtons = this.propertiesPanel.querySelectorAll('.sww-align-button');
+                    alignButtons.forEach(button => {
+                        const align = button.getAttribute('data-align');
+                        if (align === (firstElement.textAlign || 'left')) {
+                            button.classList.add('active');
+                        } else {
+                            button.classList.remove('active');
+                        }
+                    });
                 }
             }
+            
+            // Update text properties visibility based on current selection
+            this.updateTextPropertiesVisibility();
         }
         
         deleteSelectedElements() {
@@ -1431,6 +1713,7 @@
             });
             this.selectedElements.clear();
             this.clearSelectionHandles();
+            this.updateTextPropertiesVisibility();
         }
         
         startSelectionBox(startPoint) {
@@ -1595,6 +1878,16 @@
             this.selectedElements.forEach(element => {
                 element.resizeStartX = element.x;
                 element.resizeStartY = element.y;
+                
+                if (element.type === 'text') {
+                    // For text elements, initialize width/height if not set
+                    if (!element.width || !element.height) {
+                        const bounds = this.measureText(element.text || 'Text', element.fontSize, element.fontFamily);
+                        element.width = bounds.width + 20; // Add padding
+                        element.height = bounds.height + 10; // Add padding
+                    }
+                }
+                
                 element.resizeStartWidth = element.width;
                 element.resizeStartHeight = element.height;
             });
@@ -1621,21 +1914,32 @@
         
         getElementBounds(element) {
             if (element.type === 'text') {
-                // Calculate text bounds based on content and font size
-                const text = element.text || 'Text';
-                const bounds = this.measureText(text, element.fontSize, element.fontFamily);
-                
-                // Add padding for better visibility and selection
-                const sidePadding = element.fontSize * 0.15; // 20% of font size for left/right
-                const topPadding = element.fontSize * -0.4; // 10% of font size for top (reduced)
-                const bottomPadding = element.fontSize * 0.2; // 15% of font size for bottom
-                
-                return {
-                    x: element.x - sidePadding,
-                    y: element.y - bounds.height - topPadding, // Text baseline offset with reduced top padding
-                    width: bounds.width + (sidePadding * 2),
-                    height: bounds.height + topPadding + bottomPadding
-                };
+                // Use resized dimensions if available, otherwise calculate from text
+                if (element.width && element.height) {
+                    // Text element has been resized - use the defined bounds
+                    return {
+                        x: element.x,
+                        y: element.y,
+                        width: Math.abs(element.width),
+                        height: Math.abs(element.height)
+                    };
+                } else {
+                    // Text element hasn't been resized - calculate bounds from content
+                    const text = element.text || 'Text';
+                    const bounds = this.measureText(text, element.fontSize, element.fontFamily);
+                    
+                    // Add padding for better visibility and selection
+                    const sidePadding = element.fontSize * 0.15;
+                    const topPadding = element.fontSize * -0.4;
+                    const bottomPadding = element.fontSize * 0.2;
+                    
+                    return {
+                        x: element.x - sidePadding,
+                        y: element.y - bounds.height - topPadding,
+                        width: bounds.width + (sidePadding * 2),
+                        height: bounds.height + topPadding + bottomPadding
+                    };
+                }
             } else {
                 // For other elements, use their width/height
                 return {
@@ -1773,36 +2077,77 @@
                 if (element.type === 'text') {
                     element.fontSize = this.toolSettings.fontSize;
                     element.fontFamily = this.toolSettings.fontFamily;
+                    element.textAlign = this.toolSettings.textAlign;
                 }
                 
                 this.updateSVGElement(element);
             });
+            
+            // Update text properties visibility
+            this.updateTextPropertiesVisibility();
+        }
+        
+        updateTextPropertiesVisibility() {
+            if (!this.propertiesPanel) return;
+            
+            const textPropertiesSection = this.propertiesPanel.querySelector('.sww-text-properties');
+            if (!textPropertiesSection) return;
+            
+            // Check if any selected elements are text elements
+            const hasTextElements = Array.from(this.selectedElements).some(element => element.type === 'text');
+            
+            // Show or hide text properties based on selection
+            if (hasTextElements) {
+                textPropertiesSection.style.display = 'block';
+            } else {
+                textPropertiesSection.style.display = 'none';
+            }
         }
         
         // Text editing
         startTextEditing(element) {
             const textEditor = document.createElement('textarea');
             textEditor.className = 'sww-text-editor';
-            textEditor.value = element.text || '';
+            textEditor.value = element.originalText || element.text || '';
             
-            // Position the editor
+            // Position the editor based on text boundary if it exists
             const rect = this.svg.getBoundingClientRect();
-            const x = (element.x - this.viewBox.x) / this.viewBox.width * rect.width + rect.left;
-            const y = (element.y - this.viewBox.y) / this.viewBox.height * rect.height + rect.top;
             
-            textEditor.style.left = `${x}px`;
-            textEditor.style.top = `${y - element.fontSize}px`; // Adjust for baseline
+            let editorX, editorY, editorWidth, editorHeight;
+            
+            if (element.width && element.height) {
+                // Text has a boundary - position editor to match the boundary
+                editorX = (element.x - this.viewBox.x) / this.viewBox.width * rect.width + rect.left;
+                editorY = (element.y - this.viewBox.y) / this.viewBox.height * rect.height + rect.top;
+                editorWidth = element.width / this.viewBox.width * rect.width;
+                editorHeight = element.height / this.viewBox.height * rect.height;
+            } else {
+                // Text without boundary - use default positioning
+                editorX = (element.x - this.viewBox.x) / this.viewBox.width * rect.width + rect.left;
+                editorY = (element.y - this.viewBox.y) / this.viewBox.height * rect.height + rect.top;
+                editorWidth = Math.max(200, (element.fontSize * 10)); // Reasonable default width
+                editorHeight = element.fontSize * 1.5; // Single line height
+            }
+            
+            textEditor.style.left = `${editorX}px`;
+            textEditor.style.top = `${editorY}px`;
+            textEditor.style.width = `${editorWidth}px`;
+            textEditor.style.height = `${editorHeight}px`;
             textEditor.style.fontSize = `${element.fontSize}px`;
             textEditor.style.fontFamily = element.fontFamily;
-            textEditor.style.minWidth = '100px';
-            textEditor.style.minHeight = `${element.fontSize * 1.2}px`;
-            textEditor.style.maxWidth = '400px'; // Set reasonable maximum width
             textEditor.style.border = '2px solid #007bff';
             textEditor.style.background = 'rgba(255, 255, 255, 0.9)';
             textEditor.style.resize = 'none';
             textEditor.style.overflow = 'hidden';
             textEditor.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
             textEditor.style.wordWrap = 'break-word';
+            textEditor.style.padding = '10px'; // Match text boundary padding
+            textEditor.style.boxSizing = 'border-box';
+            
+            // Set text alignment to match element alignment
+            if (element.textAlign) {
+                textEditor.style.textAlign = element.textAlign;
+            }
             
             document.body.appendChild(textEditor);
             textEditor.focus();
@@ -1814,7 +2159,17 @@
                 if (!isEditing) return; // Prevent double execution
                 isEditing = false;
                 
-                element.text = textEditor.value || 'Text'; // Fallback text
+                const newText = textEditor.value || 'Text';
+                element.originalText = newText; // Store original text for future wrapping
+                
+                // If element has boundary, adjust text to fit and wrap
+                if (element.width && element.height) {
+                    element.text = newText; // Store original first
+                    this.adjustTextToFitBounds(element); // Then wrap it
+                } else {
+                    element.text = newText;
+                }
+                
                 this.updateSVGElement(element);
                 
                 // Safely remove the textarea
@@ -2054,6 +2409,7 @@
             this.selectedElements.clear();
             this.elementsGroup.innerHTML = '';
             this.clearSelectionHandles();
+            this.updateTextPropertiesVisibility();
         }
     }
     
