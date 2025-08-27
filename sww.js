@@ -83,7 +83,8 @@
                 opacity: 1,
                 fontSize: 16,
                 fontFamily: 'Arial',
-                textAlign: 'left'
+                textAlign: 'left',
+                textColor: '#000000'  // Separate text color property
             };
             
             this.init();
@@ -541,7 +542,8 @@
             strokeInput.value = this.toolSettings.strokeColor;
             strokeInput.addEventListener('change', (e) => {
                 this.toolSettings.strokeColor = e.target.value;
-                this.updateSelectedElements();
+                // Update only strokeColor property for selected elements
+                this.updateSelectedElementProperty('strokeColor', e.target.value);
             });
             
             strokeGroup.appendChild(strokeLabel);
@@ -563,7 +565,8 @@
             widthInput.value = this.toolSettings.strokeWidth;
             widthInput.addEventListener('input', (e) => {
                 this.toolSettings.strokeWidth = parseInt(e.target.value);
-                this.updateSelectedElements();
+                // Update only strokeWidth property for selected elements
+                this.updateSelectedElementProperty('strokeWidth', parseInt(e.target.value));
             });
             
             widthGroup.appendChild(widthLabel);
@@ -583,7 +586,8 @@
             fillInput.value = this.toolSettings.fillColor === 'transparent' ? '#ffffff' : this.toolSettings.fillColor;
             fillInput.addEventListener('change', (e) => {
                 this.toolSettings.fillColor = e.target.value;
-                this.updateSelectedElements();
+                // Update only fillColor property for selected elements
+                this.updateSelectedElementProperty('fillColor', e.target.value);
             });
             
             fillGroup.appendChild(fillLabel);
@@ -616,7 +620,8 @@
             fillStyleSelect.value = this.toolSettings.fillStyle;
             fillStyleSelect.addEventListener('change', (e) => {
                 this.toolSettings.fillStyle = e.target.value;
-                this.updateSelectedElements();
+                // Update only fillStyle property for selected elements
+                this.updateSelectedElementProperty('fillStyle', e.target.value);
             });
             
             fillStyleGroup.appendChild(fillStyleLabel);
@@ -639,7 +644,8 @@
             opacityInput.value = this.toolSettings.opacity;
             opacityInput.addEventListener('input', (e) => {
                 this.toolSettings.opacity = parseFloat(e.target.value);
-                this.updateSelectedElements();
+                // Update only opacity property for selected elements
+                this.updateSelectedElementProperty('opacity', parseFloat(e.target.value));
             });
             
             opacityGroup.appendChild(opacityLabel);
@@ -674,10 +680,6 @@
             fontSizeInput.min = '8';
             fontSizeInput.max = '72';
             fontSizeInput.value = this.toolSettings.fontSize;
-            fontSizeInput.addEventListener('input', (e) => {
-                this.toolSettings.fontSize = parseInt(e.target.value);
-                this.updateSelectedElements();
-            });
             
             const fontSizeValue = document.createElement('span');
             fontSizeValue.className = 'sww-value-display';
@@ -687,9 +689,12 @@
             fontSizeValue.style.color = '#666';
             
             fontSizeInput.addEventListener('input', (e) => {
-                this.toolSettings.fontSize = parseInt(e.target.value);
-                fontSizeValue.textContent = e.target.value + 'px';
-                this.updateSelectedElements();
+                const newFontSize = parseInt(e.target.value);
+                this.toolSettings.fontSize = newFontSize;
+                fontSizeValue.textContent = newFontSize + 'px';
+                
+                // Update only fontSize property for selected elements
+                this.updateSelectedElementProperty('fontSize', newFontSize);
             });
             
             fontSizeGroup.appendChild(fontSizeLabel);
@@ -731,7 +736,8 @@
             fontFamilySelect.value = this.toolSettings.fontFamily;
             fontFamilySelect.addEventListener('change', (e) => {
                 this.toolSettings.fontFamily = e.target.value;
-                this.updateSelectedElements();
+                // Update only fontFamily property for selected elements
+                this.updateSelectedElementProperty('fontFamily', e.target.value);
             });
             
             fontFamilyGroup.appendChild(fontFamilyLabel);
@@ -748,10 +754,11 @@
             const textColorInput = document.createElement('input');
             textColorInput.type = 'color';
             textColorInput.className = 'sww-color-input';
-            textColorInput.value = this.toolSettings.strokeColor; // Text uses stroke color
+            textColorInput.value = this.toolSettings.textColor; // Use dedicated textColor property
             textColorInput.addEventListener('change', (e) => {
-                this.toolSettings.strokeColor = e.target.value;
-                this.updateSelectedElements();
+                this.toolSettings.textColor = e.target.value;
+                // Update only textColor property for selected elements
+                this.updateSelectedElementProperty('textColor', e.target.value);
             });
             
             textColorGroup.appendChild(textColorLabel);
@@ -804,7 +811,8 @@
                     
                     // Update setting
                     this.toolSettings.textAlign = align.value;
-                    this.updateSelectedElements();
+                    // Update only textAlign property for selected elements
+                    this.updateSelectedElementProperty('textAlign', align.value);
                 });
                 
                 textAlignContainer.appendChild(button);
@@ -1123,6 +1131,7 @@
                 fontSize: this.toolSettings.fontSize,
                 fontFamily: this.toolSettings.fontFamily,
                 textAlign: this.toolSettings.textAlign,
+                textColor: this.toolSettings.textColor,
                 rotation: 0,
                 locked: false,
                 groupId: null
@@ -1262,7 +1271,16 @@
                     svg.setAttribute('y', textY);
                     svg.setAttribute('font-size', element.fontSize);
                     svg.setAttribute('font-family', element.fontFamily);
-                    svg.setAttribute('fill', element.strokeColor);
+                    svg.setAttribute('fill', element.textColor || element.strokeColor); // Use textColor for fill
+                    
+                    // Text can have stroke for outline effect
+                    if (element.strokeWidth > 0) {
+                        svg.setAttribute('stroke', element.strokeColor);
+                        svg.setAttribute('stroke-width', element.strokeWidth);
+                    } else {
+                        svg.removeAttribute('stroke');
+                        svg.removeAttribute('stroke-width');
+                    }
                     
                     // Clear existing content
                     svg.innerHTML = '';
@@ -1749,7 +1767,7 @@
                     if (fontFamilySelect) fontFamilySelect.value = firstElement.fontFamily;
                     
                     const textColorInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="color"]');
-                    if (textColorInput) textColorInput.value = firstElement.strokeColor;
+                    if (textColorInput) textColorInput.value = firstElement.textColor || firstElement.strokeColor;
                     
                     // Update text alignment buttons
                     const alignButtons = this.propertiesPanel.querySelectorAll('.sww-align-button');
@@ -2008,16 +2026,14 @@
                     const text = element.text || 'Text';
                     const bounds = this.measureText(text, element.fontSize, element.fontFamily);
                     
-                    // Add padding for better visibility and selection
-                    const sidePadding = element.fontSize * 0.15;
-                    const topPadding = element.fontSize * -0.4;
-                    const bottomPadding = element.fontSize * 0.2;
+                    // Simplified padding for better visibility and selection
+                    const padding = element.fontSize * 0.15;
                     
                     return {
-                        x: element.x - sidePadding,
-                        y: element.y - bounds.height - topPadding,
-                        width: bounds.width + (sidePadding * 2),
-                        height: bounds.height + topPadding + bottomPadding
+                        x: element.x - padding,
+                        y: element.y - bounds.height - padding,
+                        width: bounds.width + (padding * 2),
+                        height: bounds.height + (padding * 2)
                     };
                 }
             } else {
@@ -2158,6 +2174,7 @@
                     element.fontSize = this.toolSettings.fontSize;
                     element.fontFamily = this.toolSettings.fontFamily;
                     element.textAlign = this.toolSettings.textAlign;
+                    element.textColor = this.toolSettings.textColor;
                 }
                 
                 this.updateSVGElement(element);
@@ -2165,6 +2182,34 @@
             
             // Update text properties visibility
             this.updateTextPropertiesVisibility();
+        }
+
+        // Update only a specific property for selected elements
+        updateSelectedElementProperty(propertyName, value) {
+            this.selectedElements.forEach(element => {
+                // Only update the specific property
+                if (propertyName === 'fontSize' && element.type === 'text') {
+                    element.fontSize = value;
+                } else if (propertyName === 'fontFamily' && element.type === 'text') {
+                    element.fontFamily = value;
+                } else if (propertyName === 'textAlign' && element.type === 'text') {
+                    element.textAlign = value;
+                } else if (propertyName === 'textColor' && element.type === 'text') {
+                    element.textColor = value;
+                } else if (propertyName === 'strokeColor') {
+                    element.strokeColor = value;
+                } else if (propertyName === 'strokeWidth') {
+                    element.strokeWidth = value;
+                } else if (propertyName === 'fillColor') {
+                    element.fillColor = value;
+                } else if (propertyName === 'fillStyle') {
+                    element.fillStyle = value;
+                } else if (propertyName === 'opacity') {
+                    element.opacity = value;
+                }
+                
+                this.updateSVGElement(element);
+            });
         }
         
         updateTextPropertiesVisibility() {
@@ -2190,27 +2235,57 @@
             textEditor.className = 'sww-text-editor';
             textEditor.value = element.originalText || element.text || '';
             
-            // Position the editor based on text boundary if it exists
-            const rect = this.svg.getBoundingClientRect();
-            
-            let editorX, editorY, editorWidth, editorHeight;
+            // Get accurate screen coordinates using SVG transformation
+            let svgPoint, screenPoint;
             
             if (element.width && element.height) {
                 // Text has a boundary - position editor to match the boundary
-                editorX = (element.x - this.viewBox.x) / this.viewBox.width * rect.width + rect.left;
-                editorY = (element.y - this.viewBox.y) / this.viewBox.height * rect.height + rect.top;
-                editorWidth = element.width / this.viewBox.width * rect.width;
-                editorHeight = element.height / this.viewBox.height * rect.height;
+                svgPoint = { x: element.x, y: element.y };
             } else {
-                // Text without boundary - use default positioning
-                editorX = (element.x - this.viewBox.x) / this.viewBox.width * rect.width + rect.left;
-                editorY = (element.y - this.viewBox.y) / this.viewBox.height * rect.height + rect.top;
-                editorWidth = Math.max(200, (element.fontSize * 10)); // Reasonable default width
-                editorHeight = element.fontSize * 1.5; // Single line height
+                // Text without boundary - use text position with some adjustments for baseline
+                const bounds = this.getElementBounds(element);
+                svgPoint = { x: bounds.x, y: bounds.y };
             }
             
-            textEditor.style.left = `${editorX}px`;
-            textEditor.style.top = `${editorY}px`;
+            // Convert SVG coordinates to screen coordinates
+            if (this.svg.getScreenCTM) {
+                const matrix = this.svg.getScreenCTM();
+                screenPoint = {
+                    x: matrix.a * svgPoint.x + matrix.c * svgPoint.y + matrix.e,
+                    y: matrix.b * svgPoint.x + matrix.d * svgPoint.y + matrix.f
+                };
+            } else {
+                // Fallback method
+                const rect = this.svg.getBoundingClientRect();
+                screenPoint = {
+                    x: (svgPoint.x - this.viewBox.x) / this.viewBox.width * rect.width + rect.left,
+                    y: (svgPoint.y - this.viewBox.y) / this.viewBox.height * rect.height + rect.top
+                };
+            }
+            
+            // Calculate editor dimensions
+            let editorWidth, editorHeight;
+            
+            if (element.width && element.height) {
+                // Use boundary dimensions
+                if (this.svg.getScreenCTM) {
+                    const matrix = this.svg.getScreenCTM();
+                    editorWidth = Math.abs(element.width * matrix.a);
+                    editorHeight = Math.abs(element.height * matrix.d);
+                } else {
+                    const rect = this.svg.getBoundingClientRect();
+                    editorWidth = Math.abs(element.width) / this.viewBox.width * rect.width;
+                    editorHeight = Math.abs(element.height) / this.viewBox.height * rect.height;
+                }
+            } else {
+                // Default dimensions for unbounded text
+                editorWidth = Math.max(200, element.fontSize * 10);
+                editorHeight = element.fontSize * 1.5;
+            }
+            
+            textEditor.style.position = 'fixed';
+            textEditor.style.left = `${screenPoint.x}px`;
+            textEditor.style.top = `${screenPoint.y}px`;
             textEditor.style.width = `${editorWidth}px`;
             textEditor.style.height = `${editorHeight}px`;
             textEditor.style.fontSize = `${element.fontSize}px`;
@@ -2223,6 +2298,7 @@
             textEditor.style.wordWrap = 'break-word';
             textEditor.style.padding = '10px'; // Match text boundary padding
             textEditor.style.boxSizing = 'border-box';
+            textEditor.style.zIndex = '10000'; // Ensure it's on top
             
             // Set text alignment to match element alignment
             if (element.textAlign) {
@@ -2234,6 +2310,9 @@
             textEditor.select();
             
             let isEditing = true; // Flag to prevent double cleanup
+            
+            // Declare click-outside handler first
+            let handleClickOutside;
             
             const finishEditing = () => {
                 if (!isEditing) return; // Prevent double execution
@@ -2257,6 +2336,11 @@
                     textEditor.remove();
                 }
                 
+                // Clean up click-outside listener
+                if (handleClickOutside) {
+                    document.removeEventListener('click', handleClickOutside);
+                }
+                
                 // Update selection handles if element is selected
                 if (this.selectedElements.has(element)) {
                     this.updateSelectionHandles();
@@ -2275,6 +2359,11 @@
                 // Safely remove the textarea without saving changes
                 if (textEditor.parentNode) {
                     textEditor.remove();
+                }
+                
+                // Clean up click-outside listener
+                if (handleClickOutside) {
+                    document.removeEventListener('click', handleClickOutside);
                 }
                 
                 // Auto-switch to select tool even when canceling for better UX
@@ -2325,6 +2414,28 @@
                 // Auto-resize on keydown for immediate feedback
                 setTimeout(autoResize, 0);
             });
+            
+            // Add click-outside listener for intuitive editing
+            handleClickOutside = (e) => {
+                // Check if click is outside the textarea
+                if (!textEditor.contains(e.target) && textEditor.parentNode) {
+                    // Don't finish editing if clicking on toolbar buttons or other UI elements
+                    const isToolbarClick = e.target.closest('.sww-toolbar') || 
+                                         e.target.closest('button') || 
+                                         e.target.classList.contains('sww-toolbar-button');
+                    
+                    if (!isToolbarClick) {
+                        finishEditing();
+                        // Remove this listener after use
+                        document.removeEventListener('click', handleClickOutside);
+                    }
+                }
+            };
+            
+            // Add the listener with a slight delay to prevent immediate triggering
+            setTimeout(() => {
+                document.addEventListener('click', handleClickOutside);
+            }, 100);
             
             // Initial resize to fit existing content
             autoResize();
