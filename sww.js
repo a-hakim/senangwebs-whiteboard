@@ -224,6 +224,23 @@
                     stroke-width: 2 !important;
                 }
                 
+                /* Prevent selection styles from affecting arrow lines - preserve original width */
+                .sww-element.selected[marker-end] {
+                    stroke-width: var(--original-stroke-width, 2) !important;
+                }
+                
+                /* Arrow markers should maintain their original appearance */
+                marker polygon {
+                    stroke: none !important;
+                    stroke-width: 0 !important;
+                    stroke-dasharray: none !important;
+                }
+                
+                /* Ensure marker visibility */
+                marker {
+                    overflow: visible;
+                }
+                
                 .sww-selection-box {
                     fill: none;
                     stroke: #007bff;
@@ -981,6 +998,9 @@
             svg.setAttribute('stroke-width', element.strokeWidth);
             svg.setAttribute('opacity', element.opacity);
             
+            // Store original stroke width for selection styling
+            svg.style.setProperty('--original-stroke-width', element.strokeWidth);
+            
             // Fill handling
             if (element.fillStyle === 'transparent') {
                 svg.setAttribute('fill', 'none');
@@ -1025,8 +1045,8 @@
                     svg.setAttribute('y2', element.y + element.height);
                     
                     if (element.type === 'arrow') {
-                        svg.setAttribute('marker-end', 'url(#arrowhead)');
-                        this.createArrowMarker();
+                        const markerId = this.createArrowMarker(element.strokeColor);
+                        svg.setAttribute('marker-end', `url(#${markerId})`);
                     }
                     break;
                     
@@ -1079,8 +1099,11 @@
             defs.appendChild(pattern);
         }
         
-        createArrowMarker() {
-            if (document.getElementById('arrowhead')) return;
+        createArrowMarker(strokeColor = '#000000') {
+            // Create unique marker ID for each color
+            const markerId = `arrowhead-${strokeColor.replace('#', '')}`;
+            
+            if (document.getElementById(markerId)) return markerId;
             
             const defs = this.svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
             if (!this.svg.querySelector('defs')) {
@@ -1088,19 +1111,22 @@
             }
             
             const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('id', markerId);
             marker.setAttribute('markerWidth', '10');
             marker.setAttribute('markerHeight', '7');
             marker.setAttribute('refX', '9');
             marker.setAttribute('refY', '3.5');
             marker.setAttribute('orient', 'auto');
+            marker.setAttribute('markerUnits', 'strokeWidth');
             
             const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
-            polygon.setAttribute('fill', this.toolSettings.strokeColor);
+            polygon.setAttribute('fill', strokeColor);
             
             marker.appendChild(polygon);
             defs.appendChild(marker);
+            
+            return markerId;
         }
         
         pointsToPath(points) {
@@ -1144,9 +1170,16 @@
             // Add to elements array
             this.elements.push(this.currentElement);
             
+            // Select the newly created element and switch to select tool
+            this.clearSelection();
+            this.selectElement(this.currentElement);
+            
             // Clean up
             this.currentElement = null;
             this.isDrawing = false;
+            
+            // Auto-switch to select tool for better UX
+            this.setTool('select');
         }
         
         // Element manipulation methods
@@ -1667,11 +1700,12 @@
                            
                 case 'line':
                 case 'arrow':
-                    // For lines, check distance from line
+                    // For lines, use increased tolerance for easier selection
+                    const lineSelectionTolerance = Math.max(element.strokeWidth / 2 + 8, 12); // Minimum 12px for easy clicking
                     return this.distanceToLine(point, 
                         { x: element.x, y: element.y }, 
                         { x: element.x + element.width, y: element.y + element.height }
-                    ) <= Math.max(element.strokeWidth / 2, tolerance);
+                    ) <= lineSelectionTolerance;
                     
                 case 'path':
                     // For paths, check if near any point in the path
@@ -1762,10 +1796,13 @@
             textEditor.style.fontFamily = element.fontFamily;
             textEditor.style.minWidth = '100px';
             textEditor.style.minHeight = `${element.fontSize * 1.2}px`;
+            textEditor.style.maxWidth = '400px'; // Set reasonable maximum width
             textEditor.style.border = '2px solid #007bff';
             textEditor.style.background = 'rgba(255, 255, 255, 0.9)';
             textEditor.style.resize = 'none';
             textEditor.style.overflow = 'hidden';
+            textEditor.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
+            textEditor.style.wordWrap = 'break-word';
             
             document.body.appendChild(textEditor);
             textEditor.focus();
@@ -1789,6 +1826,11 @@
                 if (this.selectedElements.has(element)) {
                     this.updateSelectionHandles();
                 }
+                
+                // Auto-switch to select tool after text editing for better UX
+                if (this.currentTool === 'text') {
+                    this.setTool('select');
+                }
             };
             
             const cancelEditing = () => {
@@ -1799,7 +1841,41 @@
                 if (textEditor.parentNode) {
                     textEditor.remove();
                 }
+                
+                // Auto-switch to select tool even when canceling for better UX
+                if (this.currentTool === 'text') {
+                    this.setTool('select');
+                }
             };
+            
+            // Enhanced auto-resize function
+            const autoResize = () => {
+                if (!textEditor.parentNode) return;
+                
+                // Reset dimensions to get accurate measurements
+                textEditor.style.height = 'auto';
+                textEditor.style.width = 'auto';
+                
+                // Calculate required dimensions
+                const content = textEditor.value || textEditor.placeholder || '';
+                const lines = content.split('\n');
+                const maxLineLength = Math.max(...lines.map(line => line.length));
+                
+                // Calculate width based on content
+                const charWidth = element.fontSize * 0.6; // Approximate character width
+                const contentWidth = Math.max(maxLineLength * charWidth, 100); // Minimum 100px
+                const finalWidth = Math.min(contentWidth, 400); // Maximum 400px
+                
+                // Calculate height based on scroll height
+                const finalHeight = Math.max(textEditor.scrollHeight, element.fontSize * 1.2);
+                
+                // Apply calculated dimensions
+                textEditor.style.width = finalWidth + 'px';
+                textEditor.style.height = finalHeight + 'px';
+            };
+            
+            // Add input event listener for real-time resizing
+            textEditor.addEventListener('input', autoResize);
             
             textEditor.addEventListener('blur', finishEditing);
             textEditor.addEventListener('keydown', (e) => {
@@ -1809,20 +1885,14 @@
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
                     cancelEditing();
-                } else {
-                    // Auto-resize textarea
-                    setTimeout(() => {
-                        if (textEditor.parentNode) {
-                            textEditor.style.height = 'auto';
-                            textEditor.style.height = textEditor.scrollHeight + 'px';
-                        }
-                    }, 0);
                 }
+                
+                // Auto-resize on keydown for immediate feedback
+                setTimeout(autoResize, 0);
             });
             
-            // Initial resize
-            textEditor.style.height = 'auto';
-            textEditor.style.height = textEditor.scrollHeight + 'px';
+            // Initial resize to fit existing content
+            autoResize();
         }
         
         // Utility methods
