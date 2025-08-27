@@ -253,6 +253,29 @@
                     font-family: inherit;
                     z-index: 1001;
                 }
+                
+                .sww-text-properties {
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                    padding: 8px;
+                }
+                
+                .sww-text-properties h4 {
+                    margin: 0 0 8px 0;
+                    font-size: 11px;
+                    color: #6c757d;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                
+                .sww-value-display {
+                    font-size: 10px;
+                    color: #6c757d;
+                    font-weight: 500;
+                    min-width: 30px;
+                    text-align: right;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -521,11 +544,127 @@
             opacityGroup.appendChild(opacityLabel);
             opacityGroup.appendChild(opacityInput);
             
+            // Text properties section
+            const textSection = document.createElement('div');
+            textSection.className = 'sww-text-properties';
+            textSection.style.borderTop = '1px solid #ddd';
+            textSection.style.marginTop = '10px';
+            textSection.style.paddingTop = '10px';
+            
+            const textSectionTitle = document.createElement('h4');
+            textSectionTitle.textContent = 'Text Properties';
+            textSectionTitle.style.margin = '0 0 10px 0';
+            textSectionTitle.style.fontSize = '12px';
+            textSectionTitle.style.color = '#666';
+            textSection.appendChild(textSectionTitle);
+            
+            // Font size
+            const fontSizeGroup = document.createElement('div');
+            fontSizeGroup.className = 'sww-property-group';
+            
+            const fontSizeLabel = document.createElement('label');
+            fontSizeLabel.className = 'sww-property-label';
+            fontSizeLabel.textContent = 'Font Size';
+            
+            const fontSizeInput = document.createElement('input');
+            fontSizeInput.type = 'range';
+            fontSizeInput.className = 'sww-range-input';
+            fontSizeInput.min = '8';
+            fontSizeInput.max = '72';
+            fontSizeInput.value = this.toolSettings.fontSize;
+            fontSizeInput.addEventListener('input', (e) => {
+                this.toolSettings.fontSize = parseInt(e.target.value);
+                this.updateSelectedElements();
+            });
+            
+            const fontSizeValue = document.createElement('span');
+            fontSizeValue.className = 'sww-value-display';
+            fontSizeValue.textContent = this.toolSettings.fontSize + 'px';
+            fontSizeValue.style.marginLeft = '5px';
+            fontSizeValue.style.fontSize = '11px';
+            fontSizeValue.style.color = '#666';
+            
+            fontSizeInput.addEventListener('input', (e) => {
+                this.toolSettings.fontSize = parseInt(e.target.value);
+                fontSizeValue.textContent = e.target.value + 'px';
+                this.updateSelectedElements();
+            });
+            
+            fontSizeGroup.appendChild(fontSizeLabel);
+            fontSizeGroup.appendChild(fontSizeInput);
+            fontSizeGroup.appendChild(fontSizeValue);
+            
+            // Font family
+            const fontFamilyGroup = document.createElement('div');
+            fontFamilyGroup.className = 'sww-property-group';
+            
+            const fontFamilyLabel = document.createElement('label');
+            fontFamilyLabel.className = 'sww-property-label';
+            fontFamilyLabel.textContent = 'Font Family';
+            
+            const fontFamilySelect = document.createElement('select');
+            fontFamilySelect.className = 'sww-select-input';
+            
+            const fontFamilies = [
+                { value: 'Arial', text: 'Arial' },
+                { value: 'Helvetica', text: 'Helvetica' },
+                { value: 'Times New Roman', text: 'Times New Roman' },
+                { value: 'Georgia', text: 'Georgia' },
+                { value: 'Verdana', text: 'Verdana' },
+                { value: 'Courier New', text: 'Courier New' },
+                { value: 'Monaco', text: 'Monaco' },
+                { value: 'Comic Sans MS', text: 'Comic Sans MS' },
+                { value: 'Impact', text: 'Impact' },
+                { value: 'Trebuchet MS', text: 'Trebuchet MS' }
+            ];
+            
+            fontFamilies.forEach(font => {
+                const option = document.createElement('option');
+                option.value = font.value;
+                option.textContent = font.text;
+                option.style.fontFamily = font.value;
+                fontFamilySelect.appendChild(option);
+            });
+            
+            fontFamilySelect.value = this.toolSettings.fontFamily;
+            fontFamilySelect.addEventListener('change', (e) => {
+                this.toolSettings.fontFamily = e.target.value;
+                this.updateSelectedElements();
+            });
+            
+            fontFamilyGroup.appendChild(fontFamilyLabel);
+            fontFamilyGroup.appendChild(fontFamilySelect);
+            
+            // Text color (separate from stroke color for clarity)
+            const textColorGroup = document.createElement('div');
+            textColorGroup.className = 'sww-property-group';
+            
+            const textColorLabel = document.createElement('label');
+            textColorLabel.className = 'sww-property-label';
+            textColorLabel.textContent = 'Text Color';
+            
+            const textColorInput = document.createElement('input');
+            textColorInput.type = 'color';
+            textColorInput.className = 'sww-color-input';
+            textColorInput.value = this.toolSettings.strokeColor; // Text uses stroke color
+            textColorInput.addEventListener('change', (e) => {
+                this.toolSettings.strokeColor = e.target.value;
+                this.updateSelectedElements();
+            });
+            
+            textColorGroup.appendChild(textColorLabel);
+            textColorGroup.appendChild(textColorInput);
+            
+            textSection.appendChild(fontSizeGroup);
+            textSection.appendChild(fontFamilyGroup);
+            textSection.appendChild(textColorGroup);
+            
             panel.appendChild(strokeGroup);
             panel.appendChild(widthGroup);
             panel.appendChild(fillGroup);
             panel.appendChild(fillStyleGroup);
             panel.appendChild(opacityGroup);
+            panel.appendChild(textSection);
             
             this.container.appendChild(panel);
             this.propertiesPanel = panel;
@@ -756,9 +895,15 @@
             const snappedPoint = this.snapToGridPoint(point);
             const element = this.createElement('text', snappedPoint);
             element.text = 'Click to edit text';
-            this.currentElement = element;
+            
+            // Add element to the scene
             this.elementsGroup.appendChild(element.svgElement);
-            this.updateSVGElement(element); // Ensure the default text is rendered
+            this.elements.push(element);
+            this.updateSVGElement(element);
+            
+            // Select the element and start editing
+            this.clearSelection();
+            this.selectElement(element);
             this.startTextEditing(element);
         }
         
@@ -1178,6 +1323,7 @@
                 element.svgElement.setAttribute('class', currentClass + ' selected');
             }
             this.updateSelectionHandles();
+            this.syncPropertiesPanel();
         }
         
         clearSelection() {
@@ -1187,6 +1333,7 @@
             });
             this.selectedElements.clear();
             this.clearSelectionHandles();
+            this.syncPropertiesPanel();
         }
         
         selectAll() {
@@ -1194,6 +1341,51 @@
             this.elements.forEach(element => {
                 this.selectElement(element);
             });
+        }
+        
+        syncPropertiesPanel() {
+            if (!this.propertiesPanel) return;
+            
+            // Get the first selected element to sync properties
+            const firstElement = this.selectedElements.values().next().value;
+            
+            if (firstElement) {
+                // Update stroke color input
+                const strokeInput = this.propertiesPanel.querySelector('input[type="color"]');
+                if (strokeInput) strokeInput.value = firstElement.strokeColor;
+                
+                // Update stroke width input
+                const strokeWidthInput = this.propertiesPanel.querySelector('input[type="range"]');
+                if (strokeWidthInput) strokeWidthInput.value = firstElement.strokeWidth;
+                
+                // Update fill color input
+                const fillInputs = this.propertiesPanel.querySelectorAll('input[type="color"]');
+                if (fillInputs[1]) fillInputs[1].value = firstElement.fillColor === 'transparent' ? '#ffffff' : firstElement.fillColor;
+                
+                // Update fill style select
+                const fillStyleSelect = this.propertiesPanel.querySelector('select');
+                if (fillStyleSelect) fillStyleSelect.value = firstElement.fillStyle;
+                
+                // Update opacity input
+                const opacityInput = this.propertiesPanel.querySelector('input[type="range"][max="1"]');
+                if (opacityInput) opacityInput.value = firstElement.opacity;
+                
+                // Update text-specific properties if it's a text element
+                if (firstElement.type === 'text') {
+                    const fontSizeInput = this.propertiesPanel.querySelector('input[type="range"][max="72"]');
+                    if (fontSizeInput) {
+                        fontSizeInput.value = firstElement.fontSize;
+                        const fontSizeValue = fontSizeInput.parentElement.querySelector('.sww-value-display');
+                        if (fontSizeValue) fontSizeValue.textContent = firstElement.fontSize + 'px';
+                    }
+                    
+                    const fontFamilySelect = this.propertiesPanel.querySelector('.sww-text-properties select');
+                    if (fontFamilySelect) fontFamilySelect.value = firstElement.fontFamily;
+                    
+                    const textColorInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="color"]');
+                    if (textColorInput) textColorInput.value = firstElement.strokeColor;
+                }
+            }
         }
         
         deleteSelectedElements() {
@@ -1400,11 +1592,16 @@
                 const text = element.text || 'Text';
                 const bounds = this.measureText(text, element.fontSize, element.fontFamily);
                 
+                // Add padding for better visibility and selection
+                const sidePadding = element.fontSize * 0.15; // 20% of font size for left/right
+                const topPadding = element.fontSize * -0.4; // 10% of font size for top (reduced)
+                const bottomPadding = element.fontSize * 0.2; // 15% of font size for bottom
+                
                 return {
-                    x: element.x,
-                    y: element.y - bounds.height, // Text baseline offset
-                    width: bounds.width,
-                    height: bounds.height
+                    x: element.x - sidePadding,
+                    y: element.y - bounds.height - topPadding, // Text baseline offset with reduced top padding
+                    width: bounds.width + (sidePadding * 2),
+                    height: bounds.height + topPadding + bottomPadding
                 };
             } else {
                 // For other elements, use their width/height
@@ -1435,12 +1632,12 @@
                 maxWidth = Math.max(maxWidth, metrics.width);
             }
             
-            const lineHeight = fontSize * 1.2; // Standard line height
+            const lineHeight = fontSize * 1.3; // Increased line height for better spacing
             const height = lines.length * lineHeight;
             
             return {
-                width: Math.max(maxWidth, 20), // Minimum width
-                height: Math.max(height, fontSize)
+                width: Math.max(maxWidth, 40), // Increased minimum width
+                height: Math.max(height, fontSize * 1.3) // Better minimum height
             };
         }
         
@@ -1538,6 +1735,12 @@
                 element.fillStyle = this.toolSettings.fillStyle;
                 element.opacity = this.toolSettings.opacity;
                 
+                // Update text-specific properties
+                if (element.type === 'text') {
+                    element.fontSize = this.toolSettings.fontSize;
+                    element.fontFamily = this.toolSettings.fontFamily;
+                }
+                
                 this.updateSVGElement(element);
             });
         }
@@ -1568,14 +1771,33 @@
             textEditor.focus();
             textEditor.select();
             
+            let isEditing = true; // Flag to prevent double cleanup
+            
             const finishEditing = () => {
+                if (!isEditing) return; // Prevent double execution
+                isEditing = false;
+                
                 element.text = textEditor.value || 'Text'; // Fallback text
                 this.updateSVGElement(element);
-                textEditor.remove();
+                
+                // Safely remove the textarea
+                if (textEditor.parentNode) {
+                    textEditor.remove();
+                }
                 
                 // Update selection handles if element is selected
                 if (this.selectedElements.has(element)) {
                     this.updateSelectionHandles();
+                }
+            };
+            
+            const cancelEditing = () => {
+                if (!isEditing) return; // Prevent double execution
+                isEditing = false;
+                
+                // Safely remove the textarea without saving changes
+                if (textEditor.parentNode) {
+                    textEditor.remove();
                 }
             };
             
@@ -1585,13 +1807,17 @@
                     e.preventDefault();
                     finishEditing();
                 } else if (e.key === 'Escape') {
-                    // Restore original text on escape
-                    textEditor.remove();
+                    e.preventDefault();
+                    cancelEditing();
+                } else {
+                    // Auto-resize textarea
+                    setTimeout(() => {
+                        if (textEditor.parentNode) {
+                            textEditor.style.height = 'auto';
+                            textEditor.style.height = textEditor.scrollHeight + 'px';
+                        }
+                    }, 0);
                 }
-                
-                // Auto-resize textarea
-                textEditor.style.height = 'auto';
-                textEditor.style.height = textEditor.scrollHeight + 'px';
             });
             
             // Initial resize
