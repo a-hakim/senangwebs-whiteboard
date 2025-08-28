@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWW Basic Example</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: white;
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        .button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        .button:hover {
+            background: #007bff;
+            color: white;
+        }
+        
+        .button.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        h3 {
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .info {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>SWW v2.0 Example</h2>
+            
+            <h3>Tools</h3>
+            <button class="button active" onclick="setTool('select')">
+                <i class="fas fa-mouse-pointer"></i> Select
+            </button>
+            <button class="button" onclick="setTool('rectangle')">
+                <i class="far fa-square"></i> Rectangle
+            </button>
+            <button class="button" onclick="setTool('ellipse')">
+                <i class="far fa-circle"></i> Ellipse
+            </button>
+            <button class="button" onclick="setTool('diamond')">
+                <i class="far fa-gem"></i> Diamond
+            </button>
+            
+            <h3>Actions</h3>
+            <button class="button" onclick="clearCanvas()">
+                <i class="fas fa-trash"></i> Clear Canvas
+            </button>
+            <button class="button" onclick="createSample()">
+                <i class="fas fa-plus"></i> Create Sample
+            </button>
+            <button class="button" onclick="exportSVG()">
+                <i class="fas fa-download"></i> Export SVG
+            </button>
+            
+            <h3>History</h3>
+            <button class="button" onclick="undo()">
+                <i class="fas fa-undo"></i> Undo
+            </button>
+            <button class="button" onclick="redo()">
+                <i class="fas fa-redo"></i> Redo
+            </button>
+            
+            <div class="info">
+                <strong>Controls:</strong><br>
+                • Click and drag to draw<br>
+                • Ctrl+Z: Undo<br>
+                • Ctrl+Y: Redo<br>
+                • Ctrl+A: Select all<br>
+                • Delete: Remove selected
+            </div>
+        </div>
+        
+        <div class="canvas-container" id="drawing-canvas"></div>
+    </div>
+
+    <!-- Use the modular version -->
+    <script type="module">
+        import SWW from '../src/main.js';
+        
+        let swwInstance;
+        let currentTool = 'select';
+        
+        // Initialize SWW
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('drawing-canvas');
+            
+            swwInstance = SWW.init(container, {
+                backgroundColor: '#ffffff',
+                gridSize: 20,
+                showGrid: true,
+                snapToGrid: true
+            });
+            
+            console.log('SWW v2.0 initialized!', swwInstance);
+        });
+        
+        // Tool functions
+        window.setTool = function(toolName) {
+            if (swwInstance && swwInstance.setTool(toolName)) {
+                currentTool = toolName;
+                
+                // Update button states
+                document.querySelectorAll('.sidebar .button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            }
+        };
+        
+        window.clearCanvas = function() {
+            if (swwInstance) {
+                swwInstance.clearAll();
+            }
+        };
+        
+        window.createSample = function() {
+            if (!swwInstance) return;
+            
+            // Create some sample elements programmatically
+            const sampleScene = {
+                elements: [
+                    {
+                        id: 'sample-1',
+                        type: 'rectangle',
+                        x: 100,
+                        y: 100,
+                        width: 150,
+                        height: 100,
+                        strokeColor: '#007bff',
+                        strokeWidth: 2,
+                        fillColor: '#e3f2fd',
+                        fillStyle: 'solid',
+                        opacity: 0.8,
+                        rotation: 0
+                    },
+                    {
+                        id: 'sample-2',
+                        type: 'ellipse',
+                        x: 300,
+                        y: 120,
+                        width: 120,
+                        height: 80,
+                        strokeColor: '#28a745',
+                        strokeWidth: 2,
+                        fillColor: '#d4edda',
+                        fillStyle: 'solid',
+                        opacity: 0.9,
+                        rotation: 0
+                    },
+                    {
+                        id: 'sample-3',
+                        type: 'diamond',
+                        x: 200,
+                        y: 250,
+                        width: 100,
+                        height: 100,
+                        strokeColor: '#ffc107',
+                        strokeWidth: 3,
+                        fillColor: '#fff3cd',
+                        fillStyle: 'solid',
+                        opacity: 0.7,
+                        rotation: 15
+                    }
+                ],
+                viewBox: { x: 0, y: 0, width: 1000, height: 1000 },
+                zoom: 1
+            };
+            
+            swwInstance.loadScene(sampleScene);
+        };
+        
+        window.exportSVG = function() {
+            if (swwInstance) {
+                swwInstance.exportToSVG();
+            }
+        };
+        
+        window.undo = function() {
+            if (swwInstance) {
+                swwInstance.undo();
+            }
+        };
+        
+        window.redo = function() {
+            if (swwInstance) {
+                swwInstance.redo();
+            }
+        };
+    </script>
+</body>
+</html>

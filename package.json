@@ -1,0 +1,48 @@
+{
+  "name": "senangworks-sww",
+  "version": "2.0.0",
+  "description": "SenangWebs Works - A modular JavaScript library for creating digital whiteboards and vector drawings",
+  "main": "dist/sww.js",
+  "module": "src/main.js",
+  "type": "module",
+  "files": [
+    "dist/",
+    "src/",
+    "examples/",
+    "docs/"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "dev": "rollup -c -w --environment NODE_ENV:development",
+    "serve": "node scripts/dev-server.cjs",
+    "lint": "eslint src --ext .js",
+    "test": "echo \"No tests specified yet\" && exit 0"
+  },
+  "keywords": [
+    "drawing",
+    "whiteboard",
+    "canvas",
+    "svg",
+    "graphics",
+    "vector",
+    "illustration",
+    "diagram"
+  ],
+  "author": "SenangWebs",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
+    "eslint": "^8.0.0",
+    "rollup": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/senangwebs/sww.git"
+  },
+  "bugs": {
+    "url": "https://github.com/senangwebs/sww/issues"
+  },
+  "homepage": "https://github.com/senangwebs/sww#readme"
+}
