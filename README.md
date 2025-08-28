@@ -1,343 +1,334 @@
-# SenangWebs Works (SWW)
+# SenangWebs Works (SWW) v2.0
 
-A lightweight, client-side JavaScript library for creating digital whiteboards and vector drawings, similar to Excalidraw. SWW requires no dependencies and can be used in any web project with a single JavaScript file.
+A modern, modular JavaScript library for creating digital whiteboards and vector drawings. Complete rewrite with better architecture, developer experience, and maintainability.
 
-## Features
+## 🚀 Features
 
-### 🎨 Drawing Tools
-- **Basic Shapes**: Rectangle, Ellipse, Diamond, Line
-- **Arrows**: Single and double-headed arrows
-- **Freehand Drawing**: Pencil tool for sketching
-- **Text**: Add and edit text directly on canvas
+- **Modular Architecture**: Clean separation of concerns with pluggable components
+- **Modern ES6+ Code**: Written with modern JavaScript features and best practices  
+- **Event-Driven**: Comprehensive event system for extensibility
+- **Tool System**: Extensible tool architecture for adding new drawing tools
+- **History Management**: Full undo/redo support with configurable history size
+- **Export Support**: Export to SVG, PNG, and JSON formats
+- **No Dependencies**: Pure JavaScript with no external dependencies
+- **TypeScript Ready**: Well-structured code ready for TypeScript definitions
 
-### 🎯 Object Manipulation
-- **Selection**: Single and multi-select objects
-- **Movement**: Drag and drop objects
-- **Resizing**: Resize objects with aspect ratio control
-- **Rotation**: Rotate objects around their center
-- **Layering**: Bring to front/send to back
-- **Deletion**: Remove selected objects
-- **Undo/Redo**: Full history tracking with 50-state limit
+## 📦 Installation
 
-### 🎨 Styling Options
-- **Stroke Color**: Customize line/border colors
-- **Stroke Width**: Adjust line thickness (1-20px)
-- **Fill Style**: Transparent, Solid, or Hatched fills
-- **Fill Color**: Set interior colors
-- **Opacity**: Control transparency (0-1)
-- **Typography**: Font family and size for text
+### Manual Download
+Download the built files from the `dist/` folder:
 
-### 🖼️ Canvas Features
-- **Infinite Canvas**: No boundaries, pan and zoom freely
-- **Grid System**: Optional grid for alignment
-- **Zoom & Pan**: Mouse wheel zoom, Alt+drag or middle-click pan
-- **Responsive**: Works on desktop and touch devices
+- `dist/sww.esm.js` - ES6 module version
+- `dist/sww.js` - UMD version (works with CommonJS, AMD, or as global)
+- `dist/sww.min.js` - Minified UMD version
 
-### 💾 Export & Import
-- **SVG Export**: Vector format for scalability
-- **PNG Export**: Raster format for sharing
-- **Scene Save/Load**: JSON serialization for persistence
-
-## Quick Start
-
-### 1. Include the Library
-
+### CDN (Coming Soon)
 ```html
-<script src="sww.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/senangworks-sww@2.0.0/dist/sww.min.js"></script>
 ```
 
-### 2. Create a Container
-
-```html
-<div id="drawing-canvas" style="width: 100%; height: 100vh;"></div>
+### NPM (Coming Soon)
+```bash
+npm install senangworks-sww
 ```
 
-### 3. Initialize SWW
+## 🎯 Quick Start
+
+### ES Modules (Recommended)
+```html
+<div id="drawing-canvas" style="width: 100%; height: 500px;"></div>
+
+<script type="module">
+import SWW from './src/main.js';
+
+const canvas = document.getElementById('drawing-canvas');
+const sww = SWW.init(canvas, {
+    backgroundColor: '#ffffff',
+    gridSize: 20,
+    showGrid: true,
+    snapToGrid: true
+});
+
+// Set tool
+sww.setTool('rectangle');
+
+// Listen to events
+sww.events.on('elementCreated', (data) => {
+    console.log('Element created:', data.element);
+});
+</script>
+```
+
+### UMD (Browser Global)
+```html
+<div id="drawing-canvas" style="width: 100%; height: 500px;"></div>
+
+<script src="dist/sww.js"></script>
+<script>
+const canvas = document.getElementById('drawing-canvas');
+const sww = SWW.init(canvas, {
+    backgroundColor: '#ffffff',
+    gridSize: 20,
+    showGrid: true
+});
+</script>
+```
+
+## 🏗️ Architecture
+
+### Project Structure
+```
+src/
+├── core/                 # Core system components
+│   ├── config.js        # Configuration and constants
+│   ├── CanvasManager.js # Canvas and viewport management
+│   ├── ElementFactory.js # Element creation and validation
+│   └── HistoryManager.js # Undo/redo functionality
+├── tools/               # Drawing tools
+│   ├── BaseTool.js      # Abstract base tool class
+│   ├── SelectTool.js    # Selection and manipulation
+│   └── ShapeTools.js    # Shape drawing tools
+├── ui/                  # User interface components
+├── utils/               # Utility functions
+│   └── helpers.js       # Common helper functions
+├── events/              # Event handling
+│   └── EventManager.js  # Event system and input handling
+├── export/              # Export functionality
+│   └── ExportManager.js # SVG, PNG, JSON export
+├── SWWInstance.js       # Main application instance
+└── main.js              # Entry point and public API
+```
+
+### Core Components
+
+#### SWWInstance
+The main application instance that coordinates all components:
+- Manages tools, elements, and application state
+- Handles user input and tool switching
+- Provides public API for external interaction
+
+#### CanvasManager
+Handles SVG canvas creation and viewport management:
+- Creates and manages SVG elements
+- Handles zoom and pan operations
+- Manages coordinate transformations
+
+#### ElementFactory
+Creates and validates drawing elements:
+- Standardized element creation
+- Element validation and cloning
+- Bounding box calculations
+
+#### HistoryManager
+Manages undo/redo functionality:
+- Configurable history size
+- State serialization and restoration
+- Action-based history tracking
+
+#### EventManager
+Comprehensive event system:
+- DOM event handling (mouse, keyboard, touch)
+- Custom application events
+- Event listener management
+
+### Tool System
+
+Tools are modular and extensible. Each tool extends the `BaseTool` class:
 
 ```javascript
-document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('drawing-canvas');
-    const swwInstance = sww.init(container);
+import { BaseTool } from './BaseTool.js';
+
+export class CustomTool extends BaseTool {
+    constructor() {
+        super('custom', 'fas fa-star');
+    }
+    
+    onPointerDown(data) {
+        // Handle pointer down
+    }
+    
+    onPointerMove(data) {
+        // Handle pointer move
+    }
+    
+    onPointerUp(data) {
+        // Handle pointer up
+    }
+}
+
+// Register the tool
+sww.registerTool(new CustomTool());
+```
+
+## 🛠️ API Reference
+
+### Initialization
+```javascript
+const sww = SWW.init(container, options);
+```
+
+**Options:**
+- `width`: Canvas width (default: '100%')
+- `height`: Canvas height (default: '100%')
+- `backgroundColor`: Background color (default: '#ffffff')
+- `gridSize`: Grid size in pixels (default: 20)
+- `showGrid`: Show grid (default: true)
+- `snapToGrid`: Enable grid snapping (default: true)
+- `maxHistorySize`: Maximum undo history (default: 50)
+
+### Tools
+```javascript
+// Set active tool
+sww.setTool('rectangle');
+
+// Get current tool
+const currentTool = sww.getCurrentTool();
+
+// Register custom tool
+sww.registerTool(new CustomTool());
+```
+
+**Built-in Tools:**
+- `select`: Selection and manipulation
+- `rectangle`: Rectangle shapes
+- `ellipse`: Ellipse/circle shapes  
+- `diamond`: Diamond shapes
+
+### Scene Management
+```javascript
+// Get scene data
+const scene = sww.getScene();
+
+// Load scene
+sww.loadScene(sceneData);
+
+// Clear canvas
+sww.clearAll();
+```
+
+### Selection
+```javascript
+// Select all elements
+sww.selectAll();
+
+// Clear selection
+sww.clearSelection();
+
+// Delete selected elements
+sww.deleteSelectedElements();
+```
+
+### History
+```javascript
+// Undo last action
+sww.undo();
+
+// Redo last undone action
+sww.redo();
+```
+
+### Export
+```javascript
+// Export to SVG
+const svgData = sww.exportToSVG();
+
+// Export to PNG
+sww.exportToPNG(2); // 2x scale
+
+// Export to JSON
+const jsonData = sww.exportToJSON();
+```
+
+### Events
+```javascript
+// Listen to events
+sww.events.on('elementCreated', (data) => {
+    console.log('Element created:', data.element);
+});
+
+sww.events.on('selectionChanged', (data) => {
+    console.log('Selection changed:', data.selected);
+});
+
+sww.events.on('toolChanged', (data) => {
+    console.log('Tool changed:', data.toolName);
 });
 ```
 
-## Complete Example
+**Available Events:**
+- `elementCreated`: When an element is created
+- `elementUpdated`: When an element is modified
+- `elementDeleted`: When an element is deleted
+- `selectionChanged`: When selection changes
+- `toolChanged`: When active tool changes
+- `canvasUpdated`: When canvas is updated
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SWW Drawing App</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-        #drawing-canvas {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-</head>
-<body>
-    <div id="drawing-canvas"></div>
-    <script src="sww.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('drawing-canvas');
-            const swwInstance = sww.init(container, {
-                backgroundColor: '#ffffff',
-                gridSize: 20,
-                showGrid: true
-            });
-        });
-    </script>
-</body>
-</html>
+## 🔧 Development
+
+### Setup
+```bash
+# Install dependencies
+npm install
+
+# Build the library
+npm run build
+
+# Watch for changes
+npm run build:watch
+
+# Start development server
+npm run serve
 ```
 
-## API Reference
+### Building
+The build process creates multiple output formats:
+- `dist/sww.esm.js`: ES Module build
+- `dist/sww.js`: UMD build for browsers
+- `dist/sww.min.js`: Minified UMD build
 
-### Initialization
+### Project Scripts
+- `npm run build`: Build for production
+- `npm run build:watch`: Build and watch for changes
+- `npm run dev`: Development build with watching
+- `npm run serve`: Start HTTP server for examples
+- `npm run lint`: Run ESLint
 
-#### `sww.init(container, options)`
-Initialize SWW in a DOM container.
+## 📱 Browser Support
 
-**Parameters:**
-- `container` (HTMLElement): The DOM element to render the canvas in
-- `options` (Object, optional): Configuration options
+- Chrome 60+
+- Firefox 55+
+- Safari 12+
+- Edge 79+
 
-**Options:**
-```javascript
-{
-    width: '100%',              // Canvas width
-    height: '100%',             // Canvas height
-    backgroundColor: '#ffffff',  // Background color
-    gridSize: 20,               // Grid size in pixels
-    showGrid: true              // Show/hide grid
-}
-```
+## 🤝 Contributing
 
-**Returns:** SWWInstance object
-
-### Instance Methods
-
-#### `setTool(toolName)`
-Change the active drawing tool.
-
-**Parameters:**
-- `toolName` (string): Tool name ('select', 'rectangle', 'ellipse', 'diamond', 'line', 'arrow', 'draw', 'text')
-
-```javascript
-swwInstance.setTool('rectangle');
-```
-
-#### `getScene()`
-Get the current scene data as JSON.
-
-**Returns:** Object containing all elements and canvas state
-
-```javascript
-const sceneData = swwInstance.getScene();
-```
-
-#### `loadScene(sceneData)`
-Load a scene from JSON data.
-
-**Parameters:**
-- `sceneData` (Object): Scene data from `getScene()`
-
-```javascript
-swwInstance.loadScene(savedScene);
-```
-
-#### `exportToSVG()`
-Export the current drawing as SVG.
-
-**Returns:** SVG string data
-
-```javascript
-const svgData = swwInstance.exportToSVG();
-```
-
-#### `exportToPNG()`
-Export the current drawing as PNG (downloads automatically).
-
-```javascript
-swwInstance.exportToPNG();
-```
-
-#### `clearAll()`
-Clear all elements from the canvas.
-
-```javascript
-swwInstance.clearAll();
-```
-
-## Controls & Shortcuts
-
-### Mouse Controls
-- **Left Click**: Draw/select based on active tool
-- **Left Drag**: Create shapes or move objects
-- **Middle Click + Drag**: Pan canvas
-- **Alt + Left Click + Drag**: Pan canvas
-- **Mouse Wheel**: Zoom in/out
-
-### Keyboard Shortcuts
-- **Delete/Backspace**: Delete selected objects
-- **Escape**: Clear selection
-- **Ctrl+A**: Select all objects
-- **Ctrl+Z**: Undo last action
-- **Ctrl+Y**: Redo last action
-- **Shift+Click**: Multi-select objects
-
-### Touch Controls
-- **Tap**: Select/draw
-- **Drag**: Move objects or create shapes
-- **Two-finger gestures**: Planned for future versions
-
-## Styling Properties
-
-### Stroke Properties
-- **Color**: Any valid CSS color value
-- **Width**: 1-20 pixels
-
-### Fill Properties
-- **Style**: 'transparent', 'solid', 'hachure'
-- **Color**: Any valid CSS color value
-- **Opacity**: 0.0 to 1.0
-
-### Text Properties
-- **Font Family**: Any valid CSS font family
-- **Font Size**: Size in pixels
-- **Color**: Uses stroke color
-
-## Browser Support
-
-SWW works in all modern browsers that support:
-- SVG manipulation
-- ES6 classes
-- Canvas API (for PNG export)
-
-### Tested Browsers
-- ✅ Chrome 80+
-- ✅ Firefox 75+
-- ✅ Safari 13+
-- ✅ Edge 80+
-
-## Performance
-
-SWW is optimized for:
-- **Smooth drawing** with efficient SVG updates
-- **Large canvases** with viewport-based rendering
-- **Many objects** with optimized selection algorithms
-- **Memory efficiency** with minimal DOM manipulation
-
-## Architecture
-
-### Core Components
-1. **SWWInstance**: Main application instance
-2. **Element System**: Object-oriented element management
-3. **Tool System**: Pluggable drawing tools
-4. **Event System**: Unified input handling
-5. **Render System**: SVG-based rendering
-
-### File Structure
-```
-sww.js                 # Complete library (single file)
-├── Core Framework     # Main SWW class and utilities
-├── Element System     # Shape and object management
-├── Tool System        # Drawing tool implementations
-├── UI Components      # Toolbar and properties panel
-├── Event Handlers     # Mouse, touch, and keyboard events
-├── Export System      # SVG/PNG export functionality
-└── API Layer          # Public API methods
-```
-
-## Customization
-
-### Custom Tools
-SWW's architecture allows for easy tool extension:
-
-```javascript
-// Example: Custom tool implementation would go here
-// (Advanced feature for future versions)
-```
-
-### Custom Styling
-The CSS can be customized by overriding the injected styles:
-
-```css
-.sww-toolbar {
-    /* Custom toolbar styling */
-}
-
-.sww-element.selected {
-    /* Custom selection styling */
-}
-```
-
-## Examples & Use Cases
-
-### Educational Applications
-- Interactive diagrams
-- Mathematical illustrations
-- Flowcharts and mind maps
-
-### Business Applications
-- Wireframing and mockups
-- Process documentation
-- Collaborative sketching
-
-### Creative Applications
-- Digital sketching
-- Logo design
-- Artistic illustrations
-
-## Development
-
-### Building from Source
-SWW is designed as a single-file library. No build process required.
-
-### Contributing
 1. Fork the repository
-2. Make your changes
-3. Test thoroughly
-4. Submit a pull request
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-### Testing
-Open `index.html` in any modern browser to test functionality.
+## 📄 License
 
-## License
+MIT License - see [LICENSE](LICENSE) file for details.
 
-MIT License - feel free to use in personal and commercial projects.
+## 🔄 Migration from v1.x
 
-## Support
+SWW v2.0 is a complete rewrite with breaking changes. See [MIGRATION.md](docs/MIGRATION.md) for detailed migration guide.
 
-For issues, feature requests, or questions:
-- Create an issue on the repository
-- Check the examples in the `/examples` folder
-- Review this documentation
+## 📚 Examples
 
-## Roadmap
+- [Basic Usage](examples/basic.html)
+- [Advanced Demo](demo.html)
 
-### Planned Features
-- [ ] Layer management
-- [ ] Group/ungroup objects
-- [ ] Copy/paste functionality
-- [x] Undo/redo system
+## 🎯 Roadmap
+
+- [ ] Line and Arrow tools
+- [ ] Freehand drawing tool
+- [ ] Text editing tool
+- [ ] Image and website embedding
 - [ ] Collaborative editing
-- [ ] Mobile touch improvements
-- [ ] Additional export formats
+- [ ] Touch/mobile support improvements
+- [ ] TypeScript definitions
 - [ ] Plugin system
-- [ ] Advanced text editing
-- [ ] Shape libraries
-
----
-
-**SenangWebs Works (SWW)** - Making digital drawing simple and accessible for everyone.
+- [ ] Performance optimizations
