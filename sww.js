@@ -542,6 +542,7 @@
                 
                 .sww-website-placeholder {
                     display: flex;
+                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     background: #f8f9fa;
@@ -549,9 +550,10 @@
                     font-size: 14px;
                     font-family: Arial, sans-serif;
                     text-align: center;
-                    padding: calc(1rem + 20px);
-                    border: 2px dashed #dee2e6;
-                    border-radius: 4px;
+                }
+
+                .sww-website-placeholder i {
+                    font-size: 24px;
                 }
                 
                 .sww-image-element {
@@ -569,6 +571,7 @@
                 
                 .sww-image-placeholder {
                     display: flex;
+                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     background: #f8f9fa;
@@ -576,15 +579,15 @@
                     font-size: 14px;
                     font-family: Arial, sans-serif;
                     text-align: center;
-                    padding: calc(1rem + 20px);
-                    border: 2px dashed #dee2e6;
-                    border-radius: 4px;
                     cursor: pointer;
+                }
+
+                .sww-image-placeholder i {
+                    font-size: 24px;
                 }
                 
                 .sww-markdown-element {
-                    border: 2px solid #28a745;
-                    border-radius: 4px;
+                    border: 4px solid #6c757d;
                     overflow: hidden;
                     background: white;
                     box-sizing: border-box;
@@ -1561,13 +1564,21 @@
         }
         
         handleWebsiteStart(point) {
-            const snappedPoint = this.snapToGridPoint(point);
+            // Position element in the center of the current viewport
+            const centerPoint = {
+                x: this.viewBox.x + this.viewBox.width / 2 - 150, // Half of default width (300/2)
+                y: this.viewBox.y + this.viewBox.height / 2 - 100  // Half of default height (200/2)
+            };
+            const snappedPoint = this.snapToGridPoint(centerPoint);
             const element = this.createElement('website', snappedPoint);
             
             // Add element to the scene
             this.elementsGroup.appendChild(element.svgElement);
             this.elements.push(element);
             this.updateSVGElement(element);
+            
+            // Save state for undo/redo
+            this.saveStateToHistory('createElement');
             
             // Select the element and show configuration dialog
             this.clearSelection();
@@ -1579,13 +1590,21 @@
         }
         
         handleImageStart(point) {
-            const snappedPoint = this.snapToGridPoint(point);
+            // Position element in the center of the current viewport
+            const centerPoint = {
+                x: this.viewBox.x + this.viewBox.width / 2 - 150, // Half of default width (300/2)
+                y: this.viewBox.y + this.viewBox.height / 2 - 100  // Half of default height (200/2)
+            };
+            const snappedPoint = this.snapToGridPoint(centerPoint);
             const element = this.createElement('image', snappedPoint);
             
             // Add element to the scene
             this.elementsGroup.appendChild(element.svgElement);
             this.elements.push(element);
             this.updateSVGElement(element);
+            
+            // Save state for undo/redo
+            this.saveStateToHistory('createElement');
             
             // Select the element and show configuration dialog
             this.clearSelection();
@@ -1597,13 +1616,21 @@
         }
         
         handleMarkdownStart(point) {
-            const snappedPoint = this.snapToGridPoint(point);
+            // Position element in the center of the current viewport
+            const centerPoint = {
+                x: this.viewBox.x + this.viewBox.width / 2 - 150, // Half of default width (300/2)
+                y: this.viewBox.y + this.viewBox.height / 2 - 100  // Half of default height (200/2)
+            };
+            const snappedPoint = this.snapToGridPoint(centerPoint);
             const element = this.createElement('markdown', snappedPoint);
             
             // Add element to the scene
             this.elementsGroup.appendChild(element.svgElement);
             this.elements.push(element);
             this.updateSVGElement(element);
+            
+            // Save state for undo/redo
+            this.saveStateToHistory('createElement');
             
             // Select the element
             this.clearSelection();
@@ -2739,7 +2766,7 @@
         
         // Edit methods for new element types
         editWebsiteElement(element) {
-            this.showConfigDialog('Website Configuration', [
+            this.showConfigDialog('Website', [
                 { label: 'URL:', type: 'text', key: 'url', value: element.url || '', placeholder: 'https://example.com' }
             ], (values) => {
                 element.url = values.url;
@@ -2748,8 +2775,8 @@
         }
         
         editImageElement(element) {
-            this.showConfigDialog('Image Configuration', [
-                { label: 'Image URL:', type: 'text', key: 'imageUrl', value: element.imageUrl || '', placeholder: 'https://example.com/image.jpg' }
+            this.showConfigDialog('Image', [
+                { label: 'URL:', type: 'text', key: 'imageUrl', value: element.imageUrl || '', placeholder: 'https://example.com/image.jpg' }
             ], (values) => {
                 element.imageUrl = values.imageUrl;
                 this.updateSVGElement(element);
