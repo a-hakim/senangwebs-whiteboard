@@ -74,6 +74,12 @@
             this.contextMenu = null;
             this.clipboard = []; // For copy/paste functionality
             
+            // Undo/Redo system
+            this.historyStack = [];
+            this.historyIndex = -1;
+            this.maxHistorySize = 50;
+            this.isPerformingHistoryAction = false;
+            
             // Canvas properties
             this.viewBox = { x: 0, y: 0, width: 1000, height: 1000 };
             this.zoom = 1;
@@ -98,6 +104,12 @@
             this.injectCSS();
             this.createUI();
             this.setupEventListeners();
+            
+            // Save initial empty state
+            this.saveStateToHistory('init');
+            
+            // Update button states initially
+            this.updateHistoryButtons();
         }
         
         injectCSS() {
@@ -186,6 +198,19 @@
                     color: white;
                 }
                 
+                .sww-tool-button:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                    background: #f5f5f5;
+                    border-color: #ddd;
+                    color: #999;
+                }
+                
+                .sww-tool-button:disabled:hover {
+                    background: #f5f5f5;
+                    border-color: #ddd;
+                }
+                
                 .sww-properties-panel {
                     position: absolute;
                     top: 20px;
@@ -244,9 +269,7 @@
                 }
                 
                 .sww-element.selected {
-                    stroke-dasharray: 5,5;
-                    stroke: #007bff !important;
-                    stroke-width: 2 !important;
+                    /* Selection is indicated by selection box and handles, not by changing element appearance */
                 }
                 
                 /* Prevent selection styles from affecting arrow lines - preserve original width */
@@ -823,6 +846,8 @@
             actionGroup.className = 'sww-tool-group';
             
             const actions = [
+                { id: 'undo', icon: 'fas fa-undo', title: 'Undo (Ctrl+Z)', action: () => this.undo() },
+                { id: 'redo', icon: 'fas fa-redo', title: 'Redo (Ctrl+Y)', action: () => this.redo() },
                 { id: 'lock', icon: 'fas fa-lock', title: 'Lock/Unlock Selected', action: () => this.toggleLockSelected() },
                 { id: 'group', icon: 'fas fa-object-group', title: 'Group Selected', action: () => this.groupSelected() },
                 { id: 'ungroup', icon: 'fas fa-object-ungroup', title: 'Ungroup Selected', action: () => this.ungroupSelected() },
@@ -847,6 +872,14 @@
                 // Set initial state for grid snap button
                 if (action.id === 'snap-grid' && this.snapToGrid) {
                     button.classList.add('active');
+                }
+                
+                // Set initial state for undo/redo buttons
+                if (action.id === 'undo' && this.historyIndex < 0) {
+                    button.disabled = true;
+                }
+                if (action.id === 'redo' && this.historyIndex >= this.historyStack.length - 1) {
+                    button.disabled = true;
                 }
                 
                 actionGroup.appendChild(button);
@@ -1353,9 +1386,12 @@
             } else if (e.ctrlKey && e.key === 'a') {
                 e.preventDefault();
                 this.selectAll();
-            } else if (e.ctrlKey && e.key === 'z') {
+            } else if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
-                // TODO: Implement undo
+                this.undo();
+            } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
+                e.preventDefault();
+                this.redo();
             }
         }
         
@@ -2079,6 +2115,9 @@
             // Add to elements array
             this.elements.push(this.currentElement);
             
+            // Save state to history AFTER adding the element
+            this.saveStateToHistory('createElement');
+            
             // Select the newly created element and switch to select tool
             this.clearSelection();
             this.selectElement(this.currentElement);
@@ -2121,6 +2160,9 @@
         
         finishElementDrag() {
             if (!this.isDraggingElement) return;
+            
+            // Save state after the drag operation is complete
+            this.saveStateToHistory('moveElements');
             
             // Clean up drag state
             this.selectedElements.forEach(element => {
@@ -2344,6 +2386,9 @@
         finishResize() {
             if (!this.isResizing) return;
             
+            // Save state after the resize operation is complete
+            this.saveStateToHistory('resizeElements');
+            
             // Clean up resize state
             this.selectedElements.forEach(element => {
                 delete element.resizeStartX;
@@ -2360,6 +2405,9 @@
         
         finishRotation() {
             if (!this.isRotating) return;
+            
+            // Save state after the rotation operation is complete
+            this.saveStateToHistory('rotateElements');
             
             // Clean up rotation state
             this.selectedElements.forEach(element => {
@@ -2483,6 +2531,8 @@
         }
         
         deleteSelectedElements() {
+            if (this.selectedElements.size === 0) return;
+            
             // Filter out locked elements
             const elementsToDelete = Array.from(this.selectedElements).filter(element => !element.locked);
             
@@ -2494,6 +2544,9 @@
                 element.svgElement.remove();
                 this.selectedElements.delete(element);
             });
+            
+            // Save state after deletion
+            this.saveStateToHistory('deleteElements');
             
             // Update selection handles for remaining elements
             if (this.selectedElements.size > 0) {
@@ -2592,6 +2645,9 @@
         
         pasteClipboard() {
             if (this.clipboard.length === 0) return;
+            
+            // Save state before pasting
+            this.saveStateToHistory('pasteElements');
             
             // Clear current selection
             this.clearSelection();
@@ -3285,6 +3341,8 @@
 
         // Update only a specific property for selected elements
         updateSelectedElementProperty(propertyName, value) {
+            if (this.selectedElements.size === 0) return;
+            
             this.selectedElements.forEach(element => {
                 // Only update the specific property
                 if (propertyName === 'fontSize' && element.type === 'text') {
@@ -3309,6 +3367,9 @@
                 
                 this.updateSVGElement(element);
             });
+            
+            // Save state after property change
+            this.saveStateToHistory('updateProperty');
         }
         
         updateTextPropertiesVisibility() {
@@ -3614,8 +3675,8 @@
         setTool(toolName) {
             this.currentTool = toolName;
             
-            // Update toolbar buttons
-            this.container.querySelectorAll('.sww-tool-button').forEach(button => {
+            // Update toolbar buttons - only target tool buttons, not action buttons
+            this.container.querySelectorAll('.sww-tool-button[data-tool]').forEach(button => {
                 button.classList.remove('active');
                 if (button.getAttribute('data-tool') === toolName) {
                     button.classList.add('active');
@@ -3766,6 +3827,8 @@
         groupSelected() {
             if (this.selectedElements.size < 2) return;
             
+            this.saveStateToHistory('groupElements');
+            
             const groupId = this.generateId();
             
             this.selectedElements.forEach(element => {
@@ -3782,6 +3845,8 @@
         
         ungroupSelected() {
             if (this.selectedElements.size === 0) return;
+            
+            this.saveStateToHistory('ungroupElements');
             
             this.selectedElements.forEach(element => {
                 if (element.groupId) {
@@ -3802,11 +3867,135 @@
         }
         
         clearAll() {
+            this.saveStateToHistory('clearAll');
             this.elements = [];
             this.selectedElements.clear();
             this.elementsGroup.innerHTML = '';
             this.clearSelectionHandles();
             this.updateTextPropertiesVisibility();
+        }
+        
+        // Undo/Redo History Management
+        saveStateToHistory(actionType, beforeState = null) {
+            if (this.isPerformingHistoryAction) return;
+            if (!this.elements) return; // Don't save if elements array isn't initialized yet
+            
+            console.log(`Saving state for action: ${actionType}, current elements: ${this.elements.length}`);
+            
+            // Create a deep copy of the current state
+            const currentState = {
+                elements: JSON.parse(JSON.stringify(this.elements)),
+                selectedElements: Array.from(this.selectedElements),
+                actionType: actionType,
+                timestamp: Date.now()
+            };
+            
+            // If beforeState is provided, use it as the previous state
+            if (beforeState) {
+                currentState.beforeState = beforeState;
+            }
+            
+            // Remove any history beyond current index (when undoing then making new changes)
+            this.historyStack = this.historyStack.slice(0, this.historyIndex + 1);
+            
+            // Add new state to history
+            this.historyStack.push(currentState);
+            this.historyIndex = this.historyStack.length - 1;
+            
+            // Limit history size
+            if (this.historyStack.length > this.maxHistorySize) {
+                this.historyStack.shift();
+                this.historyIndex--;
+            }
+            
+            this.updateHistoryButtons();
+        }
+        
+        undo() {
+            if (this.historyIndex <= 0) {
+                console.log('Cannot undo: no previous history');
+                return;
+            }
+            
+            console.log(`Undo: going from index ${this.historyIndex} to ${this.historyIndex - 1}`);
+            console.log(`Current elements: ${this.elements.length}`);
+            
+            this.isPerformingHistoryAction = true;
+            this.historyIndex--;
+            
+            const previousState = this.historyStack[this.historyIndex];
+            console.log(`Restoring state with ${previousState.elements.length} elements`);
+            this.restoreState(previousState);
+            
+            this.isPerformingHistoryAction = false;
+            this.updateHistoryButtons();
+        }
+        
+        redo() {
+            if (this.historyIndex >= this.historyStack.length - 1) {
+                console.log('Cannot redo: at latest state');
+                return;
+            }
+            
+            console.log(`Redo: going from index ${this.historyIndex} to ${this.historyIndex + 1}`);
+            
+            this.isPerformingHistoryAction = true;
+            this.historyIndex++;
+            
+            const nextState = this.historyStack[this.historyIndex];
+            console.log(`Restoring state with ${nextState.elements.length} elements`);
+            this.restoreState(nextState);
+            
+            this.isPerformingHistoryAction = false;
+            this.updateHistoryButtons();
+        }
+        
+        restoreState(state) {
+            // Clear current state
+            this.elements = [];
+            this.selectedElements.clear();
+            this.elementsGroup.innerHTML = '';
+            
+            // Restore elements
+            this.elements = JSON.parse(JSON.stringify(state.elements));
+            
+            // Recreate SVG elements and add them to the DOM
+            this.elements.forEach(element => {
+                const svgElement = this.createSVGElement(element);
+                element.svgElement = svgElement;
+                this.elementsGroup.appendChild(svgElement);
+            });
+            
+            // Restore selection
+            this.selectedElements.clear();
+            if (state.selectedElements && state.selectedElements.length > 0) {
+                state.selectedElements.forEach(elementId => {
+                    const element = this.elements.find(el => el.id === elementId);
+                    if (element) {
+                        this.selectedElements.add(element);
+                    }
+                });
+            }
+            
+            this.updateSelectionHandles();
+            this.syncPropertiesPanel();
+            this.updateTextPropertiesVisibility();
+        }
+        
+        updateHistoryButtons() {
+            const undoBtn = this.container.querySelector('[data-action="undo"]');
+            const redoBtn = this.container.querySelector('[data-action="redo"]');
+            
+            if (undoBtn) {
+                // Can undo if we have history and historyIndex > 0 (can go back to previous states)
+                undoBtn.disabled = this.historyStack.length <= 1 || this.historyIndex <= 0;
+                undoBtn.style.opacity = (this.historyStack.length <= 1 || this.historyIndex <= 0) ? '0.5' : '1';
+            }
+            
+            if (redoBtn) {
+                redoBtn.disabled = this.historyIndex >= this.historyStack.length - 1;
+                redoBtn.style.opacity = this.historyIndex >= this.historyStack.length - 1 ? '0.5' : '1';
+            }
         }
         
         // Debug method to visualize click positions

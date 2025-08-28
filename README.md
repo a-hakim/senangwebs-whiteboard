@@ -17,6 +17,7 @@ A lightweight, client-side JavaScript library for creating digital whiteboards a
 - **Rotation**: Rotate objects around their center
 - **Layering**: Bring to front/send to back
 - **Deletion**: Remove selected objects
+- **Undo/Redo**: Full history tracking with 50-state limit
 
 ### 🎨 Styling Options
 - **Stroke Color**: Customize line/border colors
@@ -191,6 +192,8 @@ swwInstance.clearAll();
 - **Delete/Backspace**: Delete selected objects
 - **Escape**: Clear selection
 - **Ctrl+A**: Select all objects
+- **Ctrl+Z**: Undo last action
+- **Ctrl+Y**: Redo last action
 - **Shift+Click**: Multi-select objects
 
 ### Touch Controls
@@ -327,7 +330,7 @@ For issues, feature requests, or questions:
 - [ ] Layer management
 - [ ] Group/ungroup objects
 - [ ] Copy/paste functionality
-- [ ] Undo/redo system
+- [x] Undo/redo system
 - [ ] Collaborative editing
 - [ ] Mobile touch improvements
 - [ ] Additional export formats

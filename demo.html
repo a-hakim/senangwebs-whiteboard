@@ -152,6 +152,13 @@
             </div>
             
             <div class="demo-section">
+                <h3><i class="fas fa-history"></i> Undo/Redo</h3>
+                <button class="demo-button" onclick="undoAction()"><i class="fas fa-undo"></i> Undo (Ctrl+Z)</button>
+                <button class="demo-button" onclick="redoAction()"><i class="fas fa-redo"></i> Redo (Ctrl+Y)</button>
+                <div class="demo-info" id="historyInfo">History tracking enabled with 50 state limit.</div>
+            </div>
+            
+            <div class="demo-section">
                 <h3><i class="fas fa-save"></i> Save & Load</h3>
                 <div class="demo-input-group">
                     <label>Scene Name:</label>
@@ -212,6 +219,8 @@
                     • Delete: Remove selected<br>
                     • Escape: Clear selection<br>
                     • Ctrl+A: Select all<br>
+                    • Ctrl+Z: Undo last action<br>
+                    • Ctrl+Y: Redo last action<br>
                     • Shift+Click: Multi-select
                 </div>
             </div>
@@ -466,11 +475,23 @@
             }
         }
         
+        function undoAction() {
+            swwInstance.undo();
+            updateSceneInfo();
+        }
+        
+        function redoAction() {
+            swwInstance.redo();
+            updateSceneInfo();
+        }
+        
         // Expose functions globally for demo buttons
         window.createSampleDrawing = createSampleDrawing;
         window.clearCanvas = clearCanvas;
         window.selectAllObjects = selectAllObjects;
         window.randomizeColors = randomizeColors;
+        window.undoAction = undoAction;
+        window.redoAction = redoAction;
         window.saveScene = saveScene;
         window.toggleDebugMode = toggleDebugMode;
         window.loadLastScene = loadLastScene;
