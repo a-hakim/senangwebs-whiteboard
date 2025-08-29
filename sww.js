@@ -1056,6 +1056,31 @@
                     background: rgba(0,0,0,0.5);
                     z-index: 2999;
                 }
+                
+                /* Elegant Text Editor Styles */
+                .sww-text-editor-elegant {
+                    font-family: inherit !important;
+                    border-radius: 8px !important;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                    backdrop-filter: blur(8px) !important;
+                    -webkit-backdrop-filter: blur(8px) !important;
+                }
+                
+                .sww-text-editor-elegant:focus {
+                    box-shadow: 0 8px 32px rgba(0, 255, 153, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+                    border-color: rgba(0, 255, 153, 0.8) !important;
+                    transform: scale(1.02) !important;
+                }
+                
+                .sww-text-editor-elegant::placeholder {
+                    color: rgba(0, 0, 0, 0.4) !important;
+                    font-style: italic !important;
+                }
+                
+                .sww-text-editor-elegant:hover {
+                    border-color: rgba(0, 255, 153, 0.6) !important;
+                    box-shadow: 0 4px 16px rgba(0, 255, 153, 0.1), 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -4127,8 +4152,9 @@
         
         // Text editing
         startTextEditing(element) {
+            // Create an elegant, seamless text editor
             const textEditor = document.createElement('textarea');
-            textEditor.className = 'sww-text-editor';
+            textEditor.className = 'sww-text-editor-elegant';
             textEditor.value = element.originalText || element.text || '';
             
             // Get accurate screen coordinates using SVG transformation
@@ -4179,6 +4205,7 @@
                 editorHeight = element.fontSize * 1.5;
             }
             
+            // Apply elegant, seamless styling
             textEditor.style.position = 'fixed';
             textEditor.style.left = `${screenPoint.x}px`;
             textEditor.style.top = `${screenPoint.y}px`;
@@ -4186,24 +4213,46 @@
             textEditor.style.height = `${editorHeight}px`;
             textEditor.style.fontSize = `${element.fontSize}px`;
             textEditor.style.fontFamily = element.fontFamily;
-            textEditor.style.border = '2px solid #007370';
-            textEditor.style.background = 'rgba(255, 255, 255, 0.9)';
+            
+            // Elegant styling - seamless integration
+            textEditor.style.border = '2px solid rgba(0, 255, 153, 0.5)'; // Subtle teal border
+            textEditor.style.borderRadius = '8px';
+            textEditor.style.background = 'rgba(255, 255, 255, 0.95)';
+            textEditor.style.backdropFilter = 'blur(8px)';
+            textEditor.style.boxShadow = '0 8px 32px rgba(0, 255, 153, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)';
+            
+            // Typography and interaction
             textEditor.style.resize = 'none';
             textEditor.style.overflow = 'hidden';
-            textEditor.style.whiteSpace = 'pre-wrap'; // Preserve line breaks
+            textEditor.style.whiteSpace = 'pre-wrap';
             textEditor.style.wordWrap = 'break-word';
-            textEditor.style.padding = '10px'; // Match text boundary padding
+            textEditor.style.padding = '12px';
             textEditor.style.boxSizing = 'border-box';
-            textEditor.style.zIndex = '10000'; // Ensure it's on top
+            textEditor.style.zIndex = '10000';
+            textEditor.style.outline = 'none';
+            textEditor.style.color = element.strokeColor || '#333';
+            textEditor.style.lineHeight = '1.3';
+            
+            // Smooth transitions
+            textEditor.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
             
             // Set text alignment to match element alignment
             if (element.textAlign) {
                 textEditor.style.textAlign = element.textAlign;
             }
             
+            // Add a subtle placeholder
+            textEditor.placeholder = 'Type your text here...';
+            
             document.body.appendChild(textEditor);
-            textEditor.focus();
-            textEditor.select();
+            
+            // Add focus styling with animation
+            setTimeout(() => {
+                textEditor.style.borderColor = 'rgba(0, 255, 153, 0.8)';
+                textEditor.style.transform = 'scale(1.02)';
+                textEditor.focus();
+                textEditor.select();
+            }, 50);
             
             let isEditing = true; // Flag to prevent double cleanup
             
@@ -4214,102 +4263,141 @@
                 if (!isEditing) return; // Prevent double execution
                 isEditing = false;
                 
-                const newText = textEditor.value || 'Text';
-                element.originalText = newText; // Store original text for future wrapping
+                // Smooth exit animation
+                textEditor.style.transform = 'scale(0.98)';
+                textEditor.style.opacity = '0.8';
+                textEditor.style.borderColor = 'rgba(0, 255, 153, 0.3)';
                 
-                // If element has boundary, adjust text to fit and wrap
-                if (element.width && element.height) {
-                    element.text = newText; // Store original first
-                    this.adjustTextToFitBounds(element); // Then wrap it
-                } else {
-                    element.text = newText;
-                }
-                
-                this.updateSVGElement(element);
-                
-                // Safely remove the textarea
-                if (textEditor.parentNode) {
-                    textEditor.remove();
-                }
-                
-                // Clean up click-outside listener
-                if (handleClickOutside) {
-                    document.removeEventListener('click', handleClickOutside);
-                }
-                
-                // Update selection handles if element is selected
-                if (this.selectedElements.has(element)) {
-                    this.updateSelectionHandles();
-                }
-                
-                // Auto-switch to select tool after text editing for better UX
-                if (this.currentTool === 'text') {
-                    this.setTool('select');
-                }
+                setTimeout(() => {
+                    const newText = textEditor.value || 'Text';
+                    element.originalText = newText; // Store original text for future wrapping
+                    
+                    // If element has boundary, adjust text to fit and wrap
+                    if (element.width && element.height) {
+                        element.text = newText; // Store original first
+                        this.adjustTextToFitBounds(element); // Then wrap it
+                    } else {
+                        element.text = newText;
+                    }
+                    
+                    this.updateSVGElement(element);
+                    
+                    // Safely remove the textarea
+                    if (textEditor.parentNode) {
+                        textEditor.remove();
+                    }
+                    
+                    // Clean up click-outside listener
+                    if (handleClickOutside) {
+                        document.removeEventListener('click', handleClickOutside);
+                    }
+                    
+                    // Update selection handles if element is selected
+                    if (this.selectedElements.has(element)) {
+                        this.updateSelectionHandles();
+                    }
+                    
+                    // Auto-switch to select tool after text editing for better UX
+                    if (this.currentTool === 'text') {
+                        this.setTool('select');
+                    }
+                }, 150); // Small delay for animation
             };
             
             const cancelEditing = () => {
                 if (!isEditing) return; // Prevent double execution
                 isEditing = false;
                 
-                // Safely remove the textarea without saving changes
-                if (textEditor.parentNode) {
-                    textEditor.remove();
-                }
+                // Smooth exit animation for cancel
+                textEditor.style.transform = 'scale(0.95)';
+                textEditor.style.opacity = '0.5';
+                textEditor.style.borderColor = 'rgba(255, 0, 0, 0.3)';
                 
-                // Clean up click-outside listener
-                if (handleClickOutside) {
-                    document.removeEventListener('click', handleClickOutside);
-                }
-                
-                // Auto-switch to select tool even when canceling for better UX
-                if (this.currentTool === 'text') {
-                    this.setTool('select');
-                }
+                setTimeout(() => {
+                    // Safely remove the textarea without saving changes
+                    if (textEditor.parentNode) {
+                        textEditor.remove();
+                    }
+                    
+                    // Clean up click-outside listener
+                    if (handleClickOutside) {
+                        document.removeEventListener('click', handleClickOutside);
+                    }
+                    
+                    // Auto-switch to select tool even when canceling for better UX
+                    if (this.currentTool === 'text') {
+                        this.setTool('select');
+                    }
+                }, 150);
             };
             
-            // Enhanced auto-resize function
+            // Enhanced auto-resize function with smooth animations
             const autoResize = () => {
                 if (!textEditor.parentNode) return;
                 
-                // Reset dimensions to get accurate measurements
-                textEditor.style.height = 'auto';
-                textEditor.style.width = 'auto';
-                
-                // Calculate required dimensions
-                const content = textEditor.value || textEditor.placeholder || '';
-                const lines = content.split('\n');
-                const maxLineLength = Math.max(...lines.map(line => line.length));
-                
-                // Calculate width based on content
-                const charWidth = element.fontSize * 0.6; // Approximate character width
-                const contentWidth = Math.max(maxLineLength * charWidth, 100); // Minimum 100px
-                const finalWidth = Math.min(contentWidth, 400); // Maximum 400px
-                
-                // Calculate height based on scroll height
-                const finalHeight = Math.max(textEditor.scrollHeight, element.fontSize * 1.2);
-                
-                // Apply calculated dimensions
-                textEditor.style.width = finalWidth + 'px';
-                textEditor.style.height = finalHeight + 'px';
+                // Only auto-resize for unbounded text elements
+                if (!(element.width && element.height)) {
+                    // Reset dimensions to get accurate measurements
+                    const currentWidth = textEditor.style.width;
+                    const currentHeight = textEditor.style.height;
+                    
+                    textEditor.style.height = 'auto';
+                    textEditor.style.width = 'auto';
+                    
+                    // Calculate required dimensions
+                    const content = textEditor.value || textEditor.placeholder || '';
+                    const lines = content.split('\n');
+                    const maxLineLength = Math.max(...lines.map(line => line.length), 1);
+                    
+                    // Calculate width based on content with better accuracy
+                    const charWidth = element.fontSize * 0.65; // More accurate character width
+                    const contentWidth = Math.max(maxLineLength * charWidth + 24, 120); // Padding + minimum
+                    const finalWidth = Math.min(contentWidth, 500); // Reasonable maximum
+                    
+                    // Calculate height based on scroll height
+                    const finalHeight = Math.max(textEditor.scrollHeight + 4, element.fontSize * 1.4);
+                    
+                    // Smooth resize animation
+                    textEditor.style.width = currentWidth;
+                    textEditor.style.height = currentHeight;
+                    
+                    // Animate to new size
+                    requestAnimationFrame(() => {
+                        textEditor.style.width = finalWidth + 'px';
+                        textEditor.style.height = finalHeight + 'px';
+                    });
+                }
             };
             
-            // Add input event listener for real-time resizing
-            textEditor.addEventListener('input', autoResize);
-            
-            textEditor.addEventListener('blur', finishEditing);
+            // Enhanced keyboard interactions
             textEditor.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                // Enhanced keyboard shortcuts
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
                     finishEditing();
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
                     cancelEditing();
+                } else if (e.key === 'Tab') {
+                    e.preventDefault();
+                    // Insert tab character for better formatting
+                    const start = textEditor.selectionStart;
+                    const end = textEditor.selectionEnd;
+                    const value = textEditor.value;
+                    textEditor.value = value.substring(0, start) + '    ' + value.substring(end);
+                    textEditor.selectionStart = textEditor.selectionEnd = start + 4;
+                    autoResize();
                 }
-                
-                // Auto-resize on keydown for immediate feedback
-                setTimeout(autoResize, 0);
             });
+            
+            // Add input event listener for real-time resizing with debouncing
+            let resizeTimeout;
+            textEditor.addEventListener('input', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(autoResize, 50); // Debounced resize
+            });
+            
+            textEditor.addEventListener('blur', finishEditing);
             
             // Add click-outside listener for intuitive editing
             handleClickOutside = (e) => {
