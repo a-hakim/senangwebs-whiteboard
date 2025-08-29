@@ -210,6 +210,11 @@
             
             // Update button states initially
             this.updateHistoryButtons();
+            
+            // Set initial grid button state
+            setTimeout(() => {
+                this.updateGridButtonState();
+            }, 100); // Small delay to ensure DOM is ready
         }
         
         initPerformanceOptimizations() {
@@ -4762,7 +4767,23 @@
             } else {
                 this.hideGrid();
             }
+            
+            // Update toggle grid button visual state
+            this.updateGridButtonState();
+            
             return this.options.showGrid;
+        }
+        
+        updateGridButtonState() {
+            // Find the toggle grid button and update its active state
+            const gridButton = document.querySelector('button[onclick="toggleGrid()"]');
+            if (gridButton) {
+                if (this.options.showGrid) {
+                    gridButton.classList.add('active');
+                } else {
+                    gridButton.classList.remove('active');
+                }
+            }
         }
         
         // Layer ordering methods

@@ -146,6 +146,7 @@ html {
   justify-content: center;
 }
 
+.sww-toolbar-button.active,
 .sww-toolbar-button:hover {
   color: #00FF99;
   background: #09090B;
