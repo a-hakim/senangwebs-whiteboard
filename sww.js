@@ -1952,9 +1952,13 @@
             const element = this.createElement('text', snappedPoint);
             element.text = 'Click to edit text';
             
-            // Don't set width/height initially - let it auto-size
-            element.width = undefined;
-            element.height = undefined;
+            // Calculate initial dimensions for consistent boundary behavior
+            const measuredBounds = this.measureText(element.text, element.fontSize, element.fontFamily);
+            const padding = 10;
+            
+            // Set initial width and height based on content
+            element.width = measuredBounds.width + (padding * 2);
+            element.height = measuredBounds.height + (padding * 2);
             
             // Set up drawing state like other tools
             this.currentElement = element;
@@ -2245,15 +2249,10 @@
                     const textContent = element.text || '';
                     const lines = textContent.split('\n');
                     
-                    // Position text within boundary if it has been resized
-                    let textX = element.x;
-                    let textY = element.y;
-                    
-                    if (element.width && element.height) {
-                        // Position text with padding inside the boundary
-                        textX = element.x + 10; // Left padding
-                        textY = element.y + element.fontSize + 10; // Top padding + baseline
-                    }
+                    // Always position text with padding inside the boundary
+                    const padding = 10;
+                    const textX = element.x + padding; // Left padding
+                    const textY = element.y + element.fontSize + padding; // Top padding + baseline
                     
                     svg.setAttribute('x', textX);
                     svg.setAttribute('y', textY);
@@ -2279,16 +2278,16 @@
                         
                         // Calculate X position based on alignment
                         let lineX = textX;
-                        if (element.width && element.height && element.textAlign) {
+                        if (element.textAlign && element.width) {
                             const lineWidth = this.measureText(line, element.fontSize, element.fontFamily).width;
-                            const availableWidth = element.width - 20; // Account for padding
+                            const availableWidth = element.width - (padding * 2); // Account for padding
                             
                             switch (element.textAlign) {
                                 case 'center':
                                     lineX = element.x + (element.width / 2) - (lineWidth / 2);
                                     break;
                                 case 'right':
-                                    lineX = element.x + element.width - 10 - lineWidth;
+                                    lineX = element.x + element.width - padding - lineWidth;
                                     break;
                                 case 'left':
                                 default:
@@ -2303,7 +2302,7 @@
                         svg.appendChild(tspan);
                     });
                     
-                    // Add text boundary visualization if text has been resized
+                    // Add subtle boundary visualization for text elements
                     if (element.width && element.height) {
                         // Remove existing boundary rect
                         if (element.boundaryRect) {
@@ -2316,8 +2315,8 @@
                         rect.setAttribute('y', element.y);
                         rect.setAttribute('width', Math.abs(element.width));
                         rect.setAttribute('height', Math.abs(element.height));
-                        rect.setAttribute('fill', 'rgba(240, 240, 240, 0.05)');
-                        rect.setAttribute('stroke', 'rgba(200, 200, 200, 0.3)');
+                        rect.setAttribute('fill', 'rgba(240, 240, 240, 0.02)');
+                        rect.setAttribute('stroke', 'rgba(200, 200, 200, 0.15)');
                         rect.setAttribute('stroke-width', '1');
                         rect.setAttribute('stroke-dasharray', '3,3');
                         rect.setAttribute('class', 'sww-text-boundary');
@@ -2881,8 +2880,9 @@
             const originalText = element.originalText || element.text || 'Text';
             element.originalText = originalText; // Store original text for re-wrapping
             
-            const targetWidth = Math.abs(element.width) - 20; // Leave padding
-            const targetHeight = Math.abs(element.height) - 20; // Leave padding
+            const padding = 10; // Consistent padding
+            const targetWidth = Math.abs(element.width) - (padding * 2); // Leave padding
+            const targetHeight = Math.abs(element.height) - (padding * 2); // Leave padding
             
             if (targetWidth <= 0 || targetHeight <= 0) return;
             
@@ -3738,11 +3738,12 @@
                 element.resizeStartY = element.y;
                 
                 if (element.type === 'text') {
-                    // For text elements, initialize width/height if not set
+                    // For text elements, ensure consistent dimensions
                     if (!element.width || !element.height) {
                         const bounds = this.measureText(element.text || 'Text', element.fontSize, element.fontFamily);
-                        element.width = bounds.width + 20; // Add padding
-                        element.height = bounds.height + 10; // Add padding
+                        const padding = 10;
+                        element.width = bounds.width + (padding * 2);
+                        element.height = bounds.height + (padding * 2);
                     }
                 } else if (element.type === 'path') {
                     // For path elements, store the original points for scaling
@@ -3775,30 +3776,28 @@
         
         getElementBounds(element) {
             if (element.type === 'text') {
-                // Use resized dimensions if available, otherwise calculate from text
-                if (element.width && element.height) {
-                    // Text element has been resized - use the defined bounds
-                    return {
-                        x: element.x,
-                        y: element.y,
-                        width: Math.abs(element.width),
-                        height: Math.abs(element.height)
-                    };
-                } else {
-                    // Text element hasn't been resized - calculate bounds from content
-                    const text = element.text || 'Text';
-                    const bounds = this.measureText(text, element.fontSize, element.fontFamily);
-                    
-                    // Simplified padding for better visibility and selection
-                    const padding = element.fontSize * 0.15;
-                    
-                    return {
-                        x: element.x - padding,
-                        y: element.y - bounds.height - padding,
-                        width: bounds.width + (padding * 2),
-                        height: bounds.height + (padding * 2)
-                    };
-                }
+                // Always use consistent boundary calculation for text elements
+                const text = element.text || 'Text';
+                const measuredBounds = this.measureText(text, element.fontSize, element.fontFamily);
+                
+                // Standard padding for all text elements
+                const padding = 10;
+                
+                // Use resized dimensions if available, otherwise use measured bounds
+                let width = element.width ? Math.abs(element.width) : measuredBounds.width + (padding * 2);
+                let height = element.height ? Math.abs(element.height) : measuredBounds.height + (padding * 2);
+                
+                // Ensure minimum dimensions for better UX
+                width = Math.max(width, measuredBounds.width + (padding * 2));
+                height = Math.max(height, measuredBounds.height + (padding * 2));
+                
+                // Consistent positioning - always use element position as top-left corner
+                return {
+                    x: element.x,
+                    y: element.y,
+                    width: width,
+                    height: height
+                };
             } else if (element.type === 'line' || element.type === 'arrow') {
                 // For lines and arrows, create bounding box from start and end points
                 const startX = element.x;
