@@ -1,0 +1,383 @@
+/**
+ * SenangWebs Whiteboard (SWW) - CSS Styles
+ * Version: 1.0.0
+ * 
+ * Complete stylesheet for SWW drawing library and demo interface
+ */
+
+/* Base Styles */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+}
+
+/* Scrollbar Styles */
+#sww-layers-list::-webkit-scrollbar,
+.sww-properties-panel::-webkit-scrollbar,
+.sww-control-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+#sww-layers-list::-webkit-scrollbar-track,
+.sww-properties-panel::-webkit-scrollbar-track,
+.sww-control-section::-webkit-scrollbar-track {
+  background: #262626;
+}
+
+.sww-control-section::-webkit-scrollbar {
+  height: 8px;
+}
+
+#sww-layers-list::-webkit-scrollbar-thumb,
+.sww-properties-panel::-webkit-scrollbar-thumb,
+.sww-control-section::-webkit-scrollbar-thumb {
+  background: #525252;
+  border-radius: 0px;
+}
+
+#sww-layers-list::-webkit-scrollbar-thumb:hover,
+.sww-properties-panel::-webkit-scrollbar-thumb:hover,
+.sww-control-section::-webkit-scrollbar-thumb:hover {
+  background: #737373;
+}
+
+/* Main Layout */
+.sww-editor-container {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 48px);
+}
+
+.sww-canvas-area {
+  flex: 1;
+  height: 100%;
+}
+
+/* Control Panel */
+.sww-control-panel {
+  min-width: 20rem;
+  max-width: 20rem;
+  background: #18181b;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.sww-control-header {
+  height: 40px;
+  display: flex;
+  color: #ffffff80;
+  align-items: center;
+  justify-content: center;
+}
+
+.sww-control-section {
+  flex: 1;
+  box-sizing: border-box;
+  height: calc(100vh - 88px);
+  overflow-y: auto;
+  color: #ffffff80;
+}
+
+/* Control Menu */
+.sww-control-menu {
+  display: flex;
+  background: #09090b;
+}
+
+.sww-control-menu-button {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: #09090b;
+  color: #a3a3a3;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  height: 48px;
+  border-bottom: 1px solid transparent;
+}
+
+.sww-control-menu-button:hover,
+.sww-control-menu-button.active {
+  color: #00FF99;
+  border-color: #00FF99;
+}
+
+/* Toolbar */
+.sww-toolbar-container {
+  height: 48px;
+  background: #18181b;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.sww-toolbar-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+}
+
+.sww-toolbar-button {
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  cursor: pointer;
+  font-size: 14px;
+  height: 48px;
+  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sww-toolbar-button:hover {
+  color: #00FF99;
+  background: #09090B;
+}
+
+/* Elements Section */
+#sww-elements-section {
+  padding: 4px;
+}
+
+.sww-elements-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Action Buttons */
+.sww-action-button {
+  display: flex;
+  height: max-content;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #09090B80;
+  color: #ffffff80;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.sww-action-button i {
+  width: 48px;
+  font-size: 48px;
+  text-align: center;
+}
+
+.sww-action-button:hover {
+  color: #00FF99;
+  border: 1px solid #00FF99;
+}
+
+.sww-action-button.primary {
+  background: #007bff;
+  color: white;
+}
+
+.sww-action-button.primary:hover {
+  background: #0056b3;
+}
+
+/* Sections */
+.sww-section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sww-section:last-child {
+  border-bottom: none;
+}
+
+.sww-section h3 {
+  margin: 0 0 15px 0;
+  color: #007bff;
+  font-size: 16px;
+}
+
+/* Layer Management */
+.sww-layer-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid #3a3a3a;
+  cursor: pointer;
+  font-size: 12px;
+  background: transparent;
+  transition: background-color 0.2s;
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+
+.sww-layer-item:hover {
+  background: #262626;
+}
+
+.sww-layer-item.selected {
+  background: #00FF99;
+  color: #000;
+}
+
+.sww-layer-item.locked {
+  opacity: 0.6;
+}
+
+.sww-layer-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.sww-layer-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sww-layer-controls {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.sww-layer-control-btn {
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: color 0.2s;
+}
+
+.sww-layer-control-btn:hover {
+  color: #00FF99;
+}
+
+.sww-layer-control-btn.active {
+  color: #00FF99;
+}
+
+.sww-layer-control-btn.inactive {
+  color: #666;
+}
+
+.sww-layer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #ffffff10;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #ffffff80;
+}
+
+.sww-layer-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.sww-layer-action-btn {
+  background: transparent;
+  border: 1px solid #3a3a3a;
+  color: #a3a3a3;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 4px 6px;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.sww-layer-action-btn:hover {
+  color: #00FF99;
+  border-color: #00FF99;
+}
+
+.sww-layers-container {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+/* Form Elements */
+.sww-info-text {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.sww-input-group {
+  margin-bottom: 15px;
+}
+
+.sww-input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+}
+
+.sww-input-group input,
+.sww-input-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Scene Management */
+.sww-scene-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.sww-scene-item {
+  padding: 10px;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.sww-scene-item:hover {
+  background: #f0f0f0;
+}
+
+.sww-scene-item:last-child {
+  border-bottom: none;
+}
