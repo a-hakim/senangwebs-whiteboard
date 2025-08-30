@@ -1431,6 +1431,120 @@
             
             opacityGroup.appendChild(opacityInputGroup);
             
+            // Width property
+            const elementWidthGroup = document.createElement('div');
+            elementWidthGroup.className = 'sww-property-group';
+            
+            const elementWidthLabel = document.createElement('label');
+            elementWidthLabel.className = 'sww-property-label';
+            elementWidthLabel.textContent = 'Width';
+            
+            const elementWidthInput = document.createElement('input');
+            elementWidthInput.type = 'number';
+            elementWidthInput.className = 'sww-number-input';
+            elementWidthInput.min = '1';
+            elementWidthInput.step = '1';
+            elementWidthInput.value = '100';
+            
+            const elementWidthUnit = document.createElement('span');
+            elementWidthUnit.className = 'sww-property-unit';
+            elementWidthUnit.textContent = 'px';
+            
+            elementWidthInput.addEventListener('input', (e) => {
+                let value = parseInt(e.target.value);
+                if (value < 1) value = 1;
+                e.target.value = value;
+                
+                // Update width property for selected elements
+                this.updateSelectedElementProperty('width', value);
+            });
+            
+            elementWidthGroup.appendChild(elementWidthLabel);
+            
+            const elementWidthInputGroup = document.createElement('div');
+            elementWidthInputGroup.className = 'sww-property-input-group';
+            elementWidthInputGroup.appendChild(elementWidthInput);
+            elementWidthInputGroup.appendChild(elementWidthUnit);
+            
+            elementWidthGroup.appendChild(elementWidthInputGroup);
+            
+            // Height property
+            const elementHeightGroup = document.createElement('div');
+            elementHeightGroup.className = 'sww-property-group';
+            
+            const elementHeightLabel = document.createElement('label');
+            elementHeightLabel.className = 'sww-property-label';
+            elementHeightLabel.textContent = 'Height';
+            
+            const elementHeightInput = document.createElement('input');
+            elementHeightInput.type = 'number';
+            elementHeightInput.className = 'sww-number-input';
+            elementHeightInput.min = '1';
+            elementHeightInput.step = '1';
+            elementHeightInput.value = '100';
+            
+            const elementHeightUnit = document.createElement('span');
+            elementHeightUnit.className = 'sww-property-unit';
+            elementHeightUnit.textContent = 'px';
+            
+            elementHeightInput.addEventListener('input', (e) => {
+                let value = parseInt(e.target.value);
+                if (value < 1) value = 1;
+                e.target.value = value;
+                
+                // Update height property for selected elements
+                this.updateSelectedElementProperty('height', value);
+            });
+            
+            elementHeightGroup.appendChild(elementHeightLabel);
+            
+            const elementHeightInputGroup = document.createElement('div');
+            elementHeightInputGroup.className = 'sww-property-input-group';
+            elementHeightInputGroup.appendChild(elementHeightInput);
+            elementHeightInputGroup.appendChild(elementHeightUnit);
+            
+            elementHeightGroup.appendChild(elementHeightInputGroup);
+            
+            // Rotation property
+            const rotationGroup = document.createElement('div');
+            rotationGroup.className = 'sww-property-group';
+            
+            const rotationLabel = document.createElement('label');
+            rotationLabel.className = 'sww-property-label';
+            rotationLabel.textContent = 'Rotation';
+            
+            const rotationInput = document.createElement('input');
+            rotationInput.type = 'number';
+            rotationInput.className = 'sww-number-input';
+            rotationInput.min = '-360';
+            rotationInput.max = '360';
+            rotationInput.step = '1';
+            rotationInput.value = '0';
+            
+            const rotationUnit = document.createElement('span');
+            rotationUnit.className = 'sww-property-unit';
+            rotationUnit.textContent = '°';
+            
+            rotationInput.addEventListener('input', (e) => {
+                let value = parseInt(e.target.value);
+                // Normalize rotation to -360 to 360 range
+                if (value < -360) value = -360;
+                if (value > 360) value = 360;
+                e.target.value = value;
+                
+                // Update rotation property for selected elements
+                this.updateSelectedElementProperty('rotation', value);
+            });
+            
+            rotationGroup.appendChild(rotationLabel);
+            
+            const rotationInputGroup = document.createElement('div');
+            rotationInputGroup.className = 'sww-property-input-group';
+            rotationInputGroup.appendChild(rotationInput);
+            rotationInputGroup.appendChild(rotationUnit);
+            
+            rotationGroup.appendChild(rotationInputGroup);
+            
             // Text properties section
             const textSection = document.createElement('div');
             textSection.className = 'sww-text-properties';
@@ -1617,6 +1731,9 @@
             panel.appendChild(fillGroup);
             panel.appendChild(fillStyleGroup);
             panel.appendChild(opacityGroup);
+            panel.appendChild(elementWidthGroup);
+            panel.appendChild(elementHeightGroup);
+            panel.appendChild(rotationGroup);
             panel.appendChild(textSection);
             
             this.container.appendChild(panel);
@@ -2583,6 +2700,9 @@
                 const centerX = element.x + element.width / 2;
                 const centerY = element.y + element.height / 2;
                 svg.setAttribute('transform', `rotate(${element.rotation} ${centerX} ${centerY})`);
+            } else {
+                // Remove transform attribute when rotation is 0
+                svg.removeAttribute('transform');
             }
             
             // Update spatial index when element properties change
@@ -3184,6 +3304,25 @@
                 const opacityInput = this.propertiesPanel.querySelector('input[type="number"][min="0"][max="100"]');
                 if (opacityInput) {
                     opacityInput.value = Math.round((firstElement.opacity || 1) * 100);
+                }
+                
+                // Update width input
+                const widthInputs = this.propertiesPanel.querySelectorAll('input[type="number"][min="1"]');
+                const widthInput = widthInputs[0]; // First input with min="1" should be width
+                if (widthInput) {
+                    widthInput.value = Math.abs(firstElement.width) || 100;
+                }
+                
+                // Update height input
+                const heightInput = widthInputs[1]; // Second input with min="1" should be height
+                if (heightInput) {
+                    heightInput.value = Math.abs(firstElement.height) || 100;
+                }
+                
+                // Update rotation input
+                const rotationInput = this.propertiesPanel.querySelector('input[type="number"][min="-360"][max="360"]');
+                if (rotationInput) {
+                    rotationInput.value = firstElement.rotation || 0;
                 }
                 
                 // Update text properties visibility and values
@@ -4245,10 +4384,19 @@
                     element.fillStyle = value;
                 } else if (propertyName === 'opacity') {
                     element.opacity = value;
+                } else if (propertyName === 'width') {
+                    element.width = Math.abs(value); // Ensure positive width
+                } else if (propertyName === 'height') {
+                    element.height = Math.abs(value); // Ensure positive height
+                } else if (propertyName === 'rotation') {
+                    element.rotation = value;
                 }
                 
                 this.updateSVGElement(element);
             });
+            
+            // Update selection handles after property change to reflect new dimensions
+            this.updateSelectionHandles();
             
             // Save state after property change
             this.saveStateToHistory('updateProperty');
