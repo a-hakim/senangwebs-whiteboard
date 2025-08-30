@@ -912,7 +912,6 @@
                 
                 .sww-image-element {
                     overflow: hidden;
-                    padding: 8px;
                     box-sizing: border-box;
                 }
                 
@@ -2461,6 +2460,16 @@
                         div.style.width = '100%';
                         div.style.height = '100%';
                         
+                        // Apply stroke properties to the container
+                        if (element.strokeWidth > 0) {
+                            div.style.border = `${element.strokeWidth}px solid ${element.strokeColor}`;
+                        } else {
+                            div.style.border = 'none';
+                        }
+                        
+                        // Apply opacity
+                        div.style.opacity = element.opacity;
+                        
                         const img = document.createElement('img');
                         img.src = element.imageUrl;
                         img.style.width = '100%';
@@ -2476,6 +2485,17 @@
                         div.className = 'sww-image-placeholder';
                         div.style.width = '100%';
                         div.style.height = '100%';
+                        
+                        // Apply stroke properties to the placeholder as well
+                        if (element.strokeWidth > 0) {
+                            div.style.border = `${element.strokeWidth}px solid ${element.strokeColor}`;
+                        } else {
+                            div.style.border = 'none';
+                        }
+                        
+                        // Apply opacity
+                        div.style.opacity = element.opacity;
+                        
                         div.innerHTML = '<i class="fas fa-image"></i><br>Click to set image';
                         div.onclick = () => this.editImageElement(element);
                         svg.appendChild(div);
@@ -4240,12 +4260,15 @@
             const textPropertiesSection = this.propertiesPanel.querySelector('.sww-text-properties');
             if (!textPropertiesSection) return;
             
-            // Check if any selected elements are text or markdown elements
+            // Check if any selected elements are text, markdown, or image elements
             const hasTextElements = Array.from(this.selectedElements).some(element => 
                 element.type === 'text'
             );
             const hasMarkdownElements = Array.from(this.selectedElements).some(element => 
                 element.type === 'markdown'
+            );
+            const hasImageElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'image'
             );
             
             // Show or hide text properties based on selection
@@ -4275,6 +4298,38 @@
                 });
             } else {
                 textPropertiesSection.style.display = 'none';
+            }
+            
+            // Handle fill properties visibility for image elements
+            // Look for fill property groups directly in the main panel
+            if (hasImageElements && !hasTextElements && !hasMarkdownElements) {
+                // For image elements only, hide fill color and fill style properties
+                const allPropertyGroups = this.propertiesPanel.querySelectorAll('.sww-property-group');
+                
+                allPropertyGroups.forEach(group => {
+                    const label = group.querySelector('.sww-property-label');
+                    if (label) {
+                        const labelText = label.textContent.trim();
+                        
+                        if (labelText === 'Fill Color' || labelText === 'Fill Style') {
+                            group.style.display = 'none';
+                        }
+                    }
+                });
+            } else {
+                // For other elements or mixed selection, show all fill properties
+                const allPropertyGroups = this.propertiesPanel.querySelectorAll('.sww-property-group');
+                
+                allPropertyGroups.forEach(group => {
+                    const label = group.querySelector('.sww-property-label');
+                    if (label) {
+                        const labelText = label.textContent.trim();
+                        
+                        if (labelText === 'Fill Color' || labelText === 'Fill Style') {
+                            group.style.display = 'flex';
+                        }
+                    }
+                });
             }
         }
         
