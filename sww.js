@@ -940,11 +940,10 @@
                 }
                 
                 .sww-markdown-element {
-                    border: 4px solid #6c757d;
                     overflow: hidden;
-                    background: white;
                     box-sizing: border-box;
                     pointer-events: all;
+                    /* Border and background are now set dynamically based on element properties */
                 }
                 
                 .sww-markdown-editor {
@@ -957,9 +956,9 @@
                     font-size: 12px;
                     line-height: 1.4;
                     outline: none;
-                    background: white;
                     box-sizing: border-box;
                     pointer-events: all;
+                    /* Background and color are now set dynamically based on element properties */
                 }
                 
                 .sww-markdown-placeholder {
@@ -2497,10 +2496,36 @@
                     div.style.width = '100%';
                     div.style.height = '100%';
                     
+                    // Apply stroke and fill properties to the container
+                    if (element.strokeWidth > 0) {
+                        div.style.border = `${element.strokeWidth}px solid ${element.strokeColor}`;
+                    } else {
+                        div.style.border = 'none';
+                    }
+                    
+                    // Apply fill color as background
+                    if (element.fillStyle === 'solid' && element.fillColor !== 'transparent') {
+                        div.style.backgroundColor = element.fillColor;
+                    } else if (element.fillStyle === 'transparent') {
+                        div.style.backgroundColor = 'transparent';
+                    } else {
+                        div.style.backgroundColor = 'white'; // Default background
+                    }
+                    
+                    // Apply opacity
+                    div.style.opacity = element.opacity;
+                    
                     const textarea = document.createElement('textarea');
                     textarea.className = 'sww-markdown-editor';
                     textarea.value = element.markdown || '# Markdown Document\n\nClick to edit...';
                     textarea.placeholder = 'Enter markdown here...';
+                    
+                    // Style the textarea to match the container properties
+                    textarea.style.backgroundColor = 'transparent'; // Let container background show through
+                    textarea.style.color = element.textColor || element.strokeColor; // Use textColor property, fallback to strokeColor
+                    textarea.style.border = 'none'; // Remove default border
+                    textarea.style.fontSize = (element.fontSize || 12) + 'px'; // Use fontSize property
+                    textarea.style.fontFamily = element.fontFamily || 'Monaco, Menlo, Ubuntu Mono, monospace'; // Use fontFamily property
                     
                     // Handle textarea events
                     textarea.addEventListener('input', (e) => {
@@ -3143,36 +3168,39 @@
                 // Update text properties visibility and values
                 this.updateTextPropertiesVisibility();
                 
-                // Update text-specific properties if it's a text element
-                if (firstElement.type === 'text') {
-                    // Update font size input
-                    const fontSizeInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="number"][min="8"][max="72"]');
-                    if (fontSizeInput) {
-                        fontSizeInput.value = firstElement.fontSize || 16;
+                // Update text-specific properties if it's a text or markdown element
+                if (firstElement.type === 'text' || firstElement.type === 'markdown') {
+                    // Only show text color for markdown elements, all text properties for text elements
+                    if (firstElement.type === 'text') {
+                        // Update font size input
+                        const fontSizeInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="number"][min="8"][max="72"]');
+                        if (fontSizeInput) {
+                            fontSizeInput.value = firstElement.fontSize || 16;
+                        }
+                        
+                        // Update font family select
+                        const fontFamilySelect = this.propertiesPanel.querySelector('.sww-text-properties select');
+                        if (fontFamilySelect) {
+                            fontFamilySelect.value = firstElement.fontFamily || 'Arial';
+                        }
+                        
+                        // Update text alignment buttons (only for text elements)
+                        const alignButtons = this.propertiesPanel.querySelectorAll('.sww-align-button');
+                        alignButtons.forEach(button => {
+                            const align = button.getAttribute('data-align');
+                            if (align === (firstElement.textAlign || 'left')) {
+                                button.classList.add('active');
+                            } else {
+                                button.classList.remove('active');
+                            }
+                        });
                     }
                     
-                    // Update font family select
-                    const fontFamilySelect = this.propertiesPanel.querySelector('.sww-text-properties select');
-                    if (fontFamilySelect) {
-                        fontFamilySelect.value = firstElement.fontFamily || 'Arial';
-                    }
-                    
-                    // Update text color input (third color input)
+                    // Update text color input (for both text and markdown elements)
                     const textColorInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="color"]');
                     if (textColorInput) {
                         textColorInput.value = firstElement.textColor || firstElement.strokeColor || '#000000';
                     }
-                    
-                    // Update text alignment buttons
-                    const alignButtons = this.propertiesPanel.querySelectorAll('.sww-align-button');
-                    alignButtons.forEach(button => {
-                        const align = button.getAttribute('data-align');
-                        if (align === (firstElement.textAlign || 'left')) {
-                            button.classList.add('active');
-                        } else {
-                            button.classList.remove('active');
-                        }
-                    });
                 }
             }
             
@@ -4184,7 +4212,7 @@
                     element.fontFamily = value;
                 } else if (propertyName === 'textAlign' && element.type === 'text') {
                     element.textAlign = value;
-                } else if (propertyName === 'textColor' && element.type === 'text') {
+                } else if (propertyName === 'textColor' && (element.type === 'text' || element.type === 'markdown')) {
                     element.textColor = value;
                 } else if (propertyName === 'strokeColor') {
                     element.strokeColor = value;
@@ -4211,12 +4239,39 @@
             const textPropertiesSection = this.propertiesPanel.querySelector('.sww-text-properties');
             if (!textPropertiesSection) return;
             
-            // Check if any selected elements are text elements
-            const hasTextElements = Array.from(this.selectedElements).some(element => element.type === 'text');
+            // Check if any selected elements are text or markdown elements
+            const hasTextElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'text'
+            );
+            const hasMarkdownElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'markdown'
+            );
             
             // Show or hide text properties based on selection
-            if (hasTextElements) {
+            if (hasTextElements || hasMarkdownElements) {
                 textPropertiesSection.style.display = 'block';
+                
+                // Find property groups by their labels
+                const propertyGroups = textPropertiesSection.querySelectorAll('.sww-property-group');
+                
+                propertyGroups.forEach(group => {
+                    const label = group.querySelector('.sww-property-label');
+                    if (label) {
+                        const labelText = label.textContent.trim();
+                        
+                        if (hasMarkdownElements && !hasTextElements) {
+                            // For markdown elements only, hide font size, font family, and text align
+                            if (labelText === 'Font Size' || labelText === 'Font Family' || labelText === 'Text Align') {
+                                group.style.display = 'none';
+                            } else {
+                                group.style.display = 'flex';
+                            }
+                        } else {
+                            // For text elements or mixed selection, show all properties
+                            group.style.display = 'flex';
+                        }
+                    }
+                });
             } else {
                 textPropertiesSection.style.display = 'none';
             }
