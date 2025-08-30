@@ -1931,6 +1931,20 @@
         }
         
         handleKeyDown(e) {
+            // Check if the user is currently typing in an input field
+            const activeElement = document.activeElement;
+            const isEditingInput = activeElement && (
+                activeElement.tagName === 'INPUT' || 
+                activeElement.tagName === 'TEXTAREA' || 
+                activeElement.tagName === 'SELECT' ||
+                activeElement.contentEditable === 'true'
+            );
+            
+            // Don't trigger shortcuts when user is editing input fields
+            if (isEditingInput) {
+                return;
+            }
+            
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 this.deleteSelectedElements();
             } else if (e.key === 'Escape') {
