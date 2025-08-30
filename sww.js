@@ -884,6 +884,7 @@
                 .sww-website-content {
                     flex: 1;
                     overflow: hidden;
+                    background: white;
                 }
                 
                 .sww-website-element iframe {
