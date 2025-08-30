@@ -1370,8 +1370,7 @@
             
             const fillStyles = [
                 { value: 'transparent', text: 'Transparent' },
-                { value: 'solid', text: 'Solid' },
-                { value: 'hachure', text: 'Hatched' }
+                { value: 'solid', text: 'Solid' }
             ];
             
             fillStyles.forEach(style => {
@@ -2081,6 +2080,25 @@
         
         // Element creation and manipulation
         createElement(type, point) {
+            // Set default stroke width based on element type
+            let defaultStrokeWidth;
+            let defaultFillColor;
+            let defaultFillStyle;
+            
+            if (type === 'text') {
+                defaultStrokeWidth = 0;  // Text elements have 0px stroke width
+                defaultFillColor = this.toolSettings.fillColor;
+                defaultFillStyle = this.toolSettings.fillStyle;
+            } else if (['rectangle', 'ellipse', 'diamond', 'parallelogram', 'star', 'arrow'].includes(type)) {
+                defaultStrokeWidth = 2;  // Shape elements have 2px stroke width
+                defaultFillColor = '#ffffff';  // White fill for shapes
+                defaultFillStyle = 'solid';  // Solid fill for shapes
+            } else {
+                defaultStrokeWidth = this.toolSettings.strokeWidth;  // Use tool settings for other elements
+                defaultFillColor = this.toolSettings.fillColor;
+                defaultFillStyle = this.toolSettings.fillStyle;
+            }
+            
             const element = {
                 id: this.generateId(),
                 type: type,
@@ -2089,9 +2107,9 @@
                 width: type === 'website' || type === 'image' || type === 'markdown' ? 300 : 0,
                 height: type === 'website' || type === 'image' || type === 'markdown' ? 200 : 0,
                 strokeColor: this.toolSettings.strokeColor,
-                strokeWidth: this.toolSettings.strokeWidth,
-                fillColor: this.toolSettings.fillColor,
-                fillStyle: this.toolSettings.fillStyle,
+                strokeWidth: defaultStrokeWidth,
+                fillColor: defaultFillColor,
+                fillStyle: defaultFillStyle,
                 opacity: this.toolSettings.opacity,
                 fontSize: this.toolSettings.fontSize,
                 fontFamily: this.toolSettings.fontFamily,
@@ -2398,7 +2416,7 @@
                         urlDisplay.textContent = element.url;
                         urlDisplay.onclick = () => this.editWebsiteElement(element);
                         
-                        addressBar.appendChild(controls);
+                        // addressBar.appendChild(controls);
                         addressBar.appendChild(urlDisplay);
                         
                         // Create content area
@@ -3092,40 +3110,58 @@
             const firstElement = this.selectedElements.values().next().value;
             
             if (firstElement) {
-                // Update stroke color input
+                // Update stroke color input (first color input)
                 const strokeInput = this.propertiesPanel.querySelector('input[type="color"]');
-                if (strokeInput) strokeInput.value = firstElement.strokeColor;
+                if (strokeInput) {
+                    strokeInput.value = firstElement.strokeColor || '#000000';
+                }
                 
-                // Update stroke width input
-                const strokeWidthInput = this.propertiesPanel.querySelector('input[type="range"]');
-                if (strokeWidthInput) strokeWidthInput.value = firstElement.strokeWidth;
+                // Update stroke width input (number input)
+                const strokeWidthInput = this.propertiesPanel.querySelector('input[type="number"][min="0"][max="20"]');
+                if (strokeWidthInput) {
+                    strokeWidthInput.value = firstElement.strokeWidth || 0;
+                }
                 
-                // Update fill color input
+                // Update fill color input (second color input)
                 const fillInputs = this.propertiesPanel.querySelectorAll('input[type="color"]');
-                if (fillInputs[1]) fillInputs[1].value = firstElement.fillColor === 'transparent' ? '#ffffff' : firstElement.fillColor;
+                if (fillInputs[1]) {
+                    fillInputs[1].value = firstElement.fillColor === 'transparent' ? '#ffffff' : (firstElement.fillColor || '#ffffff');
+                }
                 
                 // Update fill style select
-                const fillStyleSelect = this.propertiesPanel.querySelector('select');
-                if (fillStyleSelect) fillStyleSelect.value = firstElement.fillStyle;
+                const fillStyleSelect = this.propertiesPanel.querySelector('select.sww-select-input');
+                if (fillStyleSelect) {
+                    fillStyleSelect.value = firstElement.fillStyle || 'transparent';
+                }
                 
-                // Update opacity input
-                const opacityInput = this.propertiesPanel.querySelector('input[type="range"][max="1"]');
-                if (opacityInput) opacityInput.value = firstElement.opacity;
+                // Update opacity input (number input with max 100)
+                const opacityInput = this.propertiesPanel.querySelector('input[type="number"][min="0"][max="100"]');
+                if (opacityInput) {
+                    opacityInput.value = Math.round((firstElement.opacity || 1) * 100);
+                }
+                
+                // Update text properties visibility and values
+                this.updateTextPropertiesVisibility();
                 
                 // Update text-specific properties if it's a text element
                 if (firstElement.type === 'text') {
-                    const fontSizeInput = this.propertiesPanel.querySelector('input[type="range"][max="72"]');
+                    // Update font size input
+                    const fontSizeInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="number"][min="8"][max="72"]');
                     if (fontSizeInput) {
-                        fontSizeInput.value = firstElement.fontSize;
-                        const fontSizeValue = fontSizeInput.parentElement.querySelector('.sww-value-display');
-                        if (fontSizeValue) fontSizeValue.textContent = firstElement.fontSize + 'px';
+                        fontSizeInput.value = firstElement.fontSize || 16;
                     }
                     
+                    // Update font family select
                     const fontFamilySelect = this.propertiesPanel.querySelector('.sww-text-properties select');
-                    if (fontFamilySelect) fontFamilySelect.value = firstElement.fontFamily;
+                    if (fontFamilySelect) {
+                        fontFamilySelect.value = firstElement.fontFamily || 'Arial';
+                    }
                     
+                    // Update text color input (third color input)
                     const textColorInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="color"]');
-                    if (textColorInput) textColorInput.value = firstElement.textColor || firstElement.strokeColor;
+                    if (textColorInput) {
+                        textColorInput.value = firstElement.textColor || firstElement.strokeColor || '#000000';
+                    }
                     
                     // Update text alignment buttons
                     const alignButtons = this.propertiesPanel.querySelectorAll('.sww-align-button');
@@ -3923,6 +3959,37 @@
                         height: Math.max(Math.abs(element.height || 0), 20)
                     };
                 }
+            } else if (element.type === 'star') {
+                // For star shapes, calculate bounds based on actual star points
+                const cx = element.x + element.width / 2;
+                const cy = element.y + element.height / 2;
+                const outerRadius = Math.min(Math.abs(element.width), Math.abs(element.height)) / 2;
+                const innerRadius = outerRadius * 0.4;
+                
+                // Find the actual bounds of the star points
+                let minX = cx, maxX = cx, minY = cy, maxY = cy;
+                
+                for (let i = 0; i < 10; i++) {
+                    const angle = (i * Math.PI) / 5 - Math.PI / 2;
+                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                    const pointX = cx + radius * Math.cos(angle);
+                    const pointY = cy + radius * Math.sin(angle);
+                    
+                    minX = Math.min(minX, pointX);
+                    maxX = Math.max(maxX, pointX);
+                    minY = Math.min(minY, pointY);
+                    maxY = Math.max(maxY, pointY);
+                }
+                
+                // Add small padding for easier selection
+                const padding = Math.max(element.strokeWidth || 2, 3);
+                
+                return {
+                    x: minX - padding,
+                    y: minY - padding,
+                    width: (maxX - minX) + (padding * 2),
+                    height: (maxY - minY) + (padding * 2)
+                };
             } else {
                 // For other elements, use their width/height
                 return {
