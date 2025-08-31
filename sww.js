@@ -532,7 +532,7 @@
                 
                 .sww-property-group {
                     margin: 6px 0;
-                    padding: 0 12px;
+                    padding: 0 16px;
                 }
                 
                 .sww-property-label {
@@ -543,7 +543,7 @@
                 }
                 
                 .sww-property-group {
-                    margin-bottom: 15px;
+                    margin-bottom: 12px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
@@ -581,7 +581,7 @@
                 }
                 
                 .sww-number-input {
-                    width: 60px;
+                    width: 64px;
                     padding: 5px 8px;
                     border-radius: 8px;
                     font-size: 12px;
@@ -695,8 +695,8 @@
                 
                 .sww-text-properties {
                     background: #ffffff10;
-                    padding: 12px;
-                    border-radius: 6px;
+                    padding-top: 12px;
+                    padding-bottom: 1px;
                 }
                 
                 .sww-text-properties h4 {
@@ -810,6 +810,41 @@
                     height: 1px;
                     background: #e9ecef;
                     margin: 4px 0;
+                }
+
+                .sww-panel-header {
+                    height: 40px;
+                    font-size: 14px;
+                    color: #ffffff80;
+                    background: #18181B;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+
+                .sww-panel-header span {
+                    line-height: 40px;
+                    padding-left: 16px;
+                    color: white;
+                }
+
+                .sww-panel-header-button {
+                    width: 40px;
+                    height: 40px;
+                    background: #18181B;
+                    border: none;
+                    color: #ffffff80;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    font-size: 16px;
+                    transition: all 0.2s;
+                }
+
+                .sww-panel-header-button:hover {
+                    background: #09090B;
+                    color: #00FF99;
                 }
                 
                 /* Hidden properties panel by default */
@@ -1313,6 +1348,24 @@
         createPropertiesPanel() {
             const panel = document.createElement('div');
             panel.className = 'sww-properties-panel';
+
+            const panelHeader = document.createElement('div');
+            panelHeader.className = 'sww-panel-header';
+
+            const panelHeaderTitle = document.createElement('span');
+            panelHeaderTitle.textContent = 'Properties';
+
+            const panelHeaderCloseButton = document.createElement('button');
+            panelHeaderCloseButton.className = 'sww-panel-header-button';
+            panelHeaderCloseButton.innerHTML = '<i class="fas fa-times"></i>';
+            panelHeaderCloseButton.title = 'Close Properties Panel';
+
+            panelHeaderCloseButton.addEventListener('click', () => {
+                panel.classList.remove('visible');
+            });
+
+            panelHeader.appendChild(panelHeaderTitle);
+            panelHeader.appendChild(panelHeaderCloseButton);
             
             // Stroke color
             const strokeGroup = document.createElement('div');
@@ -1591,12 +1644,12 @@
             textSection.style.marginTop = '10px';
             textSection.style.display = 'none'; // Initially hidden
             
-            const textSectionTitle = document.createElement('h4');
-            textSectionTitle.textContent = 'Text Properties';
-            textSectionTitle.style.margin = '0 0 10px 0';
-            textSectionTitle.style.fontSize = '12px';
-            textSectionTitle.style.color = '#666';
-            textSection.appendChild(textSectionTitle);
+            // const textSectionTitle = document.createElement('h4');
+            // textSectionTitle.textContent = 'Text Properties';
+            // textSectionTitle.style.margin = '0 0 10px 0';
+            // textSectionTitle.style.fontSize = '12px';
+            // textSectionTitle.style.color = '#666';
+            // textSection.appendChild(textSectionTitle);
             
             // Font size
             const fontSizeGroup = document.createElement('div');
@@ -1766,6 +1819,7 @@
             textSection.appendChild(textColorGroup);
             textSection.appendChild(textAlignGroup);
             
+            panel.appendChild(panelHeader);
             panel.appendChild(strokeGroup);
             panel.appendChild(widthGroup);
             panel.appendChild(fillGroup);
