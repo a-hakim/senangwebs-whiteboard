@@ -77,16 +77,16 @@
                 <div class="sww-layer-header">
                     <span>Layers (<span id="layer-count">0</span>)</span>
                     <div class="sww-layer-actions">
-                        <button class="sww-layer-action-btn" onclick="selectAllLayers()" title="Select All">
+                        <button class="sww-layer-action-btn" onclick="swwInstance.selectAll()" title="Select All">
                             <i class="fas fa-check-square"></i>
                         </button>
-                        <button class="sww-layer-action-btn" onclick="clearLayerSelection()" title="Clear Selection">
+                        <button class="sww-layer-action-btn" onclick="swwInstance.clearSelection()" title="Clear Selection">
                             <i class="far fa-square"></i>
                         </button>
-                        <button class="sww-layer-action-btn" onclick="duplicateSelectedLayers()" title="Duplicate">
+                        <button class="sww-layer-action-btn" onclick="swwInstance.copySelected(); swwInstance.pasteClipboard();" title="Duplicate">
                             <i class="fas fa-copy"></i>
                         </button>
-                        <button class="sww-layer-action-btn" onclick="deleteSelectedLayers()" title="Delete Selected">
+                        <button class="sww-layer-action-btn" onclick="swwInstance.deleteSelectedElements()" title="Delete Selected">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -129,19 +129,16 @@
         
         <!-- Action Controls -->
         <div id="sww-action" class="sww-toolbar-action">
-            <button class="sww-toolbar-button" onclick="undoAction()" title="Undo">
+            <button class="sww-toolbar-button" onclick="swwInstance.undo()" title="Undo">
                 <i class="fas fa-undo"></i>
             </button>
-            <button class="sww-toolbar-button" onclick="redoAction()" title="Redo">
+            <button class="sww-toolbar-button" onclick="swwInstance.redo()" title="Redo">
                 <i class="fas fa-redo"></i>
             </button>
-            <button class="sww-toolbar-button" onclick="saveScene()" title="Save Scene">
-                <i class="fas fa-save"></i>
-            </button>
-            <button class="sww-toolbar-button" onclick="selectAllObjects()" title="Select All">
+            <button class="sww-toolbar-button" onclick="swwInstance.selectAll()" title="Select All">
                 <i class="fas fa-check-double"></i>
             </button>
-            <button class="sww-toolbar-button" onclick="clearCanvas()" title="Clear Canvas">
+            <button class="sww-toolbar-button" onclick="swwInstance.clearAll()" title="Clear Canvas">
                 <i class="fas fa-eraser"></i>
             </button>
         </div>
@@ -179,9 +176,51 @@
 
             // Initialize control panel
             swwControlPanel = new SWWControlPanel(swwInstance);
+            
+            // Make control panel globally accessible
+            window.swwControlPanel = swwControlPanel;
+            
+            // Trigger initial layer update
+            swwControlPanel.updateLayers();
+            
+            // Setup menu navigation
+            setupMenuNavigation();
 
             console.log("SenangWebs Whiteboard initialized successfully!");
         });
+        
+        /**
+         * Setup menu navigation for control panel
+         */
+        function setupMenuNavigation() {
+            const menuButtons = document.querySelectorAll('.sww-control-menu-button');
+            const sections = document.querySelectorAll('.sww-control-section');
+            
+            menuButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetMenu = button.getAttribute('data-menu');
+                    
+                    // Update active button
+                    menuButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Show/hide sections
+                    sections.forEach(section => {
+                        section.style.display = 'none';
+                    });
+                    
+                    const targetSection = document.getElementById(`sww-${targetMenu}-section`);
+                    if (targetSection) {
+                        targetSection.style.display = 'block';
+                        
+                        // If switching to layers, update the layer list
+                        if (targetMenu === 'layers' && window.swwControlPanel) {
+                            window.swwControlPanel.updateLayers();
+                        }
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>

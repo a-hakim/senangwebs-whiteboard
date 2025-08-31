@@ -240,8 +240,8 @@ html {
 }
 
 .sww-layer-item.selected {
-  background: #00FF99;
-  color: #000;
+  background: #ffffff10;
+  color: white;
 }
 
 .sww-layer-item.locked {

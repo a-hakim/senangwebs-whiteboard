@@ -352,6 +352,11 @@
             if (this.elements.length > 100) {
                 this.debouncedViewportUpdate();
             }
+            
+            // Update control panel if available
+            if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
+                window.swwControlPanel.updateLayers();
+            }
         }
         
         removeElement(element) {
@@ -363,6 +368,11 @@
                 // Clean up SVG element
                 if (element.svgElement && element.svgElement.parentNode) {
                     element.svgElement.parentNode.removeChild(element.svgElement);
+                }
+                
+                // Update control panel if available
+                if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
+                    window.swwControlPanel.updateLayers();
                 }
             }
         }
@@ -4141,6 +4151,11 @@
                 }
                 
                 this.selectionUpdateScheduled = false;
+                
+                // Update control panel if available
+                if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
+                    window.swwControlPanel.updateLayers();
+                }
             });
         }
         
@@ -5936,39 +5951,120 @@
         }
         
         toggleLayerSelection(layerId) {
-            if (window.toggleLayerSelection) {
-                window.toggleLayerSelection(layerId);
-                this.updateLayers();
+            if (!this.instance) return;
+            
+            const element = this.instance.elements.find(el => el.id === layerId);
+            if (!element) return;
+            
+            if (this.instance.selectedElements.has(element)) {
+                this.instance.selectedElements.delete(element);
+            } else {
+                this.instance.selectedElements.add(element);
             }
+            
+            this.instance.updateSelectionHandles();
+            this.updateLayers();
         }
         
         toggleLayerVisibility(layerId) {
-            if (window.toggleLayerVisibility) {
-                window.toggleLayerVisibility(layerId);
-                this.updateLayers();
+            if (!this.instance) return;
+            
+            const element = this.instance.elements.find(el => el.id === layerId);
+            if (!element) return;
+            
+            this.instance.saveStateToHistory('visibility');
+            element.visible = element.visible !== false ? false : true;
+            
+            const svgElement = this.instance.svg.querySelector(`[data-element-id="${layerId}"]`);
+            if (svgElement) {
+                svgElement.style.display = element.visible ? 'block' : 'none';
+                svgElement.style.opacity = element.visible ? (element.opacity || 1) : '0.3';
             }
+            
+            this.updateLayers();
         }
         
         toggleLayerLock(layerId) {
-            if (window.toggleLayerLock) {
-                window.toggleLayerLock(layerId);
-                this.updateLayers();
+            if (!this.instance) return;
+            
+            const element = this.instance.elements.find(el => el.id === layerId);
+            if (!element) return;
+            
+            this.instance.saveStateToHistory('lock');
+            element.locked = !element.locked;
+            
+            const svgElement = this.instance.svg.querySelector(`[data-element-id="${layerId}"]`);
+            if (svgElement) {
+                if (element.locked) {
+                    svgElement.classList.add('sww-locked');
+                } else {
+                    svgElement.classList.remove('sww-locked');
+                }
             }
+            
+            if (element.locked && this.instance.selectedElements.has(element)) {
+                this.instance.selectedElements.delete(element);
+                this.instance.updateSelectionHandles();
+            }
+            
+            this.updateLayers();
         }
         
         focusOnLayer(layerId) {
-            if (window.focusOnLayer) {
-                window.focusOnLayer(layerId);
-                this.updateLayers();
-            }
+            if (!this.instance) return;
+            
+            const element = this.instance.elements.find(el => el.id === layerId);
+            if (!element) return;
+
+            // Clear current selection and select this element
+            this.instance.clearSelection();
+            this.instance.selectedElements.add(element);
+            this.instance.updateSelectionHandles();
+
+            // Focus on the element by centering the view on it
+            const bounds = this.instance.getElementBounds(element);
+            const centerX = bounds.x + bounds.width / 2;
+            const centerY = bounds.y + bounds.height / 2;
+
+            // Update view to center on this element
+            this.instance.viewBox.x = centerX - this.instance.viewBox.width / 2;
+            this.instance.viewBox.y = centerY - this.instance.viewBox.height / 2;
+            this.instance.updateViewBox();
+            
+            this.updateLayers();
         }
         
         getLayerIcon(type) {
-            return window.getLayerIcon ? window.getLayerIcon(type) : 'fas fa-square';
+            const icons = {
+                'rectangle': 'far fa-square',
+                'ellipse': 'far fa-circle',
+                'arrow': 'fas fa-arrow-right',
+                'draw': 'fas fa-pen',
+                'text': 'fas fa-font',
+                'website': 'fas fa-globe',
+                'image': 'fas fa-image',
+                'markdown': 'fas fa-file-alt',
+                'diamond': 'far fa-square',
+                'parallelogram': 'far fa-square',
+                'star': 'fas fa-star',
+                'line': 'fas fa-minus'
+            };
+            return icons[type] || 'fas fa-question';
         }
         
         getLayerName(layer) {
-            return window.getLayerName ? window.getLayerName(layer) : `${layer.type} ${layer.id}`;
+            if (layer.text) {
+                return `Text: ${layer.text.substring(0, 20)}${layer.text.length > 20 ? '...' : ''}`;
+            }
+            if (layer.url) {
+                return `Website: ${layer.url.substring(0, 20)}${layer.url.length > 20 ? '...' : ''}`;
+            }
+            if (layer.src) {
+                return `Image: ${layer.src.substring(0, 20)}${layer.src.length > 20 ? '...' : ''}`;
+            }
+            
+            const typeName = layer.type.charAt(0).toUpperCase() + layer.type.slice(1);
+            return `${typeName} ${layer.id.split('-').pop() || ''}`;
         }
     }
 
