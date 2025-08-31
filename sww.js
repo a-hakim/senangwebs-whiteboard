@@ -226,6 +226,16 @@
             
             // Set up performance monitoring
             this.setupPerformanceMonitoring();
+            
+            // Create throttled properties panel update for real-time feedback
+            this.throttledPropertiesPanelUpdate = PerformanceUtils.throttle(() => {
+                this.syncPropertiesPanel();
+            }, 50); // Update every 50ms for smooth real-time feedback
+            
+            // Create throttled real-time property updates for specific properties during manipulation
+            this.throttledRealTimeUpdate = PerformanceUtils.throttle((properties) => {
+                this.updatePropertiesPanelRealTime(properties);
+            }, 16); // ~60fps for very smooth updates
         }
         
         setupViewportObserver() {
@@ -3100,6 +3110,11 @@
             });
             
             this.updateSelectionHandles();
+            
+            // Update properties panel in real-time during resize (only width/height)
+            if (this.throttledRealTimeUpdate) {
+                this.throttledRealTimeUpdate(['width', 'height']);
+            }
         }
         
         adjustTextToFitBounds(element) {
@@ -3192,6 +3207,11 @@
             });
             
             this.updateSelectionHandles();
+            
+            // Update properties panel in real-time during rotation (only rotation)
+            if (this.throttledRealTimeUpdate) {
+                this.throttledRealTimeUpdate(['rotation']);
+            }
         }
         
         finishResize() {
@@ -3378,11 +3398,44 @@
                 }
             }
             
-            // Update text properties visibility based on current selection
-            this.updateTextPropertiesVisibility();
+        // Update text properties visibility based on current selection
+        this.updateTextPropertiesVisibility();
+    }
+    
+    // Real-time update of specific properties during manipulation (resize/rotate)
+    // This is more efficient than full syncPropertiesPanel for live updates
+    updatePropertiesPanelRealTime(properties = []) {
+        if (!this.propertiesPanel || this.selectedElements.size !== 1) return;
+        
+        const firstElement = this.selectedElements.values().next().value;
+        if (!firstElement) return;
+        
+        // Update width if requested or if no specific properties specified
+        if (properties.length === 0 || properties.includes('width')) {
+            const widthInputs = this.propertiesPanel.querySelectorAll('input[type="number"][min="1"]');
+            const widthInput = widthInputs[0]; // First input with min="1" should be width
+            if (widthInput) {
+                widthInput.value = Math.abs(firstElement.width) || 100;
+            }
         }
         
-        deleteSelectedElements() {
+        // Update height if requested or if no specific properties specified
+        if (properties.length === 0 || properties.includes('height')) {
+            const widthInputs = this.propertiesPanel.querySelectorAll('input[type="number"][min="1"]');
+            const heightInput = widthInputs[1]; // Second input with min="1" should be height
+            if (heightInput) {
+                heightInput.value = Math.abs(firstElement.height) || 100;
+            }
+        }
+        
+        // Update rotation if requested or if no specific properties specified
+        if (properties.length === 0 || properties.includes('rotation')) {
+            const rotationInput = this.propertiesPanel.querySelector('input[type="number"][min="-360"][max="360"]');
+            if (rotationInput) {
+                rotationInput.value = Math.round(firstElement.rotation || 0);
+            }
+        }
+    }        deleteSelectedElements() {
             if (this.selectedElements.size === 0) return;
             
             // Filter out locked elements
