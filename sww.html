@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SWW Advanced Demo</title>
+    <title>SenangWebs Whiteboard</title>
     
     <!-- External Dependencies -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -34,14 +34,6 @@
                     <i class="fas fa-layer-group"></i>
                     <span>Layers</span>
                 </button>
-                <!-- <button class="sww-control-menu-button" data-menu="customize">
-                    <i class="fas fa-sliders"></i>
-                    <span>Customize</span>
-                </button>
-                <button class="sww-control-menu-button" data-menu="demo">
-                    <i class="fas fa-flask"></i>
-                    <span>Demo</span>
-                </button> -->
             </div>
 
             <!-- Elements Section -->
@@ -115,46 +107,6 @@
                 </div>
             </div>
 
-            <!-- Demo Section -->
-            <div id="sww-demo-section" class="sww-control-section" style="display: none; padding: 12px;">
-                
-                <!-- Quick Actions -->
-                <div class="sww-section">
-                    <h3><i class="fas fa-palette"></i> Quick Actions</h3>
-                    <button class="sww-action-button" onclick="createSampleDrawing()">
-                        <i class="fas fa-magic"></i> Create Sample
-                    </button>
-                    <button class="sww-action-button" onclick="clearCanvas()">
-                        <i class="fas fa-eraser"></i> Clear Canvas
-                    </button>
-                    <button class="sww-action-button" onclick="selectAllObjects()">
-                        <i class="fas fa-check-double"></i> Select All
-                    </button>
-                    <button class="sww-action-button" onclick="randomizeColors()">
-                        <i class="fas fa-random"></i> Random Colors
-                    </button>
-                </div>
-
-                <!-- History Actions -->
-                <div class="sww-section">
-                    <h3><i class="fas fa-history"></i> Undo/Redo</h3>
-                    <button class="sww-action-button" onclick="undoAction()">
-                        <i class="fas fa-undo"></i> Undo
-                    </button>
-                    <button class="sww-action-button" onclick="redoAction()">
-                        <i class="fas fa-redo"></i> Redo
-                    </button>
-                </div>
-
-                <!-- Scene Info -->
-                <div class="sww-section">
-                    <h3><i class="fas fa-info-circle"></i> Scene Info</h3>
-                    <div id="sww-scene-info" class="sww-info-text">
-                        Loading scene info...
-                    </div>
-                </div>
-
-            </div>
         </div>
 
         <!-- Main Canvas Area -->
@@ -199,7 +151,7 @@
             <!-- <button class="sww-toolbar-button" onclick="exportSVG()" title="Export SVG">
                 <i class="fas fa-download"></i>
             </button> -->
-            <button class="sww-toolbar-button" onclick="toggleGrid()" title="Toggle Grid">
+            <button class="sww-toolbar-button" onclick="swwInstance.toggleGrid()" title="Toggle Grid">
                 <i class="fas fa-border-none"></i>
             </button>
         </div>
@@ -210,7 +162,6 @@
     <script>
         // Global variables
         let swwInstance;
-        let swwDemo;
         let swwControlPanel;
 
         /**
@@ -226,19 +177,10 @@
                 showGrid: true,
             });
 
-            // Initialize demo functions
-            swwDemo = SWWDemo.init(swwInstance);
-
             // Initialize control panel
             swwControlPanel = new SWWControlPanel(swwInstance);
 
-            console.log("SWW Advanced Demo initialized successfully!");
-            
-            // Initial updates
-            updateSceneInfo();
-            
-            // Periodic updates
-            setInterval(updateSceneInfo, 2000);
+            console.log("SenangWebs Whiteboard initialized successfully!");
         });
     </script>
 </body>
