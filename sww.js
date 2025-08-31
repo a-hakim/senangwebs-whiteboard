@@ -887,6 +887,12 @@
                     overflow: hidden;
                     white-space: nowrap;
                     text-overflow: ellipsis;
+                    transition: border-color 0.2s ease, background-color 0.2s ease;
+                }
+                
+                .sww-website-address-bar .sww-website-url:hover {
+                    border-color: #007bff;
+                    background: #f8f9fa;
                 }
                 
                 .sww-website-content {
@@ -914,6 +920,11 @@
                     text-align: center;
                     cursor: pointer;
                     box-sizing: border-box;
+                    transition: background-color 0.2s ease;
+                }
+                
+                .sww-website-placeholder:hover {
+                    background: #e9ecef;
                 }
 
                 .sww-website-placeholder i {
@@ -943,6 +954,11 @@
                     font-family: Arial, sans-serif;
                     text-align: center;
                     cursor: pointer;
+                    transition: background-color 0.2s ease;
+                }
+                
+                .sww-image-placeholder:hover {
+                    background: #e9ecef;
                 }
 
                 .sww-image-placeholder i {
@@ -968,7 +984,21 @@
                     outline: none;
                     box-sizing: border-box;
                     pointer-events: all;
+                    transition: background-color 0.2s ease;
                     /* Background and color are now set dynamically based on element properties */
+                }
+                
+                .sww-markdown-editor[readonly] {
+                    background: rgba(248, 249, 250, 0.5) !important;
+                }
+                
+                .sww-markdown-editor[readonly]:hover {
+                    background: rgba(233, 236, 239, 0.5) !important;
+                }
+                
+                .sww-markdown-editor:not([readonly]) {
+                    background: white !important;
+                    box-shadow: inset 0 0 0 1px rgba(0, 123, 255, 0.25);
                 }
                 
                 .sww-markdown-placeholder {
@@ -2036,11 +2066,26 @@
                 } else if (element.type === 'website') {
                     this.editWebsiteElement(element);
                 } else if (element.type === 'markdown') {
-                    // Focus the textarea for markdown editing
+                    // Enable editing and focus the textarea for markdown editing
                     const textarea = element.svgElement.querySelector('.sww-markdown-editor');
+                    const hint = element.svgElement.querySelector('.sww-markdown-hint');
                     if (textarea) {
+                        textarea.readOnly = false;
+                        textarea.style.cursor = 'text';
                         textarea.focus();
                         textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                        
+                        // Hide the hint when editing
+                        if (hint) hint.style.display = 'none';
+                        
+                        // Add blur handler to make it read-only again when done editing
+                        const handleBlur = () => {
+                            textarea.readOnly = true;
+                            textarea.style.cursor = 'default';
+                            if (hint) hint.style.display = 'block';
+                            textarea.removeEventListener('blur', handleBlur);
+                        };
+                        textarea.addEventListener('blur', handleBlur);
                     }
                 }
             }
@@ -2568,7 +2613,9 @@
                         const urlDisplay = document.createElement('div');
                         urlDisplay.className = 'sww-website-url';
                         urlDisplay.textContent = element.url;
-                        urlDisplay.onclick = () => this.editWebsiteElement(element);
+                        urlDisplay.title = 'Double-click to edit URL';
+                        // Remove single-click handler for better UX
+                        // Users need to double-click to edit
                         
                         // addressBar.appendChild(controls);
                         addressBar.appendChild(urlDisplay);
@@ -2604,8 +2651,9 @@
                         // Apply opacity
                         div.style.opacity = element.opacity;
                         
-                        div.innerHTML = '<i class="fas fa-globe"></i><br>Click to set URL';
-                        div.onclick = () => this.editWebsiteElement(element);
+                        div.innerHTML = '<i class="fas fa-globe"></i><br>Double-click to set URL';
+                        // Remove single-click handler for better UX
+                        // Users need to double-click to edit
                         svg.appendChild(div);
                     }
                     break;
@@ -2662,8 +2710,9 @@
                         // Apply opacity
                         div.style.opacity = element.opacity;
                         
-                        div.innerHTML = '<i class="fas fa-image"></i><br>Click to set image';
-                        div.onclick = () => this.editImageElement(element);
+                        div.innerHTML = '<i class="fas fa-image"></i><br>Double-click to set image';
+                        // Remove single-click handler for consistency with website elements
+                        // Users need to double-click to edit
                         svg.appendChild(div);
                     }
                     break;
@@ -2725,7 +2774,7 @@
                         element.text = lines[0] || 'Markdown Document';
                     });
                     
-                    // Prevent event bubbling to allow proper text editing
+                    // Prevent event bubbling to allow proper text editing only on double-click
                     textarea.addEventListener('mousedown', (e) => {
                         e.stopPropagation();
                     });
@@ -2734,11 +2783,32 @@
                         e.stopPropagation();
                     });
                     
-                    textarea.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        textarea.focus();
-                    });
+                    // Remove single-click handler - require double-click for editing
+                    // textarea.addEventListener('click', (e) => {
+                    //     e.stopPropagation();
+                    //     textarea.focus();
+                    // });
                     
+                    // Make textarea read-only initially to prevent accidental editing
+                    textarea.readOnly = true;
+                    textarea.style.cursor = 'default';
+                    
+                    // Add a subtle overlay hint for double-click
+                    const hint = document.createElement('div');
+                    hint.className = 'sww-markdown-hint';
+                    hint.innerHTML = '<small style="opacity: 0.7;">Double-click to edit</small>';
+                    hint.style.position = 'absolute';
+                    hint.style.top = '8px';
+                    hint.style.right = '8px';
+                    hint.style.background = 'rgba(255, 255, 255, 0.9)';
+                    hint.style.padding = '2px 6px';
+                    hint.style.borderRadius = '3px';
+                    hint.style.fontSize = '10px';
+                    hint.style.color = '#6c757d';
+                    hint.style.pointerEvents = 'none';
+                    hint.style.zIndex = '10';
+                    
+                    div.appendChild(hint);
                     div.appendChild(textarea);
                     svg.appendChild(div);
                     break;
@@ -3620,10 +3690,26 @@
                         this.editImageElement(editableElement);
                         break;
                     case 'markdown':
-                        // For markdown, just focus the textarea
+                        // For markdown, enable editing and focus the textarea
                         const textarea = editableElement.svgElement.querySelector('.sww-markdown-editor');
+                        const hint = editableElement.svgElement.querySelector('.sww-markdown-hint');
                         if (textarea) {
+                            textarea.readOnly = false;
+                            textarea.style.cursor = 'text';
                             textarea.focus();
+                            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                            
+                            // Hide the hint when editing
+                            if (hint) hint.style.display = 'none';
+                            
+                            // Add blur handler to make it read-only again when done editing
+                            const handleBlur = () => {
+                                textarea.readOnly = true;
+                                textarea.style.cursor = 'default';
+                                if (hint) hint.style.display = 'block';
+                                textarea.removeEventListener('blur', handleBlur);
+                            };
+                            textarea.addEventListener('blur', handleBlur);
                         }
                         break;
                 }
