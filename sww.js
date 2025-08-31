@@ -1998,6 +1998,10 @@
             } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
                 e.preventDefault();
                 this.redo();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                // Arrow keys to move selected elements
+                e.preventDefault();
+                this.moveSelectedElements(e.key, e.shiftKey);
             }
         }
         
@@ -3384,6 +3388,64 @@
             this.elements.forEach(element => {
                 this.selectElement(element);
             });
+        }
+        
+        moveSelectedElements(arrowKey, isShiftPressed = false) {
+            if (this.selectedElements.size === 0) return;
+            
+            // Check if any selected elements are locked
+            const hasLockedElements = Array.from(this.selectedElements).some(element => element.locked);
+            if (hasLockedElements) return;
+            
+            // Determine movement distance based on grid snapping
+            let moveDistance;
+            if (this.snapToGrid) {
+                // When grid snapping is on, move by grid units
+                moveDistance = isShiftPressed ? this.options.gridSize * 5 : this.options.gridSize;
+            } else {
+                // When grid snapping is off, move by pixels
+                moveDistance = isShiftPressed ? 10 : 1;
+            }
+            
+            // Determine movement direction
+            let dx = 0, dy = 0;
+            switch (arrowKey) {
+                case 'ArrowUp':
+                    dy = -moveDistance;
+                    break;
+                case 'ArrowDown':
+                    dy = moveDistance;
+                    break;
+                case 'ArrowLeft':
+                    dx = -moveDistance;
+                    break;
+                case 'ArrowRight':
+                    dx = moveDistance;
+                    break;
+                default:
+                    return;
+            }
+            
+            // Save state for undo functionality
+            this.saveStateToHistory('moveElements');
+            
+            // Move all selected elements
+            this.selectedElements.forEach(element => {
+                element.x += dx;
+                element.y += dy;
+                
+                // Update the SVG element
+                this.updateSVGElement(element);
+                
+                // Update spatial index
+                this.updateElementInSpatialIndex(element);
+            });
+            
+            // Update selection handles to reflect new positions
+            this.updateSelectionHandles();
+            
+            // Update properties panel with new position values
+            this.syncPropertiesPanel();
         }
         
         syncPropertiesPanel() {
