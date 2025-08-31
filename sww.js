@@ -831,7 +831,6 @@
                 
                 /* New Element Types Styles */
                 .sww-website-element {
-                    border: 1px solid #dee2e6;
                     overflow: hidden;
                     padding: 0;
                     box-sizing: border-box;
@@ -913,6 +912,8 @@
                     font-size: 14px;
                     font-family: Arial, sans-serif;
                     text-align: center;
+                    cursor: pointer;
+                    box-sizing: border-box;
                 }
 
                 .sww-website-placeholder i {
@@ -2232,6 +2233,10 @@
                 defaultStrokeWidth = 2;  // Shape elements have 2px stroke width
                 defaultFillColor = '#ffffff';  // White fill for shapes
                 defaultFillStyle = 'solid';  // Solid fill for shapes
+            } else if (['website', 'image', 'markdown'].includes(type)) {
+                defaultStrokeWidth = 1;  // Website, image, and markdown elements have 1px default stroke width
+                defaultFillColor = this.toolSettings.fillColor;
+                defaultFillStyle = this.toolSettings.fillStyle;
             } else {
                 defaultStrokeWidth = this.toolSettings.strokeWidth;  // Use tool settings for other elements
                 defaultFillColor = this.toolSettings.fillColor;
@@ -2530,6 +2535,16 @@
                         container.style.width = '100%';
                         container.style.height = '100%';
                         
+                        // Apply stroke properties to the container
+                        if (element.strokeWidth > 0) {
+                            container.style.border = `${element.strokeWidth}px solid ${element.strokeColor}`;
+                        } else {
+                            container.style.border = 'none';
+                        }
+                        
+                        // Apply opacity
+                        container.style.opacity = element.opacity;
+                        
                         // Create address bar
                         const addressBar = document.createElement('div');
                         addressBar.className = 'sww-website-address-bar';
@@ -2578,6 +2593,17 @@
                         div.className = 'sww-website-placeholder';
                         div.style.width = '100%';
                         div.style.height = '100%';
+                        
+                        // Apply stroke properties to the placeholder
+                        if (element.strokeWidth > 0) {
+                            div.style.border = `${element.strokeWidth}px solid ${element.strokeColor}`;
+                        } else {
+                            div.style.border = 'none';
+                        }
+                        
+                        // Apply opacity
+                        div.style.opacity = element.opacity;
+                        
                         div.innerHTML = '<i class="fas fa-globe"></i><br>Click to set URL';
                         div.onclick = () => this.editWebsiteElement(element);
                         svg.appendChild(div);
@@ -4484,6 +4510,9 @@
             const hasImageElements = Array.from(this.selectedElements).some(element => 
                 element.type === 'image'
             );
+            const hasWebsiteElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'website'
+            );
             
             // Show or hide text properties based on selection
             if (hasTextElements || hasMarkdownElements) {
@@ -4514,10 +4543,10 @@
                 textPropertiesSection.style.display = 'none';
             }
             
-            // Handle fill properties visibility for image elements
+            // Handle fill properties visibility for image and website elements
             // Look for fill property groups directly in the main panel
-            if (hasImageElements && !hasTextElements && !hasMarkdownElements) {
-                // For image elements only, hide fill color and fill style properties
+            if ((hasImageElements || hasWebsiteElements) && !hasTextElements && !hasMarkdownElements) {
+                // For image and website elements only, hide fill color and fill style properties
                 const allPropertyGroups = this.propertiesPanel.querySelectorAll('.sww-property-group');
                 
                 allPropertyGroups.forEach(group => {
