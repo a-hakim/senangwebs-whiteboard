@@ -5019,6 +5019,20 @@
                 }
             });
             
+            // Update element tool buttons in the control panel
+            document.querySelectorAll('.sww-action-button').forEach(button => {
+                const onclick = button.getAttribute('onclick');
+                if (onclick && onclick.includes('setTool(')) {
+                    // Extract tool name from onclick attribute like "swwInstance.setTool('rectangle')"
+                    const match = onclick.match(/setTool\(['"](.*?)['"]\)/);
+                    if (match && match[1] === toolName) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                }
+            });
+            
             // Update cursor
             this.svg.style.cursor = toolName === 'select' ? 'default' : 'crosshair';
         }
