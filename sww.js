@@ -831,8 +831,7 @@
                 
                 /* New Element Types Styles */
                 .sww-website-element {
-                    border: 2px solid #007370;
-                    border-radius: 4px;
+                    border: 1px solid #dee2e6;
                     overflow: hidden;
                     padding: 0;
                     box-sizing: border-box;
@@ -843,7 +842,7 @@
                 .sww-website-address-bar {
                     background: #f8f9fa;
                     border-bottom: 1px solid #dee2e6;
-                    padding: 8px 12px;
+                    padding: 6px 12px;
                     font-size: 12px;
                     color: #6c757d;
                     display: flex;
@@ -880,8 +879,8 @@
                 .sww-website-address-bar .sww-website-url {
                     flex: 1;
                     background: white;
-                    border: 1px solid #ced4da;
-                    border-radius: 4px;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
                     padding: 4px 8px;
                     font-size: 11px;
                     color: #495057;
