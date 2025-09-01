@@ -377,6 +377,18 @@
             }
         }
         
+        // Helper method to add SVG element to DOM and handle pending boundary rects
+        addSVGElementToDOM(element) {
+            this.elementsGroup.appendChild(element.svgElement);
+            
+            // Handle pending boundary rect for text elements
+            if (element.pendingBoundaryRect) {
+                this.elementsGroup.insertBefore(element.pendingBoundaryRect, element.svgElement);
+                element.boundaryRect = element.pendingBoundaryRect;
+                delete element.pendingBoundaryRect;
+            }
+        }
+        
         updateElementInSpatialIndex(element) {
             // Remove from old position and add to new position
             this.spatialIndex.remove(element);
@@ -2209,7 +2221,7 @@
             const element = this.createElement(this.currentTool, snappedPoint);
             this.currentElement = element;
             this.isDrawing = true;
-            this.elementsGroup.appendChild(element.svgElement);
+            this.addSVGElementToDOM(element);
         }
         
         handleLineStart(point) {
@@ -2217,7 +2229,7 @@
             const element = this.createElement(this.currentTool, snappedPoint);
             this.currentElement = element;
             this.isDrawing = true;
-            this.elementsGroup.appendChild(element.svgElement);
+            this.addSVGElementToDOM(element);
         }
         
         handleDrawStart(point) {
@@ -2226,7 +2238,7 @@
             element.points = [snappedPoint];
             this.currentElement = element;
             this.isDrawing = true;
-            this.elementsGroup.appendChild(element.svgElement);
+            this.addSVGElementToDOM(element);
         }
         
         handleTextStart(point) {
@@ -2247,7 +2259,7 @@
             this.isDrawing = true;
             
             // Add element to the scene
-            this.elementsGroup.appendChild(element.svgElement);
+            this.addSVGElementToDOM(element);
             this.updateSVGElement(element);
             
             // We'll finish the element on pointer up, which will auto-switch to select tool
@@ -2264,7 +2276,7 @@
             const element = this.createElement('website', snappedPoint);
             
             // Add element to the scene
-            this.elementsGroup.appendChild(element.svgElement);
+            this.addSVGElementToDOM(element);
             this.elements.push(element);
             this.updateSVGElement(element);
             
@@ -2290,7 +2302,7 @@
             const element = this.createElement('image', snappedPoint);
             
             // Add element to the scene
-            this.elementsGroup.appendChild(element.svgElement);
+            this.addSVGElementToDOM(element);
             this.elements.push(element);
             this.updateSVGElement(element);
             
@@ -2316,7 +2328,7 @@
             const element = this.createElement('markdown', snappedPoint);
             
             // Add element to the scene
-            this.elementsGroup.appendChild(element.svgElement);
+            this.addSVGElementToDOM(element);
             this.elements.push(element);
             this.updateSVGElement(element);
             
@@ -2626,9 +2638,14 @@
                         rect.setAttribute('stroke-dasharray', '3,3');
                         rect.setAttribute('class', 'sww-text-boundary');
                         
-                        // Insert the rect before the text
-                        svg.parentNode.insertBefore(rect, svg);
-                        element.boundaryRect = rect;
+                        // Insert the rect before the text (only if svg has a parent)
+                        if (svg.parentNode) {
+                            svg.parentNode.insertBefore(rect, svg);
+                            element.boundaryRect = rect;
+                        } else {
+                            // Store the rect to be inserted later when the element is added to DOM
+                            element.pendingBoundaryRect = rect;
+                        }
                     }
                     break;
                     
@@ -3787,7 +3804,7 @@
                 const svgElement = this.createSVGElement(newElement);
                 newElement.svgElement = svgElement;
                 this.elements.push(newElement);
-                this.elementsGroup.appendChild(svgElement);
+                this.addSVGElementToDOM(newElement);
                 
                 // Select the new element
                 this.selectElement(newElement);
@@ -5210,7 +5227,7 @@
                     const element = { ...elementData };
                     element.svgElement = this.createSVGElement(element);
                     this.elements.push(element);
-                    this.elementsGroup.appendChild(element.svgElement);
+                    this.addSVGElementToDOM(element);
                 });
             }
         }
@@ -5607,7 +5624,7 @@
             this.elements.forEach(element => {
                 const svgElement = this.createSVGElement(element);
                 element.svgElement = svgElement;
-                this.elementsGroup.appendChild(svgElement);
+                this.addSVGElementToDOM(element);
                 
                 // Add to spatial index
                 const bounds = this.getElementBounds(element);
