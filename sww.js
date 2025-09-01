@@ -2172,6 +2172,12 @@
         
         handleDoubleClick(e) {
             e.preventDefault();
+            
+            // Prevent editing in preview mode
+            if (this.isPreviewMode) {
+                return;
+            }
+            
             const point = this.getPointerPosition(e);
             const element = this.getElementAtPoint(point);
             
@@ -3736,6 +3742,11 @@
         
         // Context Menu Methods
         showContextMenu(e) {
+            // Prevent context menu in preview mode
+            if (this.isPreviewMode) {
+                return;
+            }
+            
             const rect = this.container.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -3932,6 +3943,11 @@
         
         // Edit methods for new element types
         editWebsiteElement(element) {
+            // Prevent editing in preview mode
+            if (this.isPreviewMode) {
+                return;
+            }
+            
             this.showConfigDialog('Website', [
                 { label: 'URL:', type: 'text', key: 'url', value: element.url || '', placeholder: 'https://example.com' }
             ], (values) => {
@@ -3941,6 +3957,11 @@
         }
         
         editImageElement(element) {
+            // Prevent editing in preview mode
+            if (this.isPreviewMode) {
+                return;
+            }
+            
             this.showConfigDialog('Image', [
                 { label: 'URL:', type: 'text', key: 'imageUrl', value: element.imageUrl || '', placeholder: 'https://example.com/image.jpg' }
             ], (values) => {
@@ -4850,6 +4871,11 @@
         
         // Text editing
         startTextEditing(element) {
+            // Prevent editing in preview mode
+            if (this.isPreviewMode) {
+                return;
+            }
+            
             // Create an elegant, seamless text editor
             const textEditor = document.createElement('textarea');
             textEditor.className = 'sww-text-editor-elegant';
