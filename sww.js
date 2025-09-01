@@ -175,6 +175,18 @@
             this.viewBox = { x: 0, y: 0, width: 1000, height: 1000 };
             this.zoom = 1;
             
+            // Preview mode state
+            this.isPreviewMode = false;
+            this.isPseudoFullscreen = false;
+            this.isBrowserFrameFullscreen = false;
+            this.previewModeOriginalTool = null;
+            this.previewModeOriginalViewBox = null;
+            this.previewModeOriginalZoom = 1;
+            this.previewOverlay = null;
+            this.previewModeKeyHandler = null;
+            this.fullscreenChangeHandler = null;
+            this.previewModeLockedElements = [];
+            
             // Tool settings
             this.toolSettings = {
                 strokeColor: '#000000',
@@ -1182,6 +1194,22 @@
                     border-color: rgba(0, 255, 153, 0.6) !important;
                     box-shadow: 0 4px 16px rgba(0, 255, 153, 0.1), 0 1px 4px rgba(0, 0, 0, 0.08) !important;
                 }
+                
+                /* Fullscreen styles for preview mode */
+                .sww-container:fullscreen {
+                    background: #000;
+                }
+                
+                .sww-container:fullscreen .sww-canvas {
+                    width: 100vw !important;
+                    height: 100vh !important;
+                }
+                
+                /* Hide UI elements in preview mode */
+                .sww-container.preview-mode .sww-toolbar,
+                .sww-container.preview-mode .sww-properties-panel {
+                    display: none !important;
+                }
             `;
             document.head.appendChild(style);
         }
@@ -1958,10 +1986,15 @@
                 this.showDebugPoint(point);
             }
             
-            if (e.button === 1 || (e.button === 0 && e.altKey)) {
-                // Middle mouse or Alt+click for panning
+            if (e.button === 1 || (e.button === 0 && e.altKey) || this.isPreviewMode) {
+                // Middle mouse, Alt+click, or preview mode - enable panning for better viewing
                 this.isPanning = true;
                 this.svg.style.cursor = 'grabbing';
+                return;
+            }
+            
+            // Disable tool interactions in preview mode
+            if (this.isPreviewMode) {
                 return;
             }
             
@@ -2058,6 +2091,11 @@
             
             // Don't trigger shortcuts when user is editing input fields
             if (isEditingInput) {
+                return;
+            }
+            
+            // In preview mode, only allow ESC to exit (already handled in preview mode)
+            if (this.isPreviewMode) {
                 return;
             }
             
@@ -5476,6 +5514,266 @@
             if (this.spatialIndex) {
                 this.spatialIndex.clear();
             }
+        }
+        
+        // Preview Mode functionality
+        enterPreviewMode() {
+            if (this.isPreviewMode) return;
+            
+            this.isPreviewMode = true;
+            this.previewModeOriginalTool = this.currentTool;
+            
+            // Clear selection and set to select tool
+            this.clearSelection();
+            this.setTool('select');
+            
+            // Store original states
+            this.previewModeOriginalViewBox = { ...this.viewBox };
+            this.previewModeOriginalZoom = this.zoom;
+            
+            // Calculate bounds of all elements to fit canvas optimally
+            this.fitCanvasToElements();
+            
+            // Lock all elements (disable editing)
+            this.lockAllElements();
+            
+            // Add ESC key listener
+            this.previewModeKeyHandler = (e) => {
+                if (e.key === 'Escape') {
+                    this.exitPreviewMode();
+                }
+            };
+            document.addEventListener('keydown', this.previewModeKeyHandler);
+            
+            // Add fullscreen change listener to handle browser ESC
+            this.fullscreenChangeHandler = (e) => {
+                if (e.key === 'Escape' && this.isPreviewMode) {
+                    this.exitPreviewMode();
+                }
+            };
+            document.addEventListener('keydown', this.fullscreenChangeHandler);
+            
+            // Enable browser-frame fullscreen (not native fullscreen)
+            this.enableBrowserFrameFullscreen();
+            
+            // Dispatch preview mode event
+            this.container.dispatchEvent(new CustomEvent('previewModeEntered'));
+            
+            // Update button state
+            this.updatePreviewButtonState();
+        }
+        
+        exitPreviewMode() {
+            if (!this.isPreviewMode) return;
+            
+            console.log('Exiting preview mode...');
+            this.isPreviewMode = false;
+            
+            // Disable browser-frame fullscreen
+            this.disableBrowserFrameFullscreen();
+            
+            // Remove ESC key listener
+            if (this.previewModeKeyHandler) {
+                document.removeEventListener('keydown', this.previewModeKeyHandler);
+                this.previewModeKeyHandler = null;
+            }
+            
+            // Remove fullscreen change listeners
+            if (this.fullscreenChangeHandler) {
+                document.removeEventListener('keydown', this.fullscreenChangeHandler);
+                this.fullscreenChangeHandler = null;
+            }
+            
+            // Restore original tool
+            if (this.previewModeOriginalTool) {
+                this.setTool(this.previewModeOriginalTool);
+            }
+            
+            // Restore original view
+            if (this.previewModeOriginalViewBox) {
+                this.viewBox = { ...this.previewModeOriginalViewBox };
+                this.zoom = this.previewModeOriginalZoom;
+                this.updateViewBox();
+            }
+            
+            // Unlock all elements
+            this.unlockAllElements();
+            
+            // Force a redraw to ensure UI is restored
+            setTimeout(() => {
+                console.log('Preview mode exit complete');
+                // Additional cleanup for browser-frame fullscreen
+                if (this.isBrowserFrameFullscreen) {
+                    this.disableBrowserFrameFullscreen();
+                }
+                
+                // Reset container styles if needed
+                this.container.style.position = '';
+                this.container.style.top = '';
+                this.container.style.left = '';
+                this.container.style.width = '';
+                this.container.style.height = '';
+                this.container.style.zIndex = '';
+                this.container.style.background = '';
+            }, 100);
+            
+            // Dispatch preview mode event
+            this.container.dispatchEvent(new CustomEvent('previewModeExited'));
+            
+            // Update button state
+            this.updatePreviewButtonState();
+        }
+        
+        fitCanvasToElements() {
+            if (this.elements.length === 0) return;
+            
+            // Calculate bounds of all elements
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            this.elements.forEach(element => {
+                const bounds = this.getElementBounds(element);
+                minX = Math.min(minX, bounds.x);
+                minY = Math.min(minY, bounds.y);
+                maxX = Math.max(maxX, bounds.x + bounds.width);
+                maxY = Math.max(maxY, bounds.y + bounds.height);
+            });
+            
+            // Add padding
+            const padding = 50;
+            minX -= padding;
+            minY -= padding;
+            maxX += padding;
+            maxY += padding;
+            
+            // Calculate aspect ratio and fit to container
+            const containerRect = this.container.getBoundingClientRect();
+            const contentWidth = maxX - minX;
+            const contentHeight = maxY - minY;
+            const containerAspect = containerRect.width / containerRect.height;
+            const contentAspect = contentWidth / contentHeight;
+            
+            if (contentAspect > containerAspect) {
+                // Content is wider, fit to width
+                this.viewBox.width = contentWidth;
+                this.viewBox.height = contentWidth / containerAspect;
+                this.viewBox.x = minX;
+                this.viewBox.y = minY - (this.viewBox.height - contentHeight) / 2;
+            } else {
+                // Content is taller, fit to height
+                this.viewBox.height = contentHeight;
+                this.viewBox.width = contentHeight * containerAspect;
+                this.viewBox.x = minX - (this.viewBox.width - contentWidth) / 2;
+                this.viewBox.y = minY;
+            }
+            
+            this.updateViewBox();
+        }
+        
+        lockAllElements() {
+            this.previewModeLockedElements = [];
+            this.elements.forEach(element => {
+                if (!element.locked) {
+                    element.locked = true;
+                    this.previewModeLockedElements.push(element.id);
+                }
+            });
+        }
+        
+        enablePseudoFullscreen() {
+            // Add pseudo-fullscreen class to body for styling
+            document.body.classList.add('sww-pseudo-fullscreen');
+            this.isPseudoFullscreen = true;
+        }
+        
+        disablePseudoFullscreen() {
+            document.body.classList.remove('sww-pseudo-fullscreen');
+            this.isPseudoFullscreen = false;
+            
+            // Force style reset on body
+            document.body.style.background = '';
+            document.body.style.overflow = '';
+            
+            // Reset any styles on the editor container
+            const editorContainer = document.querySelector('.sww-editor-container');
+            if (editorContainer) {
+                editorContainer.style.position = '';
+                editorContainer.style.top = '';
+                editorContainer.style.left = '';
+                editorContainer.style.width = '';
+                editorContainer.style.height = '';
+                editorContainer.style.zIndex = '';
+                editorContainer.style.background = '';
+            }
+        }
+        
+        enableBrowserFrameFullscreen() {
+            // Add browser-frame fullscreen class to body for styling
+            document.body.classList.add('sww-browser-fullscreen');
+            this.isBrowserFrameFullscreen = true;
+        }
+        
+        disableBrowserFrameFullscreen() {
+            document.body.classList.remove('sww-browser-fullscreen');
+            this.isBrowserFrameFullscreen = false;
+            
+            // Force style reset on body
+            document.body.style.background = '';
+            document.body.style.overflow = '';
+            
+            // Reset any styles on the editor container
+            const editorContainer = document.querySelector('.sww-editor-container');
+            if (editorContainer) {
+                editorContainer.style.position = '';
+                editorContainer.style.top = '';
+                editorContainer.style.left = '';
+                editorContainer.style.width = '';
+                editorContainer.style.height = '';
+                editorContainer.style.zIndex = '';
+                editorContainer.style.background = '';
+            }
+        }
+        
+        unlockAllElements() {
+            if (this.previewModeLockedElements) {
+                this.elements.forEach(element => {
+                    if (this.previewModeLockedElements.includes(element.id)) {
+                        element.locked = false;
+                    }
+                });
+                this.previewModeLockedElements = [];
+            }
+        }
+        
+        // Toggle preview mode
+        togglePreviewMode() {
+            if (this.isPreviewMode) {
+                this.exitPreviewMode();
+            } else {
+                this.enterPreviewMode();
+            }
+            this.updatePreviewButtonState();
+        }
+        
+        updatePreviewButtonState() {
+            // Find the preview button and update its active state
+            const previewButtons = document.querySelectorAll('button[onclick*="togglePreviewMode"]');
+            previewButtons.forEach(button => {
+                if (this.isPreviewMode) {
+                    button.classList.add('active');
+                    button.title = 'Exit Preview Mode';
+                    const icon = button.querySelector('i');
+                    if (icon) {
+                        icon.className = 'fas fa-times';
+                    }
+                } else {
+                    button.classList.remove('active');
+                    button.title = 'Preview Mode';
+                    const icon = button.querySelector('i');
+                    if (icon) {
+                        icon.className = 'far fa-window-maximize';
+                    }
+                }
+            });
         }
         
         // Undo/Redo History Management

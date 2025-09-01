@@ -383,3 +383,65 @@ html {
 .sww-scene-item:last-child {
   border-bottom: none;
 }
+
+/* Preview Mode Styles - Browser Frame Fullscreen */
+body.sww-browser-fullscreen .sww-control-panel,
+body.sww-browser-fullscreen .sww-toolbar-container {
+  display: none !important;
+}
+
+body.sww-browser-fullscreen .sww-editor-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9998 !important;
+  background: #000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body.sww-browser-fullscreen .sww-canvas-area {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Ensure body background is black in browser-frame fullscreen */
+body.sww-browser-fullscreen {
+  background: #000 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Legacy fallback styles for pseudo-fullscreen */
+body:fullscreen .sww-control-panel,
+body:fullscreen .sww-toolbar-container,
+body.sww-pseudo-fullscreen .sww-control-panel,
+body.sww-pseudo-fullscreen .sww-toolbar-container {
+  display: none !important;
+}
+
+body:fullscreen .sww-editor-container,
+body.sww-pseudo-fullscreen .sww-editor-container {
+  height: 100vh !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  z-index: 9998 !important;
+  background: #000 !important;
+}
+
+body:fullscreen .sww-canvas-area,
+body.sww-pseudo-fullscreen .sww-canvas-area {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Ensure body background is black in pseudo-fullscreen */
+body.sww-pseudo-fullscreen {
+  background: #000 !important;
+  overflow: hidden !important;
+}
