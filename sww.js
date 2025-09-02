@@ -5509,7 +5509,7 @@
         
         updateGridButtonState() {
             // Find the toggle grid button and update its active state
-            const gridButton = document.querySelector('button[onclick="toggleGrid()"]');
+            const gridButton = document.querySelector('#toggle-grid-btn');
             if (gridButton) {
                 if (this.options.showGrid) {
                     gridButton.classList.add('active');

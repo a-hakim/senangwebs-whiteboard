@@ -127,32 +127,32 @@
         
         <!-- Zoom Controls -->
         <div id="sww-zoom" class="sww-toolbar-action">
-            <button class="sww-toolbar-button" onclick="swwInstance.zoomIn()" title="Zoom In">
+            <button class="sww-toolbar-button" onclick="swwInstance.zoomIn()" title="Zoom In" id="zoom-in-btn">
                 <i class="fas fa-search-plus"></i>
             </button>
-            <button class="sww-toolbar-button" onclick="swwInstance.zoomOut()" title="Zoom Out">
+            <button class="sww-toolbar-button" onclick="swwInstance.zoomOut()" title="Zoom Out" id="zoom-out-btn">
                 <i class="fas fa-search-minus"></i>
             </button>
         </div>
         
         <!-- Action Controls -->
         <div id="sww-action" class="sww-toolbar-action">
-            <button class="sww-toolbar-button" onclick="swwInstance.undo()" title="Undo">
+            <button class="sww-toolbar-button" onclick="swwInstance.undo()" title="Undo" id="undo-btn">
                 <i class="fas fa-undo"></i>
             </button>
-            <button class="sww-toolbar-button" onclick="swwInstance.redo()" title="Redo">
+            <button class="sww-toolbar-button" onclick="swwInstance.redo()" title="Redo" id="redo-btn">
                 <i class="fas fa-redo"></i>
             </button>
             <!-- <button class="sww-toolbar-button" title="Save">
                 <i class="fas fa-save"></i>
             </button> -->
-            <button class="sww-toolbar-button" onclick="swwInstance.togglePreviewMode()" title="Preview">
+            <button class="sww-toolbar-button" onclick="swwInstance.togglePreviewMode()" title="Preview" id="toggle-preview-btn">
                 <i class="far fa-window-maximize"></i>
             </button>
-            <button class="sww-toolbar-button" onclick="swwInstance.selectAll()" title="Select All">
+            <button class="sww-toolbar-button" onclick="swwInstance.selectAll()" title="Select All" id="select-all-btn">
                 <i class="fas fa-check-double"></i>
             </button>
-            <button class="sww-toolbar-button" onclick="swwInstance.clearAll()" title="Clear Canvas">
+            <button class="sww-toolbar-button" onclick="swwInstance.clearAll()" title="Clear Canvas" id="clear-canvas-btn">
                 <i class="fas fa-eraser"></i>
             </button>
         </div>
@@ -162,7 +162,7 @@
             <!-- <button class="sww-toolbar-button" onclick="exportSVG()" title="Export SVG">
                 <i class="fas fa-download"></i>
             </button> -->
-            <button class="sww-toolbar-button" onclick="swwInstance.toggleGrid()" title="Toggle Grid">
+            <button class="sww-toolbar-button" onclick="swwInstance.toggleGrid()" title="Toggle Grid" id="toggle-grid-btn">
                 <i class="fas fa-border-none"></i>
             </button>
         </div>
