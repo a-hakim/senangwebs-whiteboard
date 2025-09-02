@@ -21,7 +21,15 @@
             
             <!-- Panel Header -->
             <div class="sww-control-header">
-                SW Whiteboard
+                <div><h4>SW Whiteboard</h4></div>
+                <div class="sww-control-header-actions">
+                    <button class="sww-toolbar-button" onclick="togglePanelWidth()" title="Expand Panel Width" id="toggle-width-btn">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button class="sww-toolbar-button active" onclick="togglePanelDock()" title="Dock Panel" id="toggle-dock-btn">
+                        <i class="fas fa-bookmark"></i>
+                    </button>
+                </div>
             </div>
             
             <!-- Menu Navigation -->
@@ -226,6 +234,38 @@
                     }
                 });
             });
+        }
+
+        /**
+         * Toggle panel width between normal and expanded
+         */
+        function togglePanelWidth() {
+            const controlPanel = document.getElementById('sww-control-panel');
+            controlPanel.classList.toggle('expanded');
+            const toggleWidthBtn = document.getElementById('toggle-width-btn');
+            if (controlPanel.classList.contains('expanded')) {
+                toggleWidthBtn.title = "Collapse Panel Width";
+                toggleWidthBtn.classList.add('active');
+            } else {
+                toggleWidthBtn.title = "Expand Panel Width";
+                toggleWidthBtn.classList.remove('active');
+            }
+        }
+
+        /**
+         * Toggle panel docking between docked and undocked
+         */
+        function togglePanelDock() {
+            const controlPanel = document.getElementById('sww-control-panel');
+            controlPanel.classList.toggle('undocked');
+            const toggleDockBtn = document.getElementById('toggle-dock-btn');
+            if (controlPanel.classList.contains('undocked')) {
+                toggleDockBtn.title = "Dock Panel";
+                toggleDockBtn.classList.remove('active');
+            } else {
+                toggleDockBtn.title = "Undock Panel";
+                toggleDockBtn.classList.add('active');
+            }
         }
     </script>
 </body>

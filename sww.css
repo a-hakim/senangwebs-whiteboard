@@ -64,11 +64,25 @@ html {
   min-width: 20rem;
   max-width: 20rem;
   background: #18181b;
-  border-right: 1px solid #e0e0e0;
   overflow-y: auto;
   z-index: 1000;
   display: flex;
   flex-direction: column;
+}
+
+.sww-control-panel.expanded {
+  min-width: 36rem;
+  max-width: 36rem;
+}
+
+.sww-control-panel.undocked {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 1rem;
+  z-index: 1001;
+  height: calc(100vh - 64px);
+  margin: 0.5rem;
 }
 
 .sww-control-header {
@@ -76,7 +90,16 @@ html {
   display: flex;
   color: #ffffff80;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+}
+
+.sww-control-header-actions {
+  display: flex;
+}
+
+.sww-control-panel h4 {
+  margin: 0 0 0 12px;
+  font-size: 14px;
 }
 
 .sww-control-section {
