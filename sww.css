@@ -169,8 +169,23 @@ html {
   justify-content: center;
 }
 
+.sww-panel-button {
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  cursor: pointer;
+  font-size: 14px;
+  height: 40px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .sww-toolbar-button.active,
-.sww-toolbar-button:hover {
+.sww-toolbar-button:hover,
+.sww-panel-button.active,
+.sww-panel-button:hover {
   color: #00FF99;
   background: #09090B;
 }
