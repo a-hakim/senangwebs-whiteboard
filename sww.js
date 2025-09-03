@@ -637,6 +637,33 @@
                     border-color: #404040;
                 }
                 
+                .sww-hex-input {
+                    width: 80px;
+                    padding: 5px 8px;
+                    border-radius: 8px;
+                    font-size: 12px;
+                    height: 32px;
+                    background: #09090B;
+                    color: white;
+                    border: 1px solid #262626;
+                    box-sizing: border-box;
+                    text-align: center;
+                }
+                
+                .sww-hex-input:focus {
+                    outline: none;
+                    border-color: #00FF99;
+                    box-shadow: 0 0 0 1px #00FF99;
+                }
+                
+                .sww-hex-input:hover {
+                    border-color: #404040;
+                }
+                
+                .sww-hex-input::placeholder {
+                    color: #666;
+                }
+                
                 .sww-property-unit {
                     margin-left: 8px;
                     font-size: 11px;
@@ -1429,14 +1456,55 @@
             strokeInput.type = 'color';
             strokeInput.className = 'sww-color-input';
             strokeInput.value = this.toolSettings.strokeColor;
+            
+            const strokeHexInput = document.createElement('input');
+            strokeHexInput.type = 'text';
+            strokeHexInput.className = 'sww-hex-input';
+            strokeHexInput.placeholder = '#000000';
+            strokeHexInput.value = this.toolSettings.strokeColor;
+            strokeHexInput.maxLength = 7;
+            
+            const updateStrokeColor = (value) => {
+                // Validate hex color
+                if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    this.toolSettings.strokeColor = value;
+                    strokeInput.value = value;
+                    strokeHexInput.value = value;
+                    this.updateSelectedElementProperty('strokeColor', value);
+                }
+            };
+            
             strokeInput.addEventListener('change', (e) => {
-                this.toolSettings.strokeColor = e.target.value;
-                // Update only strokeColor property for selected elements
-                this.updateSelectedElementProperty('strokeColor', e.target.value);
+                updateStrokeColor(e.target.value);
+            });
+            strokeInput.addEventListener('input', (e) => {
+                updateStrokeColor(e.target.value);
             });
             
+            strokeHexInput.addEventListener('change', (e) => {
+                let value = e.target.value.trim();
+                if (!value.startsWith('#')) {
+                    value = '#' + value;
+                }
+                updateStrokeColor(value);
+            });
+            strokeHexInput.addEventListener('input', (e) => {
+                let value = e.target.value.trim();
+                if (!value.startsWith('#')) {
+                    value = '#' + value;
+                }
+                if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    updateStrokeColor(value);
+                }
+            });
+            
+            const strokeInputGroup = document.createElement('div');
+            strokeInputGroup.className = 'sww-property-input-group';
+            strokeInputGroup.appendChild(strokeInput);
+            strokeInputGroup.appendChild(strokeHexInput);
+            
             strokeGroup.appendChild(strokeLabel);
-            strokeGroup.appendChild(strokeInput);
+            strokeGroup.appendChild(strokeInputGroup);
             
             // Stroke width
             const widthGroup = document.createElement('div');
@@ -1490,14 +1558,55 @@
             fillInput.type = 'color';
             fillInput.className = 'sww-color-input';
             fillInput.value = this.toolSettings.fillColor === 'transparent' ? '#ffffff' : this.toolSettings.fillColor;
+            
+            const fillHexInput = document.createElement('input');
+            fillHexInput.type = 'text';
+            fillHexInput.className = 'sww-hex-input';
+            fillHexInput.placeholder = '#ffffff';
+            fillHexInput.value = this.toolSettings.fillColor === 'transparent' ? '#ffffff' : this.toolSettings.fillColor;
+            fillHexInput.maxLength = 7;
+            
+            const updateFillColor = (value) => {
+                // Validate hex color
+                if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    this.toolSettings.fillColor = value;
+                    fillInput.value = value;
+                    fillHexInput.value = value;
+                    this.updateSelectedElementProperty('fillColor', value);
+                }
+            };
+            
             fillInput.addEventListener('change', (e) => {
-                this.toolSettings.fillColor = e.target.value;
-                // Update only fillColor property for selected elements
-                this.updateSelectedElementProperty('fillColor', e.target.value);
+                updateFillColor(e.target.value);
+            });
+            fillInput.addEventListener('input', (e) => {
+                updateFillColor(e.target.value);
             });
             
+            fillHexInput.addEventListener('change', (e) => {
+                let value = e.target.value.trim();
+                if (!value.startsWith('#')) {
+                    value = '#' + value;
+                }
+                updateFillColor(value);
+            });
+            fillHexInput.addEventListener('input', (e) => {
+                let value = e.target.value.trim();
+                if (!value.startsWith('#')) {
+                    value = '#' + value;
+                }
+                if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    updateFillColor(value);
+                }
+            });
+            
+            const fillInputGroup = document.createElement('div');
+            fillInputGroup.className = 'sww-property-input-group';
+            fillInputGroup.appendChild(fillInput);
+            fillInputGroup.appendChild(fillHexInput);
+            
             fillGroup.appendChild(fillLabel);
-            fillGroup.appendChild(fillInput);
+            fillGroup.appendChild(fillInputGroup);
             
             // Fill style
             const fillStyleGroup = document.createElement('div');
@@ -3498,7 +3607,28 @@
             this.syncPropertiesPanel();
         }
         
+        commitPropertiesPanelChanges() {
+            if (!this.propertiesPanel) return;
+            
+            // Force any focused input to trigger its change event
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.closest('.sww-properties-panel')) {
+                // If an input in the properties panel is active, blur it to trigger change event
+                activeElement.blur();
+                // Give a brief moment for the change event to process
+                setTimeout(() => {
+                    // Re-focus the canvas or appropriate element if needed
+                    if (this.svg) {
+                        this.svg.focus();
+                    }
+                }, 10);
+            }
+        }
+        
         clearSelection() {
+            // Commit any pending changes in properties panel before clearing selection
+            this.commitPropertiesPanelChanges();
+            
             this.selectedElements.forEach(element => {
                 const currentClass = element.svgElement.getAttribute('class') || '';
                 element.svgElement.setAttribute('class', currentClass.replace('selected', '').trim());
@@ -3582,6 +3712,39 @@
             
             if (this.selectedElements.size === 0 || hasMultipleSelection || hasGroupedSelection) {
                 this.propertiesPanel.classList.remove('visible');
+                
+                // When no selection, ensure properties panel shows current tool settings
+                if (this.selectedElements.size === 0) {
+                    // Update stroke color input to current tool setting
+                    const strokeInput = this.propertiesPanel.querySelector('input[type="color"]');
+                    if (strokeInput && strokeInput.value !== this.toolSettings.strokeColor) {
+                        strokeInput.value = this.toolSettings.strokeColor;
+                    }
+                    
+                    // Update stroke hex input
+                    const strokeHexInput = this.propertiesPanel.querySelector('.sww-hex-input');
+                    if (strokeHexInput && strokeHexInput.value !== this.toolSettings.strokeColor) {
+                        strokeHexInput.value = this.toolSettings.strokeColor;
+                    }
+                    
+                    // Update fill color input to current tool setting
+                    const fillInputs = this.propertiesPanel.querySelectorAll('input[type="color"]');
+                    if (fillInputs[1] && this.toolSettings.fillColor !== 'transparent') {
+                        const expectedFillValue = this.toolSettings.fillColor;
+                        if (fillInputs[1].value !== expectedFillValue) {
+                            fillInputs[1].value = expectedFillValue;
+                        }
+                    }
+                    
+                    // Update fill hex input
+                    const fillHexInputs = this.propertiesPanel.querySelectorAll('.sww-hex-input');
+                    if (fillHexInputs[1] && this.toolSettings.fillColor !== 'transparent') {
+                        const expectedFillValue = this.toolSettings.fillColor;
+                        if (fillHexInputs[1].value !== expectedFillValue) {
+                            fillHexInputs[1].value = expectedFillValue;
+                        }
+                    }
+                }
                 return;
             }
             
@@ -3598,6 +3761,12 @@
                     strokeInput.value = firstElement.strokeColor || '#000000';
                 }
                 
+                // Update stroke hex input
+                const strokeHexInput = this.propertiesPanel.querySelector('.sww-hex-input');
+                if (strokeHexInput) {
+                    strokeHexInput.value = firstElement.strokeColor || '#000000';
+                }
+                
                 // Update stroke width input (number input)
                 const strokeWidthInput = this.propertiesPanel.querySelector('input[type="number"][min="0"][max="20"]');
                 if (strokeWidthInput) {
@@ -3608,6 +3777,12 @@
                 const fillInputs = this.propertiesPanel.querySelectorAll('input[type="color"]');
                 if (fillInputs[1]) {
                     fillInputs[1].value = firstElement.fillColor === 'transparent' ? '#ffffff' : (firstElement.fillColor || '#ffffff');
+                }
+                
+                // Update fill hex input
+                const fillHexInputs = this.propertiesPanel.querySelectorAll('.sww-hex-input');
+                if (fillHexInputs[1]) {
+                    fillHexInputs[1].value = firstElement.fillColor === 'transparent' ? '#ffffff' : (firstElement.fillColor || '#ffffff');
                 }
                 
                 // Update fill style select
