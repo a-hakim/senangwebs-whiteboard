@@ -2740,23 +2740,17 @@
                     break;
                     
                 case 'parallelogram':
-                    // Handle negative dimensions for northwest direction
-                    const paraX = element.width < 0 ? element.x + element.width : element.x;
-                    const paraY = element.height < 0 ? element.y + element.height : element.y;
-                    const paraW = Math.abs(element.width);
-                    const paraH = Math.abs(element.height);
-                    const skew = paraW * 0.2; // 20% skew
-                    const parallelogramPoints = `${paraX + skew},${paraY} ${paraX + paraW},${paraY} ${paraX + paraW - skew},${paraY + paraH} ${paraX},${paraY + paraH}`;
+                    // Since elements are normalized to positive dimensions after creation,
+                    // we can use the element properties directly
+                    const skew = element.width * 0.2; // 20% skew
+                    const parallelogramPoints = `${element.x + skew},${element.y} ${element.x + element.width},${element.y} ${element.x + element.width - skew},${element.y + element.height} ${element.x},${element.y + element.height}`;
                     svg.setAttribute('points', parallelogramPoints);
                     break;
                     
                 case 'star':
-                    // Handle negative dimensions for northwest direction
-                    const starX = element.width < 0 ? element.x + element.width : element.x;
-                    const starY = element.height < 0 ? element.y + element.height : element.y;
-                    const starW = Math.abs(element.width);
-                    const starH = Math.abs(element.height);
-                    const starPoints = this.createStarPoints(starX, starY, starW, starH);
+                    // Since elements are normalized to positive dimensions after creation,
+                    // we can use the element properties directly
+                    const starPoints = this.createStarPoints(element.x, element.y, element.width, element.height);
                     svg.setAttribute('points', starPoints);
                     break;
                     
@@ -3355,6 +3349,25 @@
                 }));
             }
             
+            // Normalize elements to always have positive dimensions for consistent resize behavior
+            // Convert negative dimensions to positive while adjusting position accordingly
+            if (this.currentElement.type !== 'line' && this.currentElement.type !== 'arrow' && this.currentElement.type !== 'path') {
+                if (this.currentElement.width < 0) {
+                    // Negative width: move x position and make width positive
+                    this.currentElement.x += this.currentElement.width;
+                    this.currentElement.width = -this.currentElement.width;
+                }
+                
+                if (this.currentElement.height < 0) {
+                    // Negative height: move y position and make height positive
+                    this.currentElement.y += this.currentElement.height;
+                    this.currentElement.height = -this.currentElement.height;
+                }
+                
+                // Update the SVG element with normalized dimensions
+                this.updateSVGElement(this.currentElement);
+            }
+            
             // Add to elements array with spatial index update
             this.addElement(this.currentElement);
             
@@ -3508,6 +3521,7 @@
                     }
                 } else {
                     // Standard resize for rectangles, ellipses, diamonds, etc.
+                    // Always use southeast direction logic for consistent UI/UX regardless of original creation direction
                     switch (this.resizeHandle) {
                         case 'se': // Southeast handle
                             newWidth = startWidth + dx;
@@ -3563,22 +3577,41 @@
                     }
                 } else {
                     // Standard minimum size constraints for other shapes
-                    // Handle width constraints
-                    if (newWidth < minSize) {
+                    // For shapes, we need to ensure minimum absolute size while preserving direction
+                    const minSize = 10;
+                    const currentAbsWidth = Math.abs(newWidth);
+                    const currentAbsHeight = Math.abs(newHeight);
+                    
+                    // Handle width constraints - only apply if absolute width is too small
+                    if (currentAbsWidth < minSize) {
+                        // Preserve the sign (direction) but enforce minimum absolute size
+                        const direction = newWidth >= 0 ? 1 : -1;
+                        newWidth = minSize * direction;
+                        
                         if (this.resizeHandle.includes('w')) {
                             // West handles: adjust X position to maintain right edge
-                            newX = startX + startWidth - minSize;
+                            if (direction > 0) {
+                                newX = startX + startWidth - minSize;
+                            } else {
+                                newX = startX + startWidth + minSize;
+                            }
                         }
-                        newWidth = minSize;
                     }
                     
-                    // Handle height constraints
-                    if (newHeight < minSize) {
+                    // Handle height constraints - only apply if absolute height is too small
+                    if (currentAbsHeight < minSize) {
+                        // Preserve the sign (direction) but enforce minimum absolute size
+                        const direction = newHeight >= 0 ? 1 : -1;
+                        newHeight = minSize * direction;
+                        
                         if (this.resizeHandle.includes('n')) {
                             // North handles: adjust Y position to maintain bottom edge
-                            newY = startY + startHeight - minSize;
+                            if (direction > 0) {
+                                newY = startY + startHeight - minSize;
+                            } else {
+                                newY = startY + startHeight + minSize;
+                            }
                         }
-                        newHeight = minSize;
                     }
                 }
                 
@@ -3715,6 +3748,30 @@
             
             // Save state after the resize operation is complete
             this.saveStateToHistory('resizeElements');
+            
+            // Normalize all resized elements to southeast direction for consistent behavior
+            this.selectedElements.forEach(element => {
+                // Only normalize shape elements (not lines, arrows, or paths)
+                if (element.type !== 'line' && element.type !== 'arrow' && element.type !== 'path') {
+                    if (element.width < 0) {
+                        // Negative width: move x position and make width positive
+                        element.x += element.width;
+                        element.width = -element.width;
+                    }
+                    
+                    if (element.height < 0) {
+                        // Negative height: move y position and make height positive
+                        element.y += element.height;
+                        element.height = -element.height;
+                    }
+                    
+                    // Update the SVG element with normalized dimensions
+                    this.updateSVGElement(element);
+                }
+            });
+            
+            // Update selection handles after normalization
+            this.updateSelectionHandles();
             
             // Clean up resize state
             this.selectedElements.forEach(element => {
