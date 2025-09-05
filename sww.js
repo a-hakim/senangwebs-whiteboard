@@ -2710,44 +2710,53 @@
             // Type-specific attributes
             switch (element.type) {
                 case 'rectangle':
-                    svg.setAttribute('x', element.x);
-                    svg.setAttribute('y', element.y);
+                    // Handle negative dimensions for northwest direction
+                    const rectX = element.width < 0 ? element.x + element.width : element.x;
+                    const rectY = element.height < 0 ? element.y + element.height : element.y;
+                    svg.setAttribute('x', rectX);
+                    svg.setAttribute('y', rectY);
                     svg.setAttribute('width', Math.abs(element.width));
                     svg.setAttribute('height', Math.abs(element.height));
                     break;
                     
                 case 'ellipse':
-                    svg.setAttribute('cx', element.x + element.width / 2);
-                    svg.setAttribute('cy', element.y + element.height / 2);
+                    // Handle negative dimensions for northwest direction
+                    const ellipseCx = element.x + element.width / 2;
+                    const ellipseCy = element.y + element.height / 2;
+                    svg.setAttribute('cx', ellipseCx);
+                    svg.setAttribute('cy', ellipseCy);
                     svg.setAttribute('rx', Math.abs(element.width) / 2);
                     svg.setAttribute('ry', Math.abs(element.height) / 2);
                     break;
                     
                 case 'diamond':
-                    const cx = element.x + element.width / 2;
-                    const cy = element.y + element.height / 2;
-                    const w = Math.abs(element.width) / 2;
-                    const h = Math.abs(element.height) / 2;
-                    const points = `${cx},${cy - h} ${cx + w},${cy} ${cx},${cy + h} ${cx - w},${cy}`;
-                    svg.setAttribute('points', points);
+                    // Handle negative dimensions for northwest direction
+                    const diamondCx = element.x + element.width / 2;
+                    const diamondCy = element.y + element.height / 2;
+                    const diamondW = Math.abs(element.width) / 2;
+                    const diamondH = Math.abs(element.height) / 2;
+                    const diamondPoints = `${diamondCx},${diamondCy - diamondH} ${diamondCx + diamondW},${diamondCy} ${diamondCx},${diamondCy + diamondH} ${diamondCx - diamondW},${diamondCy}`;
+                    svg.setAttribute('points', diamondPoints);
                     break;
                     
                 case 'parallelogram':
-                    const px = element.x;
-                    const py = element.y;
-                    const pw = Math.abs(element.width);
-                    const ph = Math.abs(element.height);
-                    const skew = pw * 0.2; // 20% skew
-                    const parallelogramPoints = `${px + skew},${py} ${px + pw},${py} ${px + pw - skew},${py + ph} ${px},${py + ph}`;
+                    // Handle negative dimensions for northwest direction
+                    const paraX = element.width < 0 ? element.x + element.width : element.x;
+                    const paraY = element.height < 0 ? element.y + element.height : element.y;
+                    const paraW = Math.abs(element.width);
+                    const paraH = Math.abs(element.height);
+                    const skew = paraW * 0.2; // 20% skew
+                    const parallelogramPoints = `${paraX + skew},${paraY} ${paraX + paraW},${paraY} ${paraX + paraW - skew},${paraY + paraH} ${paraX},${paraY + paraH}`;
                     svg.setAttribute('points', parallelogramPoints);
                     break;
                     
                 case 'star':
-                    const sx = element.x;
-                    const sy = element.y;
-                    const sw = Math.abs(element.width);
-                    const sh = Math.abs(element.height);
-                    const starPoints = this.createStarPoints(sx, sy, sw, sh);
+                    // Handle negative dimensions for northwest direction
+                    const starX = element.width < 0 ? element.x + element.width : element.x;
+                    const starY = element.height < 0 ? element.y + element.height : element.y;
+                    const starW = Math.abs(element.width);
+                    const starH = Math.abs(element.height);
+                    const starPoints = this.createStarPoints(starX, starY, starW, starH);
                     svg.setAttribute('points', starPoints);
                     break;
                     
@@ -3127,8 +3136,19 @@
             
             // Apply rotation
             if (element.rotation !== 0) {
-                const centerX = element.x + element.width / 2;
-                const centerY = element.y + element.height / 2;
+                // Calculate center point correctly for negative dimensions
+                let centerX, centerY;
+                if (element.type === 'line' || element.type === 'arrow') {
+                    // For lines and arrows, center is midpoint between start and end
+                    centerX = element.x + element.width / 2;
+                    centerY = element.y + element.height / 2;
+                } else {
+                    // For shapes, handle negative dimensions
+                    const elementX = element.width < 0 ? element.x + element.width : element.x;
+                    const elementY = element.height < 0 ? element.y + element.height : element.y;
+                    centerX = elementX + Math.abs(element.width) / 2;
+                    centerY = elementY + Math.abs(element.height) / 2;
+                }
                 svg.setAttribute('transform', `rotate(${element.rotation} ${centerX} ${centerY})`);
             } else {
                 // Remove transform attribute when rotation is 0
@@ -4904,10 +4924,12 @@
                     height: (maxY - minY) + (padding * 2)
                 };
             } else {
-                // For other elements, use their width/height
+                // For other elements (rectangle, ellipse, diamond, parallelogram), handle negative dimensions
+                const elementX = element.width < 0 ? element.x + element.width : element.x;
+                const elementY = element.height < 0 ? element.y + element.height : element.y;
                 bounds = {
-                    x: element.x,
-                    y: element.y,
+                    x: elementX,
+                    y: elementY,
                     width: Math.abs(element.width),
                     height: Math.abs(element.height)
                 };
