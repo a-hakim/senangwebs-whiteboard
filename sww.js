@@ -762,8 +762,8 @@
                 
                 .sww-text-properties {
                     background: #ffffff10;
-                    padding-top: 12px;
-                    padding-bottom: 1px;
+                    padding-top: 6px;
+                    padding-bottom: 6px;
                 }
                 
                 .sww-text-properties h4 {
