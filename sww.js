@@ -4732,6 +4732,8 @@
         }
         
         getElementBounds(element) {
+            let bounds;
+            
             if (element.type === 'text') {
                 // Always use consistent boundary calculation for text elements
                 const text = element.text || 'Text';
@@ -4749,7 +4751,7 @@
                 height = Math.max(height, measuredBounds.height + (padding * 2));
                 
                 // Consistent positioning - always use element position as top-left corner
-                return {
+                bounds = {
                     x: element.x,
                     y: element.y,
                     width: width,
@@ -4771,7 +4773,7 @@
                 // Add some padding for easier selection
                 const padding = 5;
                 
-                return {
+                bounds = {
                     x: minX - padding,
                     y: minY - padding,
                     width: (maxX - minX) + (padding * 2),
@@ -4799,7 +4801,7 @@
                         // Add padding for easier selection
                         const padding = Math.max(element.strokeWidth || 2, 8);
                         
-                        return {
+                        bounds = {
                             x: minX - padding,
                             y: minY - padding,
                             width: (maxX - minX) + (padding * 2),
@@ -4810,7 +4812,7 @@
                     // Finished element: use the stored bounds since points are now relative
                     const padding = Math.max(element.strokeWidth || 2, 8);
                     
-                    return {
+                    bounds = {
                         x: element.x - padding,
                         y: element.y - padding,
                         width: element.width + (padding * 2),
@@ -4835,7 +4837,7 @@
                     // Add padding and convert to absolute coordinates
                     const padding = Math.max(element.strokeWidth || 2, 8);
                     
-                    return {
+                    bounds = {
                         x: element.x + minX - padding,
                         y: element.y + minY - padding,
                         width: (maxX - minX) + (padding * 2),
@@ -4843,7 +4845,7 @@
                     };
                 } else {
                     // Final fallback if no points available
-                    return {
+                    bounds = {
                         x: element.x,
                         y: element.y,
                         width: Math.max(Math.abs(element.width || 0), 20),
@@ -4875,7 +4877,7 @@
                 // Add small padding for easier selection
                 const padding = Math.max(element.strokeWidth || 2, 3);
                 
-                return {
+                bounds = {
                     x: minX - padding,
                     y: minY - padding,
                     width: (maxX - minX) + (padding * 2),
@@ -4883,13 +4885,65 @@
                 };
             } else {
                 // For other elements, use their width/height
-                return {
+                bounds = {
                     x: element.x,
                     y: element.y,
                     width: Math.abs(element.width),
                     height: Math.abs(element.height)
                 };
             }
+            
+            // Apply rotation if element is rotated
+            if (element.rotation && element.rotation !== 0) {
+                return this.getRotatedBounds(bounds, element.rotation);
+            }
+            
+            return bounds;
+        }
+        
+        getRotatedBounds(bounds, rotation) {
+            const centerX = bounds.x + bounds.width / 2;
+            const centerY = bounds.y + bounds.height / 2;
+            
+            // Get the four corners of the original rectangle
+            const corners = [
+                { x: bounds.x, y: bounds.y },
+                { x: bounds.x + bounds.width, y: bounds.y },
+                { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
+                { x: bounds.x, y: bounds.y + bounds.height }
+            ];
+            
+            // Rotate each corner around the center
+            const rotatedCorners = corners.map(corner => {
+                const radians = (rotation * Math.PI) / 180;
+                const dx = corner.x - centerX;
+                const dy = corner.y - centerY;
+                
+                return {
+                    x: centerX + dx * Math.cos(radians) - dy * Math.sin(radians),
+                    y: centerY + dx * Math.sin(radians) + dy * Math.cos(radians)
+                };
+            });
+            
+            // Find the bounding box of the rotated corners
+            let minX = rotatedCorners[0].x;
+            let maxX = rotatedCorners[0].x;
+            let minY = rotatedCorners[0].y;
+            let maxY = rotatedCorners[0].y;
+            
+            for (let i = 1; i < rotatedCorners.length; i++) {
+                minX = Math.min(minX, rotatedCorners[i].x);
+                maxX = Math.max(maxX, rotatedCorners[i].x);
+                minY = Math.min(minY, rotatedCorners[i].y);
+                maxY = Math.max(maxY, rotatedCorners[i].y);
+            }
+            
+            return {
+                x: minX,
+                y: minY,
+                width: maxX - minX,
+                height: maxY - minY
+            };
         }
         
         measureText(text, fontSize = 16, fontFamily = 'Arial') {
