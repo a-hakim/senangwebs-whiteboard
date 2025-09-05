@@ -197,7 +197,13 @@
                 fontSize: 16,
                 fontFamily: 'Arial',
                 textAlign: 'left',
-                textColor: '#000000'  // Separate text color property
+                textColor: '#000000',  // Separate text color property
+                // Gradient settings
+                gradientType: 'linear',  // 'linear' or 'radial'
+                gradientStops: [
+                    { offset: 0, color: '#000000' },
+                    { offset: 100, color: '#ffffff' }
+                ]
             };
             
             // Performance optimization properties
@@ -1621,7 +1627,8 @@
             
             const fillStyles = [
                 { value: 'transparent', text: 'Transparent' },
-                { value: 'solid', text: 'Solid' }
+                { value: 'solid', text: 'Solid' },
+                { value: 'gradient', text: 'Gradient' }
             ];
             
             fillStyles.forEach(style => {
@@ -1636,10 +1643,78 @@
                 this.toolSettings.fillStyle = e.target.value;
                 // Update only fillStyle property for selected elements
                 this.updateSelectedElementProperty('fillStyle', e.target.value);
+                // Show/hide gradient controls
+                this.updateGradientControlsVisibility();
             });
             
             fillStyleGroup.appendChild(fillStyleLabel);
             fillStyleGroup.appendChild(fillStyleSelect);
+            
+            // Gradient Controls
+            const gradientGroup = document.createElement('div');
+            gradientGroup.className = 'sww-property-group sww-gradient-group';
+            gradientGroup.style.display = this.toolSettings.fillStyle === 'gradient' ? 'block' : 'none';
+            
+            // Gradient Type
+            const gradientTypeGroup = document.createElement('div');
+            gradientTypeGroup.className = 'sww-property-subgroup';
+            
+            const gradientTypeLabel = document.createElement('label');
+            gradientTypeLabel.className = 'sww-property-label';
+            gradientTypeLabel.textContent = 'Gradient Type';
+            
+            const gradientTypeSelect = document.createElement('select');
+            gradientTypeSelect.className = 'sww-select-input';
+            
+            const gradientTypes = [
+                { value: 'linear', text: 'Linear' },
+                { value: 'radial', text: 'Radial' }
+            ];
+            
+            gradientTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.value;
+                option.textContent = type.text;
+                gradientTypeSelect.appendChild(option);
+            });
+            
+            gradientTypeSelect.value = this.toolSettings.gradientType;
+            gradientTypeSelect.addEventListener('change', (e) => {
+                this.toolSettings.gradientType = e.target.value;
+                this.updateSelectedElementProperty('gradientType', e.target.value);
+            });
+            
+            gradientTypeGroup.appendChild(gradientTypeLabel);
+            gradientTypeGroup.appendChild(gradientTypeSelect);
+            
+            // Gradient Stops
+            const gradientStopsGroup = document.createElement('div');
+            gradientStopsGroup.className = 'sww-property-subgroup';
+            
+            const gradientStopsLabel = document.createElement('label');
+            gradientStopsLabel.className = 'sww-property-label';
+            gradientStopsLabel.textContent = 'Gradient Stops';
+            
+            const gradientStopsContainer = document.createElement('div');
+            gradientStopsContainer.className = 'sww-gradient-stops-container';
+            
+            // Add Gradient Stop Button
+            const addStopButton = document.createElement('button');
+            addStopButton.className = 'sww-gradient-add-stop';
+            addStopButton.textContent = '+ Add Stop';
+            addStopButton.addEventListener('click', () => {
+                this.addGradientStop();
+            });
+            
+            gradientStopsGroup.appendChild(gradientStopsLabel);
+            gradientStopsGroup.appendChild(gradientStopsContainer);
+            gradientStopsGroup.appendChild(addStopButton);
+            
+            gradientGroup.appendChild(gradientTypeGroup);
+            gradientGroup.appendChild(gradientStopsGroup);
+            
+            // Initialize gradient stops UI
+            this.updateGradientStopsUI();
             
             // Opacity
             const opacityGroup = document.createElement('div');
@@ -1983,6 +2058,7 @@
             panel.appendChild(widthGroup);
             panel.appendChild(fillGroup);
             panel.appendChild(fillStyleGroup);
+            panel.appendChild(gradientGroup);
             panel.appendChild(opacityGroup);
             panel.appendChild(elementWidthGroup);
             panel.appendChild(elementHeightGroup);
@@ -2532,6 +2608,8 @@
                 strokeWidth: defaultStrokeWidth,
                 fillColor: defaultFillColor,
                 fillStyle: defaultFillStyle,
+                gradientType: this.toolSettings.gradientType,
+                gradientStops: [...this.toolSettings.gradientStops],
                 opacity: this.toolSettings.opacity,
                 fontSize: this.toolSettings.fontSize,
                 fontFamily: this.toolSettings.fontFamily,
@@ -2632,6 +2710,10 @@
                 // Create hatch pattern
                 svg.setAttribute('fill', 'url(#hatch)');
                 this.createHatchPattern(element.fillColor);
+            } else if (element.fillStyle === 'gradient') {
+                // Create gradient
+                const gradientId = this.createGradient(element);
+                svg.setAttribute('fill', `url(#${gradientId})`);
             }
             
             // Type-specific attributes
@@ -3117,6 +3199,52 @@
             defs.appendChild(marker);
             
             return markerId;
+        }
+        
+        createGradient(element) {
+            const gradientId = `gradient-${element.id}`;
+            
+            // Get or create defs section
+            const defs = this.svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            if (!this.svg.querySelector('defs')) {
+                this.svg.appendChild(defs);
+            }
+            
+            // Remove existing gradient if it exists
+            const existingGradient = defs.querySelector(`#${gradientId}`);
+            if (existingGradient) {
+                existingGradient.remove();
+            }
+            
+            // Create gradient element based on type
+            let gradient;
+            if (element.gradientType === 'radial') {
+                gradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+                gradient.setAttribute('cx', '50%');
+                gradient.setAttribute('cy', '50%');
+                gradient.setAttribute('r', '50%');
+            } else {
+                // Default to linear gradient
+                gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                gradient.setAttribute('x1', '0%');
+                gradient.setAttribute('y1', '0%');
+                gradient.setAttribute('x2', '100%');
+                gradient.setAttribute('y2', '0%');
+            }
+            
+            gradient.setAttribute('id', gradientId);
+            
+            // Add gradient stops
+            const stops = element.gradientStops || this.toolSettings.gradientStops;
+            stops.forEach(stop => {
+                const stopElement = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stopElement.setAttribute('offset', `${stop.offset}%`);
+                stopElement.setAttribute('stop-color', stop.color);
+                gradient.appendChild(stopElement);
+            });
+            
+            defs.appendChild(gradient);
+            return gradientId;
         }
         
         createStarPoints(x, y, width, height) {
@@ -3605,6 +3733,11 @@
             }
             this.updateSelectionHandles();
             this.syncPropertiesPanel();
+            
+            // Ensure UI state is properly updated after selection change
+            setTimeout(() => {
+                this.updateTextPropertiesVisibility();
+            }, 0);
         }
         
         commitPropertiesPanelChanges() {
@@ -3745,6 +3878,9 @@
                         }
                     }
                 }
+                
+                // Update gradient controls visibility for no selection (use tool settings)
+                this.updateGradientControlsVisibility();
                 return;
             }
             
@@ -3790,6 +3926,18 @@
                 if (fillStyleSelect) {
                     fillStyleSelect.value = firstElement.fillStyle || 'transparent';
                 }
+                
+                // Update gradient properties
+                if (firstElement.gradientType) {
+                    const gradientTypeSelect = this.propertiesPanel.querySelector('.sww-gradient-group select');
+                    if (gradientTypeSelect) {
+                        gradientTypeSelect.value = firstElement.gradientType;
+                    }
+                }
+                
+                // Update gradient controls visibility and stops
+                this.updateGradientControlsVisibility();
+                this.updateGradientStopsUI();
                 
                 // Update opacity input (number input with max 100)
                 const opacityInput = this.propertiesPanel.querySelector('input[type="number"][min="0"][max="100"]');
@@ -4950,6 +5098,10 @@
                     element.height = Math.abs(value); // Ensure positive height
                 } else if (propertyName === 'rotation') {
                     element.rotation = value;
+                } else if (propertyName === 'gradientType') {
+                    element.gradientType = value;
+                } else if (propertyName === 'gradientStops') {
+                    element.gradientStops = value;
                 }
                 
                 this.updateSVGElement(element);
@@ -5013,8 +5165,8 @@
             
             // Handle fill properties visibility for image and website elements
             // Look for fill property groups directly in the main panel
-            if ((hasImageElements || hasWebsiteElements) && !hasTextElements && !hasMarkdownElements) {
-                // For image and website elements only, hide fill color and fill style properties
+            if ((hasImageElements || hasWebsiteElements || hasTextElements) && !hasMarkdownElements) {
+                // For image, website, and text elements, hide fill color and fill style properties
                 const allPropertyGroups = this.propertiesPanel.querySelectorAll('.sww-property-group');
                 
                 allPropertyGroups.forEach(group => {
@@ -5027,8 +5179,16 @@
                         }
                     }
                 });
+                
+                // For text elements, also hide gradient controls since they don't apply
+                if (hasTextElements) {
+                    const gradientGroup = this.propertiesPanel.querySelector('.sww-gradient-group');
+                    if (gradientGroup) {
+                        gradientGroup.style.display = 'none';
+                    }
+                }
             } else {
-                // For other elements or mixed selection, show all fill properties
+                // For other elements or mixed selection, show fill style but handle fill color based on gradient
                 const allPropertyGroups = this.propertiesPanel.querySelectorAll('.sww-property-group');
                 
                 allPropertyGroups.forEach(group => {
@@ -5036,11 +5196,272 @@
                     if (label) {
                         const labelText = label.textContent.trim();
                         
-                        if (labelText === 'Fill Color' || labelText === 'Fill Style') {
+                        if (labelText === 'Fill Style') {
                             group.style.display = 'flex';
                         }
+                        // Fill Color visibility will be handled by updateGradientControlsVisibility
                     }
                 });
+                
+                // Update gradient controls visibility (this will also handle fill color visibility)
+                // Only call this for non-text, non-image, non-website elements
+                if (!hasTextElements && !hasImageElements && !hasWebsiteElements) {
+                    this.updateGradientControlsVisibility();
+                } else {
+                    // For text/image/website elements, ensure gradient controls are hidden
+                    const gradientGroup = this.propertiesPanel.querySelector('.sww-gradient-group');
+                    if (gradientGroup) {
+                        gradientGroup.style.display = 'none';
+                    }
+                }
+            }
+        }
+        
+        // Gradient Controls Management
+        updateGradientControlsVisibility() {
+            if (!this.propertiesPanel) return;
+            
+            const gradientGroup = this.propertiesPanel.querySelector('.sww-gradient-group');
+            if (!gradientGroup) return;
+            
+            // Check if we have text elements selected (they don't support gradients)
+            const hasTextElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'text'
+            );
+            
+            // Hide gradient controls for text elements
+            if (hasTextElements) {
+                gradientGroup.style.display = 'none';
+                // Also hide fill color for text elements
+                this.updateFillColorVisibility(false);
+                return;
+            }
+            
+            // Check the actual fill style of selected elements or tool settings
+            let isGradientStyle = false;
+            
+            if (this.selectedElements.size > 0) {
+                // If elements are selected, check their fill style
+                isGradientStyle = Array.from(this.selectedElements).some(element => 
+                    element.fillStyle === 'gradient'
+                );
+            } else {
+                // If no elements selected, use tool settings
+                isGradientStyle = this.toolSettings.fillStyle === 'gradient';
+            }
+            
+            gradientGroup.style.display = isGradientStyle ? 'block' : 'none';
+            
+            // Hide/show fill color controls based on gradient selection
+            this.updateFillColorVisibility(!isGradientStyle);
+        }
+        
+        updateFillColorVisibility(shouldShow) {
+            if (!this.propertiesPanel) return;
+            
+            // Check if we have image, website, or text elements selected (they should hide fill color)
+            const hasImageElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'image'
+            );
+            const hasWebsiteElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'website'
+            );
+            const hasTextElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'text'
+            );
+            const hasMarkdownElements = Array.from(this.selectedElements).some(element => 
+                element.type === 'markdown'
+            );
+            
+            // Hide fill color for image/website/text elements, or when gradient is selected for other elements
+            const shouldHideFillColor = (hasImageElements || hasWebsiteElements || hasTextElements) && !hasMarkdownElements;
+            const finalShouldShow = shouldHideFillColor ? false : shouldShow;
+            
+            // Find the fill color property group by looking for the "Fill Color" label
+            const allPropertyGroups = this.propertiesPanel.querySelectorAll('.sww-property-group');
+            
+            allPropertyGroups.forEach(group => {
+                const label = group.querySelector('.sww-property-label');
+                if (label && label.textContent.trim() === 'Fill Color') {
+                    group.style.display = finalShouldShow ? 'flex' : 'none';
+                }
+            });
+        }
+        
+        updateGradientStopsUI() {
+            if (!this.propertiesPanel) return;
+            
+            const container = this.propertiesPanel.querySelector('.sww-gradient-stops-container');
+            if (!container) return;
+            
+            // Clear existing stops
+            container.innerHTML = '';
+            
+            // Get gradient stops from tool settings or selected element
+            let gradientStops = this.toolSettings.gradientStops;
+            if (this.selectedElements.size === 1) {
+                const selectedElement = Array.from(this.selectedElements)[0];
+                if (selectedElement.gradientStops) {
+                    gradientStops = selectedElement.gradientStops;
+                }
+            }
+            
+            // Create UI for each gradient stop
+            gradientStops.forEach((stop, index) => {
+                const stopElement = this.createGradientStopElement(stop, index);
+                container.appendChild(stopElement);
+            });
+        }
+        
+        createGradientStopElement(stop, index) {
+            const stopDiv = document.createElement('div');
+            stopDiv.className = 'sww-gradient-stop';
+            
+            // Color input
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.className = 'sww-color-input';
+            colorInput.value = stop.color;
+            colorInput.addEventListener('change', (e) => {
+                this.updateGradientStop(index, 'color', e.target.value);
+            });
+            
+            // Offset input (0-100%)
+            const offsetInput = document.createElement('input');
+            offsetInput.type = 'number';
+            offsetInput.className = 'sww-number-input';
+            offsetInput.min = '0';
+            offsetInput.max = '100';
+            offsetInput.value = stop.offset;
+            offsetInput.addEventListener('input', (e) => {
+                this.updateGradientStop(index, 'offset', parseInt(e.target.value));
+            });
+            
+            // Offset label
+            const offsetLabel = document.createElement('span');
+            offsetLabel.className = 'sww-gradient-stop-label';
+            offsetLabel.textContent = '%';
+            
+            // Remove button (only show if more than 2 stops)
+            const removeButton = document.createElement('button');
+            removeButton.className = 'sww-gradient-remove-stop';
+            removeButton.textContent = '×';
+            removeButton.addEventListener('click', () => {
+                this.removeGradientStop(index);
+            });
+            
+            stopDiv.appendChild(colorInput);
+            stopDiv.appendChild(offsetInput);
+            stopDiv.appendChild(offsetLabel);
+            
+            // Only show remove button if we have more than 2 stops
+            const gradientStops = this.selectedElements.size === 1 ? 
+                Array.from(this.selectedElements)[0].gradientStops || this.toolSettings.gradientStops :
+                this.toolSettings.gradientStops;
+            
+            if (gradientStops.length > 2) {
+                stopDiv.appendChild(removeButton);
+            }
+            
+            return stopDiv;
+        }
+        
+        addGradientStop() {
+            // Determine which gradient stops to modify
+            let gradientStops;
+            if (this.selectedElements.size === 1) {
+                const selectedElement = Array.from(this.selectedElements)[0];
+                if (selectedElement.gradientStops) {
+                    gradientStops = [...selectedElement.gradientStops];
+                } else {
+                    gradientStops = [...this.toolSettings.gradientStops];
+                }
+            } else {
+                gradientStops = [...this.toolSettings.gradientStops];
+            }
+            
+            // Find a good position for the new stop (middle of the largest gap)
+            gradientStops.sort((a, b) => a.offset - b.offset);
+            let newOffset = 50;
+            
+            if (gradientStops.length >= 2) {
+                let maxGap = 0;
+                let maxGapMidpoint = 50;
+                
+                for (let i = 0; i < gradientStops.length - 1; i++) {
+                    const gap = gradientStops[i + 1].offset - gradientStops[i].offset;
+                    if (gap > maxGap) {
+                        maxGap = gap;
+                        maxGapMidpoint = gradientStops[i].offset + gap / 2;
+                    }
+                }
+                
+                newOffset = Math.round(maxGapMidpoint);
+            }
+            
+            // Add new stop
+            const newStop = {
+                offset: newOffset,
+                color: '#808080' // Gray as default
+            };
+            
+            gradientStops.push(newStop);
+            gradientStops.sort((a, b) => a.offset - b.offset);
+            
+            // Update tool settings and selected elements
+            this.toolSettings.gradientStops = gradientStops;
+            if (this.selectedElements.size > 0) {
+                this.updateSelectedElementProperty('gradientStops', gradientStops);
+            }
+            
+            // Update UI
+            this.updateGradientStopsUI();
+        }
+        
+        removeGradientStop(index) {
+            // Don't allow removing if only 2 stops remain
+            let gradientStops = this.selectedElements.size === 1 ? 
+                Array.from(this.selectedElements)[0].gradientStops || this.toolSettings.gradientStops :
+                this.toolSettings.gradientStops;
+            
+            if (gradientStops.length <= 2) return;
+            
+            gradientStops = [...gradientStops];
+            gradientStops.splice(index, 1);
+            
+            // Update tool settings and selected elements
+            this.toolSettings.gradientStops = gradientStops;
+            if (this.selectedElements.size > 0) {
+                this.updateSelectedElementProperty('gradientStops', gradientStops);
+            }
+            
+            // Update UI
+            this.updateGradientStopsUI();
+        }
+        
+        updateGradientStop(index, property, value) {
+            // Get current gradient stops
+            let gradientStops = this.selectedElements.size === 1 ? 
+                Array.from(this.selectedElements)[0].gradientStops || this.toolSettings.gradientStops :
+                this.toolSettings.gradientStops;
+            
+            gradientStops = [...gradientStops];
+            gradientStops[index] = { ...gradientStops[index], [property]: value };
+            
+            // Sort by offset after updating
+            if (property === 'offset') {
+                gradientStops.sort((a, b) => a.offset - b.offset);
+            }
+            
+            // Update tool settings and selected elements
+            this.toolSettings.gradientStops = gradientStops;
+            if (this.selectedElements.size > 0) {
+                this.updateSelectedElementProperty('gradientStops', gradientStops);
+            }
+            
+            // Update UI if offset changed (to maintain correct order)
+            if (property === 'offset') {
+                this.updateGradientStopsUI();
             }
         }
         

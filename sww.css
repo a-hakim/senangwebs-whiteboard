@@ -399,6 +399,96 @@ html {
   font-size: 12px;
 }
 
+/* Gradient Controls */
+.sww-gradient-group {
+  padding: 8px 12px;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.sww-property-subgroup {
+  margin-bottom: 12px;
+}
+
+.sww-gradient-stops-container {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.sww-gradient-stop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  margin-bottom: 4px;
+  background: #262626;
+  border-radius: 4px;
+}
+
+.sww-gradient-stop .sww-color-input {
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.sww-gradient-stop .sww-number-input {
+  width: 50px;
+  padding: 2px 4px;
+  font-size: 12px;
+  background: #18181b;
+  border: 1px solid #3a3a3a;
+  color: #ffffff80;
+  border-radius: 2px;
+}
+
+.sww-gradient-stop-label {
+  font-size: 12px;
+  color: #ffffff80;
+}
+
+.sww-gradient-add-stop {
+  width: 100%;
+  padding: 6px;
+  background: #3a3a3a;
+  border: 1px solid #525252;
+  color: #ffffff80;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.sww-gradient-add-stop:hover {
+  background: #525252;
+  color: #00FF99;
+  border-color: #00FF99;
+}
+
+.sww-gradient-remove-stop {
+  background: #dc3545;
+  border: none;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.sww-gradient-remove-stop:hover {
+  background: #c82333;
+}
+
 /* Scene Management */
 .sww-scene-list {
   max-height: 200px;
