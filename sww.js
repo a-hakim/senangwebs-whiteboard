@@ -821,11 +821,6 @@
                     filter: grayscale(50%) !important;
                 }
                 
-                .sww-grouped {
-                    stroke-dasharray: 2,2 !important;
-                    stroke-dashoffset: 0 !important;
-                }
-                
                 /* Context Menu Styles */
                 .sww-context-menu {
                     position: absolute;
@@ -5991,11 +5986,6 @@
             
             this.selectedElements.forEach(element => {
                 element.groupId = groupId;
-                // Add visual indication for grouped elements using CSS class
-                const currentClass = element.svgElement.getAttribute('class') || '';
-                if (!currentClass.includes('sww-grouped')) {
-                    element.svgElement.setAttribute('class', currentClass + ' sww-grouped');
-                }
             });
             
             console.log(`Grouped ${this.selectedElements.size} elements with ID: ${groupId}`);
@@ -6014,9 +6004,6 @@
                     // Remove group from all elements in the group
                     groupElements.forEach(groupEl => {
                         groupEl.groupId = null;
-                        // Remove visual indication using CSS class
-                        const currentClass = groupEl.svgElement.getAttribute('class') || '';
-                        groupEl.svgElement.setAttribute('class', currentClass.replace('sww-grouped', '').trim());
                     });
                 }
             });
