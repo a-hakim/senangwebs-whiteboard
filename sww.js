@@ -3142,10 +3142,13 @@
         createHatchPattern(color) {
             if (document.getElementById('hatch')) return;
             
-            const defs = this.svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            if (!this.svg.querySelector('defs')) {
-                this.svg.appendChild(defs);
+            // Ensure we have a dedicated defs element for markers and patterns (not the grid defs)
+            if (!this.markerDefs) {
+                this.markerDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                this.markerDefs.setAttribute('id', 'sww-marker-defs');
+                this.svg.appendChild(this.markerDefs);
             }
+            const defs = this.markerDefs;
             
             const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
             pattern.setAttribute('id', 'hatch');
@@ -3168,10 +3171,13 @@
             
             if (document.getElementById(markerId)) return markerId;
             
-            const defs = this.svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            if (!this.svg.querySelector('defs')) {
-                this.svg.appendChild(defs);
+            // Ensure we have a dedicated defs element for markers (not the grid defs)
+            if (!this.markerDefs) {
+                this.markerDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                this.markerDefs.setAttribute('id', 'sww-marker-defs');
+                this.svg.appendChild(this.markerDefs);
             }
+            const defs = this.markerDefs;
             
             const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
             marker.setAttribute('id', markerId);
@@ -3195,11 +3201,13 @@
         createGradient(element) {
             const gradientId = `gradient-${element.id}`;
             
-            // Get or create defs section
-            const defs = this.svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            if (!this.svg.querySelector('defs')) {
-                this.svg.appendChild(defs);
+            // Ensure we have a dedicated defs element for markers and patterns (not the grid defs)
+            if (!this.markerDefs) {
+                this.markerDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                this.markerDefs.setAttribute('id', 'sww-marker-defs');
+                this.svg.appendChild(this.markerDefs);
             }
+            const defs = this.markerDefs;
             
             // Remove existing gradient if it exists
             const existingGradient = defs.querySelector(`#${gradientId}`);
