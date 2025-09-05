@@ -401,10 +401,9 @@ html {
 
 /* Gradient Controls */
 .sww-gradient-group {
-  padding: 8px 12px;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  margin-bottom: 8px;
+  padding: 12px 16px 6px 16px !important;
+  margin: 12px 0px !important;
+  background: #ffffff10;
 }
 
 .sww-property-subgroup {
@@ -419,12 +418,13 @@ html {
 
 .sww-gradient-stop {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 8px;
-  padding: 4px;
+  padding: 6px;
   margin-bottom: 4px;
-  background: #262626;
-  border-radius: 4px;
+  background: #00000050;
+  border-radius: 8px;
 }
 
 .sww-gradient-stop .sww-color-input {
@@ -437,18 +437,19 @@ html {
 }
 
 .sww-gradient-stop .sww-number-input {
-  width: 50px;
-  padding: 2px 4px;
+  width: 64px;
+  padding: 3px 6px;
   font-size: 12px;
-  background: #18181b;
+  background: #00000050;
   border: 1px solid #3a3a3a;
   color: #ffffff80;
-  border-radius: 2px;
+  border-radius: 8px;
 }
 
 .sww-gradient-stop-label {
   font-size: 12px;
   color: #ffffff80;
+  margin-right: 8px;
 }
 
 .sww-gradient-add-stop {

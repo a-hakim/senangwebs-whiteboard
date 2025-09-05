@@ -571,22 +571,18 @@
                 }
                 
                 .sww-property-group {
-                    margin: 6px 0;
+                    margin: 12px 0;
                     padding: 0 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
                 }
-                
+
                 .sww-property-label {
                     display: block;
                     margin-bottom: 6px;
                     font-size: 12px;
                     color: #ffffff80;
-                }
-                
-                .sww-property-group {
-                    margin-bottom: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
                 }
                 
                 .sww-property-label {
@@ -762,7 +758,7 @@
                 
                 .sww-text-properties {
                     background: #ffffff10;
-                    padding-top: 6px;
+                    padding-top: 0.1px;
                     padding-bottom: 6px;
                 }
                 
