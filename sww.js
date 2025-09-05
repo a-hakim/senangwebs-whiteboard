@@ -3430,10 +3430,11 @@
                 let newWidth = element.width;
                 let newHeight = element.height;
                 
-                // Special handling for lines and arrows
+                // Special handling for lines and arrows - preserve direction
                 if (element.type === 'line' || element.type === 'arrow') {
                     // For lines/arrows, we need to handle resize differently
                     // The element represents a line from (x,y) to (x+width, y+height)
+                    // Negative width/height indicates direction (northwest, southwest, etc.)
                     switch (this.resizeHandle) {
                         case 'se': // Moving end point
                             newWidth = startWidth + dx;
@@ -3525,25 +3526,40 @@
                     }
                 }
                 
-                // Ensure minimum size and prevent negative values
+                // Ensure minimum size and prevent negative values (except for lines/arrows which can have negative dimensions for direction)
                 const minSize = 10;
                 
-                // Handle width constraints
-                if (newWidth < minSize) {
-                    if (this.resizeHandle.includes('w')) {
-                        // West handles: adjust X position to maintain right edge
-                        newX = startX + startWidth - minSize;
+                if (element.type === 'line' || element.type === 'arrow') {
+                    // For lines and arrows, allow negative dimensions to preserve direction
+                    // Just ensure the absolute value meets minimum size
+                    const minLineLength = 20; // Minimum line length
+                    const currentLength = Math.sqrt(newWidth * newWidth + newHeight * newHeight);
+                    
+                    if (currentLength < minLineLength) {
+                        // Preserve direction but enforce minimum length
+                        const scale = minLineLength / currentLength;
+                        newWidth = newWidth * scale;
+                        newHeight = newHeight * scale;
                     }
-                    newWidth = minSize;
-                }
-                
-                // Handle height constraints
-                if (newHeight < minSize) {
-                    if (this.resizeHandle.includes('n')) {
-                        // North handles: adjust Y position to maintain bottom edge
-                        newY = startY + startHeight - minSize;
+                } else {
+                    // Standard minimum size constraints for other shapes
+                    // Handle width constraints
+                    if (newWidth < minSize) {
+                        if (this.resizeHandle.includes('w')) {
+                            // West handles: adjust X position to maintain right edge
+                            newX = startX + startWidth - minSize;
+                        }
+                        newWidth = minSize;
                     }
-                    newHeight = minSize;
+                    
+                    // Handle height constraints
+                    if (newHeight < minSize) {
+                        if (this.resizeHandle.includes('n')) {
+                            // North handles: adjust Y position to maintain bottom edge
+                            newY = startY + startHeight - minSize;
+                        }
+                        newHeight = minSize;
+                    }
                 }
                 
                 // Apply the constrained values
