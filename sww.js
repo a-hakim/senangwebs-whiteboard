@@ -1109,6 +1109,95 @@
                     border-radius: 4px;
                 }
                 
+                /* Rendered markdown content styles */
+                .sww-markdown-rendered {
+                    pointer-events: all;
+                }
+                
+                .sww-markdown-rendered h1 {
+                    font-size: 1.8em;
+                    font-weight: bold;
+                    margin: 0.5em 0;
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 0.3em;
+                }
+                
+                .sww-markdown-rendered h2 {
+                    font-size: 1.5em;
+                    font-weight: bold;
+                    margin: 0.4em 0;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 0.2em;
+                }
+                
+                .sww-markdown-rendered h3 {
+                    font-size: 1.3em;
+                    font-weight: bold;
+                    margin: 0.3em 0;
+                }
+                
+                .sww-markdown-rendered p {
+                    margin: 0.5em 0;
+                    line-height: 1.6;
+                }
+                
+                .sww-markdown-rendered strong {
+                    font-weight: bold;
+                }
+                
+                .sww-markdown-rendered em {
+                    font-style: italic;
+                }
+                
+                .sww-markdown-rendered code {
+                    background-color: #f4f4f4;
+                    padding: 2px 4px;
+                    border-radius: 3px;
+                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                    font-size: 0.9em;
+                }
+                
+                .sww-markdown-rendered pre {
+                    background-color: #f8f8f8;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    padding: 8px;
+                    margin: 0.5em 0;
+                    overflow-x: auto;
+                }
+                
+                .sww-markdown-rendered pre code {
+                    background: none;
+                    padding: 0;
+                    border-radius: 0;
+                }
+                
+                .sww-markdown-rendered ul {
+                    margin: 0.5em 0;
+                    padding-left: 1.5em;
+                }
+                
+                .sww-markdown-rendered li {
+                    margin: 0.2em 0;
+                }
+                
+                .sww-markdown-rendered blockquote {
+                    border-left: 4px solid #ddd;
+                    margin: 0.5em 0;
+                    padding-left: 1em;
+                    color: #666;
+                    font-style: italic;
+                }
+                
+                .sww-markdown-rendered a {
+                    color: #0066cc;
+                    text-decoration: none;
+                }
+                
+                .sww-markdown-rendered a:hover {
+                    text-decoration: underline;
+                }
+                
                 /* Element configuration dialogs */
                 .sww-config-dialog {
                     position: fixed;
@@ -2430,10 +2519,15 @@
                 } else if (element.type === 'website') {
                     this.editWebsiteElement(element);
                 } else if (element.type === 'markdown') {
-                    // Enable editing and focus the textarea for markdown editing
+                    // Switch to editing mode for markdown elements
                     const textarea = element.svgElement.querySelector('.sww-markdown-editor');
+                    const renderedView = element.svgElement.querySelector('.sww-markdown-rendered');
                     const hint = element.svgElement.querySelector('.sww-markdown-hint');
-                    if (textarea) {
+                    
+                    if (textarea && renderedView) {
+                        // Hide rendered view and show editor
+                        renderedView.style.display = 'none';
+                        textarea.style.display = 'block';
                         textarea.readOnly = false;
                         textarea.style.cursor = 'text';
                         textarea.focus();
@@ -2442,8 +2536,11 @@
                         // Hide the hint when editing
                         if (hint) hint.style.display = 'none';
                         
-                        // Add blur handler to make it read-only again when done editing
+                        // Add blur handler to switch back to rendered view
                         const handleBlur = () => {
+                            // Switch back to rendered view
+                            textarea.style.display = 'none';
+                            renderedView.style.display = 'block';
                             textarea.readOnly = true;
                             textarea.style.cursor = 'default';
                             if (hint) hint.style.display = 'block';
@@ -3110,11 +3207,13 @@
                     // Clear existing content
                     svg.innerHTML = '';
                     
-                    // Create markdown editor container
+                    // Create markdown container
                     const div = document.createElement('div');
                     div.className = 'sww-markdown-element';
                     div.style.width = '100%';
                     div.style.height = '100%';
+                    div.style.position = 'relative';
+                    div.style.overflow = 'auto';
                     
                     // Apply stroke and fill properties to the container
                     if (element.strokeWidth > 0) {
@@ -3135,30 +3234,60 @@
                     // Apply opacity
                     div.style.opacity = element.opacity;
                     
+                    // Create rendered markdown view
+                    const renderedView = document.createElement('div');
+                    renderedView.className = 'sww-markdown-rendered';
+                    renderedView.style.width = '100%';
+                    renderedView.style.height = '100%';
+                    renderedView.style.padding = '8px';
+                    renderedView.style.color = element.textColor || element.strokeColor;
+                    renderedView.style.fontSize = (element.fontSize || 12) + 'px';
+                    renderedView.style.fontFamily = element.fontFamily || 'Arial, sans-serif';
+                    renderedView.style.lineHeight = '1.4';
+                    renderedView.style.boxSizing = 'border-box';
+                    
+                    // Parse and render markdown
+                    const markdownText = element.markdown || '# Markdown Document\n\nDouble-click to edit...';
+                    renderedView.innerHTML = this.parseMarkdown(markdownText);
+                    
+                    // Create markdown editor (hidden by default)
                     const textarea = document.createElement('textarea');
                     textarea.className = 'sww-markdown-editor';
-                    textarea.value = element.markdown || '# Markdown Document\n\nClick to edit...';
+                    textarea.value = markdownText;
                     textarea.placeholder = 'Enter markdown here...';
-                    
-                    // Style the textarea to match the container properties
-                    textarea.style.backgroundColor = 'transparent'; // Let container background show through
-                    textarea.style.color = element.textColor || element.strokeColor; // Use textColor property, fallback to strokeColor
-                    textarea.style.border = 'none'; // Remove default border
-                    textarea.style.fontSize = (element.fontSize || 12) + 'px'; // Use fontSize property
-                    textarea.style.fontFamily = element.fontFamily || 'Monaco, Menlo, Ubuntu Mono, monospace'; // Use fontFamily property
+                    textarea.style.width = '100%';
+                    textarea.style.height = '100%';
+                    textarea.style.padding = '8px';
+                    textarea.style.backgroundColor = 'transparent';
+                    textarea.style.color = element.textColor || element.strokeColor;
+                    textarea.style.border = 'none';
+                    textarea.style.fontSize = (element.fontSize || 12) + 'px';
+                    textarea.style.fontFamily = 'Monaco, Menlo, Ubuntu Mono, monospace';
+                    textarea.style.resize = 'none';
+                    textarea.style.outline = 'none';
+                    textarea.style.display = 'none'; // Hidden by default
+                    textarea.style.boxSizing = 'border-box';
                     
                     // Handle textarea events
                     textarea.addEventListener('input', (e) => {
                         element.markdown = e.target.value;
+                        // Update rendered view in real-time
+                        renderedView.innerHTML = this.parseMarkdown(e.target.value);
                     });
                     
                     textarea.addEventListener('blur', () => {
+                        // Switch back to rendered view
+                        textarea.style.display = 'none';
+                        renderedView.style.display = 'block';
+                        textarea.readOnly = true;
+                        textarea.style.cursor = 'default';
+                        
                         // Update element text for display purposes
                         const lines = textarea.value.split('\n');
                         element.text = lines[0] || 'Markdown Document';
                     });
                     
-                    // Prevent event bubbling to allow proper text editing only on double-click
+                    // Prevent event bubbling to allow proper text editing
                     textarea.addEventListener('mousedown', (e) => {
                         e.stopPropagation();
                     });
@@ -3167,23 +3296,17 @@
                         e.stopPropagation();
                     });
                     
-                    // Remove single-click handler - require double-click for editing
-                    // textarea.addEventListener('click', (e) => {
-                    //     e.stopPropagation();
-                    //     textarea.focus();
-                    // });
-                    
-                    // Make textarea read-only initially to prevent accidental editing
+                    // Make textarea read-only initially
                     textarea.readOnly = true;
                     textarea.style.cursor = 'default';
                     
-                    // Add a subtle overlay hint for double-click
+                    // Add edit hint
                     const hint = document.createElement('div');
                     hint.className = 'sww-markdown-hint';
-                    hint.innerHTML = '<small style="opacity: 0.7;">Double-click to edit</small>';
+                    hint.innerHTML = '<small>Double-click to edit</small>';
                     hint.style.position = 'absolute';
-                    hint.style.top = '8px';
-                    hint.style.right = '8px';
+                    hint.style.top = '4px';
+                    hint.style.right = '4px';
                     hint.style.background = 'rgba(255, 255, 255, 0.9)';
                     hint.style.padding = '2px 6px';
                     hint.style.borderRadius = '3px';
@@ -3193,6 +3316,7 @@
                     hint.style.zIndex = '10';
                     
                     div.appendChild(hint);
+                    div.appendChild(renderedView);
                     div.appendChild(textarea);
                     svg.appendChild(div);
                     break;
@@ -3328,6 +3452,53 @@
             
             defs.appendChild(gradient);
             return gradientId;
+        }
+        
+        parseMarkdown(text) {
+            if (!text) return '';
+            
+            // Simple markdown parser for common elements
+            let html = text;
+            
+            // Headers (# ## ### etc.)
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            
+            // Bold (**text** or __text__)
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+            
+            // Italic (*text* or _text_)
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+            
+            // Code inline (`code`)
+            html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+            
+            // Code blocks (```code```)
+            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            
+            // Links [text](url)
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+            
+            // Line breaks
+            html = html.replace(/\n\n/g, '</p><p>');
+            html = html.replace(/\n/g, '<br>');
+            
+            // Wrap in paragraphs if not already wrapped
+            if (!html.startsWith('<h') && !html.startsWith('<p>')) {
+                html = '<p>' + html + '</p>';
+            }
+            
+            // Lists (- item or * item)
+            html = html.replace(/^[\s]*[-\*]\s(.*)$/gim, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+            
+            // Blockquotes (> text)
+            html = html.replace(/^>\s(.*)$/gim, '<blockquote>$1</blockquote>');
+            
+            return html;
         }
         
         createStarPoints(x, y, width, height) {
