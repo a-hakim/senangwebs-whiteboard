@@ -2560,7 +2560,6 @@
                     textarea.style.fontFamily = 'Monaco, Menlo, Ubuntu Mono, monospace';
                     textarea.style.resize = 'none';
                     textarea.style.outline = 'none';
-                    textarea.style.display = 'none'; // Hidden by default
                     textarea.style.boxSizing = 'border-box';
                     
                     // Handle textarea events
@@ -2589,6 +2588,36 @@
                     
                     textarea.addEventListener('mouseup', (e) => {
                         e.stopPropagation();
+                    });
+                    
+                    // Add double-click handler to textarea for editing
+                    textarea.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        if (textarea.readOnly && this.currentTool === 'select') {
+                            // Switch to editing mode
+                            div.classList.add('sww-markdown-editing');
+                            div.classList.remove('sww-markdown-readonly');
+                            
+                            textarea.readOnly = false;
+                            textarea.style.cursor = 'text';
+                            textarea.focus();
+                            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                        }
+                    });
+                    
+                    // Add double-click handler to rendered view for editing
+                    renderedView.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        if (this.currentTool === 'select') {
+                            // Switch to editing mode
+                            div.classList.add('sww-markdown-editing');
+                            div.classList.remove('sww-markdown-readonly');
+                            
+                            textarea.readOnly = false;
+                            textarea.style.cursor = 'text';
+                            textarea.focus();
+                            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                        }
                     });
                     
                     // Make textarea read-only initially
