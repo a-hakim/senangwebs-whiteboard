@@ -3434,7 +3434,7 @@
                     hint.style.pointerEvents = 'none';
                     hint.style.zIndex = '10';
                     
-                    div.appendChild(hint);
+                    // div.appendChild(hint);
                     div.appendChild(renderedView);
                     div.appendChild(textarea);
                     svg.appendChild(div);
