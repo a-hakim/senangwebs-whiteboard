@@ -2967,8 +2967,7 @@
                     break;
                     
                 case 'star':
-                    // Since elements are normalized to positive dimensions after creation,
-                    // we can use the element properties directly
+                    // Handle star shape with proper dimension handling during resize
                     const starPoints = this.createStarPoints(element.x, element.y, element.width, element.height);
                     svg.setAttribute('points', starPoints);
                     break;
@@ -3626,18 +3625,30 @@
         }
         
         createStarPoints(x, y, width, height) {
-            const cx = x + width / 2;
-            const cy = y + height / 2;
-            const outerRadius = Math.min(Math.abs(width), Math.abs(height)) / 2;
-            const innerRadius = outerRadius * 0.4; // Inner radius is 40% of outer
+            // Handle negative dimensions properly by using absolute values for calculations
+            // but maintaining the correct center position
+            const absWidth = Math.abs(width);
+            const absHeight = Math.abs(height);
+            
+            // Calculate center based on actual position and dimensions
+            const cx = width >= 0 ? x + width / 2 : x + width / 2;
+            const cy = height >= 0 ? y + height / 2 : y + height / 2;
+            
+            // Use separate radii for width and height to allow proper scaling
+            const outerRadiusX = absWidth / 2;
+            const outerRadiusY = absHeight / 2;
+            const innerRadiusX = outerRadiusX * 0.4; // Inner radius is 40% of outer
+            const innerRadiusY = outerRadiusY * 0.4;
+            
             const points = [];
             
-            // Create 5-pointed star
+            // Create 5-pointed star with elliptical shape support
             for (let i = 0; i < 10; i++) {
                 const angle = (i * Math.PI) / 5 - Math.PI / 2; // Start from top
-                const radius = i % 2 === 0 ? outerRadius : innerRadius;
-                const pointX = cx + radius * Math.cos(angle);
-                const pointY = cy + radius * Math.sin(angle);
+                const radiusX = i % 2 === 0 ? outerRadiusX : innerRadiusX;
+                const radiusY = i % 2 === 0 ? outerRadiusY : innerRadiusY;
+                const pointX = cx + radiusX * Math.cos(angle);
+                const pointY = cy + radiusY * Math.sin(angle);
                 points.push(`${pointX},${pointY}`);
             }
             
@@ -5333,20 +5344,30 @@
                     };
                 }
             } else if (element.type === 'star') {
-                // For star shapes, calculate bounds based on actual star points
-                const cx = element.x + element.width / 2;
-                const cy = element.y + element.height / 2;
-                const outerRadius = Math.min(Math.abs(element.width), Math.abs(element.height)) / 2;
-                const innerRadius = outerRadius * 0.4;
+                // For star shapes, calculate bounds based on actual star points using elliptical radii
+                // This must match the createStarPoints calculation for proper bounding box
+                const absWidth = Math.abs(element.width);
+                const absHeight = Math.abs(element.height);
+                
+                // Calculate center based on actual position and dimensions
+                const cx = element.width >= 0 ? element.x + element.width / 2 : element.x + element.width / 2;
+                const cy = element.height >= 0 ? element.y + element.height / 2 : element.y + element.height / 2;
+                
+                // Use separate radii for width and height to match createStarPoints
+                const outerRadiusX = absWidth / 2;
+                const outerRadiusY = absHeight / 2;
+                const innerRadiusX = outerRadiusX * 0.4;
+                const innerRadiusY = outerRadiusY * 0.4;
                 
                 // Find the actual bounds of the star points
                 let minX = cx, maxX = cx, minY = cy, maxY = cy;
                 
                 for (let i = 0; i < 10; i++) {
                     const angle = (i * Math.PI) / 5 - Math.PI / 2;
-                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
-                    const pointX = cx + radius * Math.cos(angle);
-                    const pointY = cy + radius * Math.sin(angle);
+                    const radiusX = i % 2 === 0 ? outerRadiusX : innerRadiusX;
+                    const radiusY = i % 2 === 0 ? outerRadiusY : innerRadiusY;
+                    const pointX = cx + radiusX * Math.cos(angle);
+                    const pointY = cy + radiusY * Math.sin(angle);
                     
                     minX = Math.min(minX, pointX);
                     maxX = Math.max(maxX, pointX);
