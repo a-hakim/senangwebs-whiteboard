@@ -232,6 +232,11 @@
             // Set initial grid button state
             setTimeout(() => {
                 this.updateGridButtonState();
+                
+                // If readOnly mode is enabled, automatically enter preview mode
+                if (this.options.readOnly) {
+                    this.enterPreviewMode();
+                }
             }, 100); // Small delay to ensure DOM is ready
         }
         
@@ -6858,21 +6863,23 @@
             // Lock all elements (disable editing)
             this.lockAllElements();
             
-            // Add ESC key listener
-            this.previewModeKeyHandler = (e) => {
-                if (e.key === 'Escape') {
-                    this.exitPreviewMode();
-                }
-            };
-            document.addEventListener('keydown', this.previewModeKeyHandler);
-            
-            // Add fullscreen change listener to handle browser ESC
-            this.fullscreenChangeHandler = (e) => {
-                if (e.key === 'Escape' && this.isPreviewMode) {
-                    this.exitPreviewMode();
-                }
-            };
-            document.addEventListener('keydown', this.fullscreenChangeHandler);
+            // Add ESC key listener - only if not in readOnly mode
+            if (!this.options.readOnly) {
+                this.previewModeKeyHandler = (e) => {
+                    if (e.key === 'Escape') {
+                        this.exitPreviewMode();
+                    }
+                };
+                document.addEventListener('keydown', this.previewModeKeyHandler);
+                
+                // Add fullscreen change listener to handle browser ESC
+                this.fullscreenChangeHandler = (e) => {
+                    if (e.key === 'Escape' && this.isPreviewMode) {
+                        this.exitPreviewMode();
+                    }
+                };
+                document.addEventListener('keydown', this.fullscreenChangeHandler);
+            }
             
             // Enable browser-frame fullscreen (not native fullscreen)
             this.enableBrowserFrameFullscreen();
@@ -7067,11 +7074,17 @@
         
         // Toggle preview mode
         togglePreviewMode() {
+            // In readOnly mode, prevent exiting preview mode
+            if (this.isPreviewMode && this.options.readOnly) {
+                return; // Do nothing - stay in preview mode
+            }
+            
             if (this.isPreviewMode) {
                 this.exitPreviewMode();
             } else {
                 this.enterPreviewMode();
             }
+            
             this.updatePreviewButtonState();
         }
         
