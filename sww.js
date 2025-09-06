@@ -758,8 +758,8 @@
                 
                 .sww-text-properties {
                     background: #ffffff10;
-                    padding-top: 0.1px;
-                    padding-bottom: 6px;
+                    padding-top: .1px;
+                    padding-bottom: .1px;
                 }
                 
                 .sww-text-properties h4 {
