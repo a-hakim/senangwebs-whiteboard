@@ -216,7 +216,6 @@
         }
         
         init() {
-            this.injectCSS();
             this.createUI();
             this.setupEventListeners();
             
@@ -477,868 +476,10 @@
             }
         }
         
-        injectCSS() {
-            if (document.getElementById('sww-styles')) return;
-            
-            // Add Font Awesome CSS if not already present
-            if (!document.querySelector('link[href*="font-awesome"]') && !document.getElementById('sww-fontawesome')) {
-                const fontAwesome = document.createElement('link');
-                fontAwesome.id = 'sww-fontawesome';
-                fontAwesome.rel = 'stylesheet';
-                fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
-                document.head.appendChild(fontAwesome);
-            }
-            
-            const style = document.createElement('style');
-            style.id = 'sww-styles';
-            style.textContent = `
-                .sww-container {
-                    position: relative;
-                    width: 100%;
-                    height: 100%;
-                    overflow: hidden;
-                    user-select: none;
-                    background: #f8f9fa;
-                }
-                
-                .sww-canvas {
-                    width: 100%;
-                    height: 100%;
-                    display: block;
-                    cursor: crosshair;
-                }
-                
-                .sww-toolbar {
-                    position: absolute;
-                    top: 8px;
-                    left: 8px;
-                    display: flex;
-                    flex-direction: column;
-                    background: #18181B;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    z-index: 1000;
-                    overflow: hidden;
-                }
-                
-                .sww-tool-group {
-                    display: flex;
-                }
-                
-                .sww-tool-button {
-                    width: 48px;
-                    height: 48px;
-                    background: transparent;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 16px;
-                    transition: all 0.2s;
-                    border: none;
-                }
-                
-                .sww-tool-button i {
-                    font-size: 16px;
-                    color: #ffffff80;
-                    transition: color 0.2s;
-                }
-                
-                .sww-tool-button:hover {
-                    background: #09090B;
-                    color: #00FF99;
-                }
-
-                .sww-tool-button:hover i {
-                    color: #00FF99;
-                }
-                
-                .sww-tool-button.active {
-                    background: #09090B;
-                    color: #00FF99;
-                }
-                
-                .sww-tool-button.active i {
-                    color: #00FF99;
-                }
-                
-                .sww-tool-button:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                    background: #f5f5f5;
-                    border-color: #ddd;
-                    color: #999;
-                }
-                
-                .sww-tool-button:disabled:hover {
-                    background: #f5f5f5;
-                    border-color: #ddd;
-                }
-                
-                .sww-property-group {
-                    margin: 12px 0;
-                    padding: 0 16px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                }
-
-                .sww-property-label {
-                    display: block;
-                    margin-bottom: 6px;
-                    font-size: 12px;
-                    color: #ffffff80;
-                }
-                
-                .sww-property-label {
-                    font-size: 12px;
-                    color: #ffffff80;
-                    margin-right: 10px;
-                    min-width: 80px;
-                    flex-shrink: 0;
-                }
-                
-                .sww-property-input-group {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                }
-                
-                .sww-property-input {
-                    width: 100%;
-                    padding: 5px;
-                    border: 1px solid #ccc;
-                    border-radius: 3px;
-                    font-size: 12px;
-                }
-                
-                .sww-color-input {
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    background: #09090B;
-                    padding: 0;
-                }
-                
-                .sww-number-input {
-                    width: 64px;
-                    padding: 5px 8px;
-                    border-radius: 8px;
-                    font-size: 12px;
-                    height: 32px;
-                    background: #09090B;
-                    color: white;
-                    border: 1px solid #262626;
-                    box-sizing: border-box;
-                    text-align: center;
-                }
-                
-                .sww-number-input:focus {
-                    outline: none;
-                    border-color: #00FF99;
-                    box-shadow: 0 0 0 1px #00FF99;
-                }
-                
-                .sww-number-input:hover {
-                    border-color: #404040;
-                }
-                
-                .sww-hex-input {
-                    width: 80px;
-                    padding: 5px 8px;
-                    border-radius: 8px;
-                    font-size: 12px;
-                    height: 32px;
-                    background: #09090B;
-                    color: white;
-                    border: 1px solid #262626;
-                    box-sizing: border-box;
-                    text-align: center;
-                }
-                
-                .sww-hex-input:focus {
-                    outline: none;
-                    border-color: #00FF99;
-                    box-shadow: 0 0 0 1px #00FF99;
-                }
-                
-                .sww-hex-input:hover {
-                    border-color: #404040;
-                }
-                
-                .sww-hex-input::placeholder {
-                    color: #666;
-                }
-                
-                .sww-property-unit {
-                    margin-left: 8px;
-                    font-size: 11px;
-                    color: #ffffff80;
-                    display: inline-block;
-                    min-width: 20px;
-                }
-                
-                .sww-range-input {
-                    width: 100%;
-                }
-                
-                .sww-select-input {
-                    width: 100%;
-                    padding: 5px;
-                    border-radius: 8px;
-                    font-size: 12px;
-                    height: 32px;
-                    background: #09090B;
-                    color: white;
-                    border: none;
-                }
-                
-                .sww-element {
-                    cursor: move;
-                }
-                
-                .sww-element.selected {
-                    /* Selection is indicated by selection box and handles, not by changing element appearance */
-                }
-                
-                /* Prevent selection styles from affecting arrow lines - preserve original width */
-                .sww-element.selected[marker-end] {
-                    stroke-width: var(--original-stroke-width, 2) !important;
-                }
-                
-                /* Arrow markers should maintain their original appearance */
-                marker polygon {
-                    stroke: none !important;
-                    stroke-width: 0 !important;
-                    stroke-dasharray: none !important;
-                }
-                
-                /* Ensure marker visibility */
-                marker {
-                    overflow: visible;
-                }
-                
-                /* Text boundary styling */
-                .sww-text-boundary {
-                    pointer-events: none;
-                    opacity: 0.8;
-                }
-                
-                .sww-element.selected .sww-text-boundary {
-                    opacity: 1;
-                    stroke: #007370;
-                    stroke-width: 1.5;
-                }
-                
-                .sww-selection-box {
-                    fill: none;
-                    stroke: #007370;
-                    stroke-width: 1;
-                    stroke-dasharray: 5,5;
-                    pointer-events: none;
-                }
-                
-                .sww-handle {
-                    fill: white;
-                    stroke: #007370;
-                    stroke-width: 2;
-                    cursor: pointer;
-                }
-                
-                .sww-handle.rotate {
-                    cursor: crosshair;
-                }
-                
-                .sww-text-editor {
-                    position: absolute;
-                    border: 2px solid #007370;
-                    background: transparent;
-                    resize: none;
-                    outline: none;
-                    padding: 2px;
-                    font-family: inherit;
-                    z-index: 1001;
-                }
-                
-                .sww-text-properties {
-                    background: #ffffff10;
-                    padding-top: .1px;
-                    padding-bottom: .1px;
-                }
-                
-                .sww-text-properties h4 {
-                    margin: 0 0 6px 0;
-                    font-size: 12px;
-                    color: white;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-                
-                .sww-value-display {
-                    font-size: 10px;
-                    color: #6c757d;
-                    font-weight: 500;
-                    min-width: 30px;
-                    text-align: right;
-                }
-                
-                .sww-align-button {
-                    padding: 4px 8px;
-                    background: #09090B;
-                    cursor: pointer;
-                    font-size: 12px;
-                    border-radius: 8px;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s;
-                    margin-right: 2px;
-                    width: 32px;
-                    height: 32px;
-                    display: flex;
-                    border: none;
-                    color: white;
-                }
-                
-                .sww-align-button:hover {
-                    background: #00FF99;
-                    color: #09090B;
-                }
-                
-                .sww-align-button.active {
-                    background: #00FF99;
-                    color: #09090B;
-                }
-                
-                .sww-align-button i {
-                    font-size: 16px;
-                }
-                
-                /* Locked and Grouped elements styling */
-                .sww-locked {
-                    opacity: 0.7 !important;
-                    filter: grayscale(50%) !important;
-                }
-                
-                /* Context Menu Styles */
-                .sww-context-menu {
-                    position: absolute;
-                    background: white;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 6px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    z-index: 2000;
-                    min-width: 150px;
-                    padding: 4px 0;
-                    font-size: 14px;
-                    display: none;
-                }
-                
-                .sww-context-menu-item {
-                    padding: 8px 16px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    color: #333;
-                    border: none;
-                    background: none;
-                    width: 100%;
-                    text-align: left;
-                    font-size: 14px;
-                }
-                
-                .sww-context-menu-item:hover {
-                    background: #f8f9fa;
-                }
-                
-                .sww-context-menu-item:disabled {
-                    color: #aaa;
-                    cursor: not-allowed;
-                }
-                
-                .sww-context-menu-item:disabled:hover {
-                    background: none;
-                }
-                
-                .sww-context-menu-item i {
-                    margin-right: 10px;
-                    width: 16px;
-                    text-align: center;
-                    font-size: 13px;
-                }
-                
-                .sww-context-menu-separator {
-                    height: 1px;
-                    background: #e9ecef;
-                    margin: 4px 0;
-                }
-
-                .sww-panel-header {
-                    height: 40px;
-                    font-size: 14px;
-                    color: #ffffff80;
-                    background: #18181B;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                }
-
-                .sww-panel-header span {
-                    line-height: 40px;
-                    padding-left: 16px;
-                    color: white;
-                }
-
-                .sww-panel-header-button {
-                    width: 40px;
-                    height: 40px;
-                    background: #18181B;
-                    border: none;
-                    color: #ffffff80;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    font-size: 16px;
-                    transition: all 0.2s;
-                }
-
-                .sww-panel-header-button:hover {
-                    background: #09090B;
-                    color: #00FF99;
-                }
-                
-                /* Hidden properties panel by default */
-                .sww-properties-panel {
-                    position: absolute;
-                    overflow-y: auto;
-                    top: 0px;
-                    right: 0px;
-                    width: 20rem;
-                    height: calc(100vh - 48px);
-                    background: #18181B;
-                    z-index: 1000;
-                    display: none;
-                }
-                
-                .sww-properties-panel.visible {
-                    display: block;
-                }
-                
-                /* New Element Types Styles */
-                .sww-website-element {
-                    overflow: hidden;
-                    padding: 0;
-                    box-sizing: border-box;
-                    display: flex;
-                    flex-direction: column;
-                }
-                
-                .sww-website-address-bar {
-                    background: #f8f9fa;
-                    border-bottom: 1px solid #dee2e6;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    color: #6c757d;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    min-height: 32px;
-                    box-sizing: border-box;
-                }
-                
-                .sww-website-address-bar .sww-website-controls {
-                    display: flex;
-                    gap: 4px;
-                }
-                
-                .sww-website-address-bar .sww-website-control {
-                    width: 12px;
-                    height: 12px;
-                    border-radius: 50%;
-                    background: #dee2e6;
-                }
-                
-                .sww-website-address-bar .sww-website-control.close {
-                    background: #dc3545;
-                }
-                
-                .sww-website-address-bar .sww-website-control.minimize {
-                    background: #ffc107;
-                }
-                
-                .sww-website-address-bar .sww-website-control.maximize {
-                    background: #28a745;
-                }
-                
-                .sww-website-address-bar .sww-website-url {
-                    flex: 1;
-                    background: white;
-                    border: 1px solid #dee2e6;
-                    border-radius: 8px;
-                    padding: 4px 8px;
-                    font-size: 11px;
-                    color: #495057;
-                    cursor: pointer;
-                    overflow: hidden;
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
-                    transition: border-color 0.2s ease, background-color 0.2s ease;
-                }
-                
-                .sww-website-address-bar .sww-website-url:hover {
-                    border-color: #007bff;
-                    background: #f8f9fa;
-                }
-                
-                .sww-website-content {
-                    flex: 1;
-                    overflow: hidden;
-                    background: white;
-                }
-                
-                .sww-website-element iframe {
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                    display: block;
-                }
-                
-                .sww-website-placeholder {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    background: #f8f9fa;
-                    color: #6c757d;
-                    font-size: 14px;
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                    cursor: pointer;
-                    box-sizing: border-box;
-                    transition: background-color 0.2s ease;
-                }
-                
-                .sww-website-placeholder:hover {
-                    background: #e9ecef;
-                }
-
-                .sww-website-placeholder i {
-                    font-size: 24px;
-                }
-                
-                .sww-image-element {
-                    overflow: hidden;
-                    box-sizing: border-box;
-                }
-                
-                .sww-image-element img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    display: block;
-                }
-                
-                .sww-image-placeholder {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    background: #f8f9fa;
-                    color: #6c757d;
-                    font-size: 14px;
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                    cursor: pointer;
-                    transition: background-color 0.2s ease;
-                    box-sizing: border-box;
-                }
-                
-                .sww-image-placeholder:hover {
-                    background: #e9ecef;
-                }
-
-                .sww-image-placeholder i {
-                    font-size: 24px;
-                }
-                
-                .sww-markdown-element {
-                    overflow: hidden;
-                    box-sizing: border-box;
-                    pointer-events: all;
-                    /* Border and background are now set dynamically based on element properties */
-                }
-                
-                .sww-markdown-editor {
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                    resize: none;
-                    padding: 10px;
-                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-                    font-size: 12px;
-                    line-height: 1.4;
-                    outline: none;
-                    box-sizing: border-box;
-                    pointer-events: all;
-                    transition: background-color 0.2s ease;
-                    /* Background and color are now set dynamically based on element properties */
-                }
-                
-                .sww-markdown-editor[readonly] {
-                    background: rgba(248, 249, 250, 0.5) !important;
-                }
-                
-                .sww-markdown-editor[readonly]:hover {
-                    background: rgba(233, 236, 239, 0.5) !important;
-                }
-                
-                .sww-markdown-editor:not([readonly]) {
-                    background: white !important;
-                    box-shadow: inset 0 0 0 1px rgba(0, 123, 255, 0.25);
-                }
-                
-                .sww-markdown-placeholder {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: #f8f9fa;
-                    color: #6c757d;
-                    font-size: 14px;
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                    padding: calc(1rem + 20px);
-                    border: 2px dashed #dee2e6;
-                    border-radius: 4px;
-                }
-                
-                /* Rendered markdown content styles */
-                .sww-markdown-rendered {
-                    pointer-events: all;
-                }
-                
-                .sww-markdown-rendered h1 {
-                    font-size: 1.8em;
-                    font-weight: bold;
-                    margin: 0.5em 0;
-                    border-bottom: 2px solid #eee;
-                    padding-bottom: 0.3em;
-                }
-                
-                .sww-markdown-rendered h2 {
-                    font-size: 1.5em;
-                    font-weight: bold;
-                    margin: 0.4em 0;
-                    border-bottom: 1px solid #eee;
-                    padding-bottom: 0.2em;
-                }
-                
-                .sww-markdown-rendered h3 {
-                    font-size: 1.3em;
-                    font-weight: bold;
-                    margin: 0.3em 0;
-                }
-                
-                .sww-markdown-rendered p {
-                    margin: 0.5em 0;
-                    line-height: 1.6;
-                }
-                
-                .sww-markdown-rendered strong {
-                    font-weight: bold;
-                }
-                
-                .sww-markdown-rendered em {
-                    font-style: italic;
-                }
-                
-                .sww-markdown-rendered code {
-                    background-color: #f4f4f4;
-                    padding: 2px 4px;
-                    border-radius: 3px;
-                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-                    font-size: 0.9em;
-                }
-                
-                .sww-markdown-rendered pre {
-                    background-color: #f8f8f8;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    padding: 8px;
-                    margin: 0.5em 0;
-                    overflow-x: auto;
-                }
-                
-                .sww-markdown-rendered pre code {
-                    background: none;
-                    padding: 0;
-                    border-radius: 0;
-                }
-                
-                .sww-markdown-rendered ul {
-                    margin: 0.5em 0;
-                    padding-left: 1.5em;
-                }
-                
-                .sww-markdown-rendered li {
-                    margin: 0.2em 0;
-                }
-                
-                .sww-markdown-rendered blockquote {
-                    border-left: 4px solid #ddd;
-                    margin: 0.5em 0;
-                    padding-left: 1em;
-                    color: #666;
-                    font-style: italic;
-                }
-                
-                .sww-markdown-rendered a {
-                    color: #0066cc;
-                    text-decoration: none;
-                }
-                
-                .sww-markdown-rendered a:hover {
-                    text-decoration: underline;
-                }
-                
-                /* Element configuration dialogs */
-                .sww-config-dialog {
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: white;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                    z-index: 3000;
-                    padding: 20px;
-                    min-width: 300px;
-                    max-width: 500px;
-                }
-                
-                .sww-config-dialog h3 {
-                    margin: 0 0 15px 0;
-                    color: #333;
-                    font-size: 16px;
-                }
-                
-                .sww-config-dialog label {
-                    display: block;
-                    margin-bottom: 5px;
-                    font-size: 12px;
-                    font-weight: bold;
-                    color: #333;
-                }
-                
-                .sww-config-dialog input,
-                .sww-config-dialog textarea {
-                    width: 100%;
-                    padding: 8px;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    margin-bottom: 15px;
-                    box-sizing: border-box;
-                }
-                
-                .sww-config-dialog textarea {
-                    height: 100px;
-                    resize: vertical;
-                    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-                }
-                
-                .sww-config-dialog-buttons {
-                    display: flex;
-                    gap: 10px;
-                    justify-content: flex-end;
-                }
-                
-                .sww-config-dialog button {
-                    padding: 8px 16px;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    background: white;
-                    cursor: pointer;
-                    font-size: 12px;
-                }
-                
-                .sww-config-dialog button.primary {
-                    background: #007370;
-                    color: white;
-                    border-color: #007370;
-                }
-                
-                .sww-config-dialog button:hover {
-                    background: #f8f9fa;
-                }
-                
-                .sww-config-dialog button.primary:hover {
-                    background: #007370;
-                }
-                
-                .sww-config-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                    z-index: 2999;
-                }
-                
-                /* Elegant Text Editor Styles */
-                .sww-text-editor-elegant {
-                    font-family: inherit !important;
-                    border-radius: 8px !important;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-                    backdrop-filter: blur(8px) !important;
-                    -webkit-backdrop-filter: blur(8px) !important;
-                }
-                
-                .sww-text-editor-elegant:focus {
-                    box-shadow: 0 8px 32px rgba(0, 255, 153, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-                    border-color: rgba(0, 255, 153, 0.8) !important;
-                    transform: scale(1.02) !important;
-                }
-                
-                .sww-text-editor-elegant::placeholder {
-                    color: rgba(0, 0, 0, 0.4) !important;
-                    font-style: italic !important;
-                }
-                
-                .sww-text-editor-elegant:hover {
-                    border-color: rgba(0, 255, 153, 0.6) !important;
-                    box-shadow: 0 4px 16px rgba(0, 255, 153, 0.1), 0 1px 4px rgba(0, 0, 0, 0.08) !important;
-                }
-                
-                /* Fullscreen styles for preview mode */
-                .sww-container:fullscreen {
-                    background: #000;
-                }
-                
-                .sww-container:fullscreen .sww-canvas {
-                    width: 100vw !important;
-                    height: 100vh !important;
-                }
-                
-                /* Hide UI elements in preview mode */
-                .sww-container.preview-mode .sww-toolbar,
-                .sww-container.preview-mode .sww-properties-panel {
-                    display: none !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
         createUI() {
             // Clear container
             this.container.innerHTML = '';
-            this.container.className = 'sww-container';
-            
-            // Create SVG canvas
+            this.container.className = 'sww-container';            // Create SVG canvas
             this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             this.svg.setAttribute('class', 'sww-canvas');
             this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
@@ -1739,7 +880,8 @@
             // Gradient Controls
             const gradientGroup = document.createElement('div');
             gradientGroup.className = 'sww-property-group sww-gradient-group';
-            gradientGroup.style.display = this.toolSettings.fillStyle === 'gradient' ? 'block' : 'none';
+            gradientGroup.classList.toggle('visible', this.toolSettings.fillStyle === 'gradient');
+            gradientGroup.classList.toggle('hidden', this.toolSettings.fillStyle !== 'gradient');
             
             // Gradient Type
             const gradientTypeGroup = document.createElement('div');
@@ -1960,9 +1102,7 @@
             
             // Text properties section
             const textSection = document.createElement('div');
-            textSection.className = 'sww-text-properties';
-            textSection.style.marginTop = '10px';
-            textSection.style.display = 'none'; // Initially hidden
+            textSection.className = 'sww-text-properties sww-text-section hidden';
             
             // const textSectionTitle = document.createElement('h4');
             // textSectionTitle.textContent = 'Text Properties';
@@ -2042,7 +1182,8 @@
                 const option = document.createElement('option');
                 option.value = font.value;
                 option.textContent = font.text;
-                option.style.fontFamily = font.value;
+                option.className = 'sww-font-family-option';
+                option.style.fontFamily = font.value; // This needs to stay dynamic
                 fontFamilySelect.appendChild(option);
             });
             
@@ -2127,9 +1268,7 @@
             textAlignLabel.textContent = 'Text Align';
             
             const textAlignContainer = document.createElement('div');
-            textAlignContainer.className = 'sww-align-buttons';
-            textAlignContainer.style.display = 'flex';
-            textAlignContainer.style.gap = '6px';
+            textAlignContainer.className = 'sww-align-buttons sww-text-align-container';
             
             const alignments = [
                 { value: 'left', icon: 'fas fa-align-left', title: 'Align Left' },
@@ -2301,7 +1440,7 @@
             if (e.button === 1 || (e.button === 0 && e.altKey) || this.isPreviewMode) {
                 // Middle mouse, Alt+click, or preview mode - enable panning for better viewing
                 this.isPanning = true;
-                this.svg.style.cursor = 'grabbing';
+                this.setCursor('grabbing');
                 return;
             }
             
@@ -2462,6 +1601,16 @@
             this.updateViewBox();
         }
         
+        // Helper method to set cursor with CSS classes
+        setCursor(cursorType) {
+            // Remove all cursor classes
+            this.svg.classList.remove('grabbing', 'grab', 'crosshair', 'default');
+            // Add the specific cursor class
+            if (cursorType !== 'default') {
+                this.svg.classList.add(cursorType);
+            }
+        }
+        
         getPointerPosition(e) {
             const rect = this.svg.getBoundingClientRect();
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
@@ -2577,25 +1726,23 @@
                     const hint = element.svgElement.querySelector('.sww-markdown-hint');
                     
                     if (textarea && renderedView) {
-                        // Hide rendered view and show editor
-                        renderedView.style.display = 'none';
-                        textarea.style.display = 'block';
+                        // Toggle to editing mode using CSS classes
+                        element.svgElement.classList.add('sww-markdown-editing');
+                        element.svgElement.classList.remove('sww-markdown-readonly');
+                        
                         textarea.readOnly = false;
                         textarea.style.cursor = 'text';
                         textarea.focus();
                         textarea.setSelectionRange(textarea.value.length, textarea.value.length);
                         
-                        // Hide the hint when editing
-                        if (hint) hint.style.display = 'none';
-                        
                         // Add blur handler to switch back to rendered view
                         const handleBlur = () => {
-                            // Switch back to rendered view
-                            textarea.style.display = 'none';
-                            renderedView.style.display = 'block';
+                            // Switch back to rendered view using CSS classes
+                            element.svgElement.classList.remove('sww-markdown-editing');
+                            element.svgElement.classList.add('sww-markdown-readonly');
+                            
                             textarea.readOnly = true;
                             textarea.style.cursor = 'default';
-                            if (hint) hint.style.display = 'block';
                             textarea.removeEventListener('blur', handleBlur);
                         };
                         textarea.addEventListener('blur', handleBlur);
@@ -3324,7 +2471,7 @@
                     
                     // Create markdown container
                     const div = document.createElement('div');
-                    div.className = 'sww-markdown-element';
+                    div.className = 'sww-markdown-element-container sww-markdown-readonly';
                     div.style.width = '100%';
                     div.style.height = '100%';
                     div.style.position = 'relative';
@@ -3399,9 +2546,9 @@
                     });
                     
                     textarea.addEventListener('blur', () => {
-                        // Switch back to rendered view
-                        textarea.style.display = 'none';
-                        renderedView.style.display = 'block';
+                        // Switch back to rendered view using CSS classes
+                        div.classList.remove('sww-markdown-editing');
+                        div.classList.add('sww-markdown-readonly');
                         textarea.readOnly = true;
                         textarea.style.cursor = 'default';
                         
@@ -5688,7 +4835,8 @@
             
             // Show or hide text properties based on selection
             if (hasTextElements || hasMarkdownElements) {
-                textPropertiesSection.style.display = 'block';
+                textPropertiesSection.classList.remove('hidden');
+                textPropertiesSection.classList.add('visible');
                 
                 // Find property groups by their labels
                 const propertyGroups = textPropertiesSection.querySelectorAll('.sww-property-group');
@@ -5712,7 +4860,8 @@
                     }
                 });
             } else {
-                textPropertiesSection.style.display = 'none';
+                textPropertiesSection.classList.remove('visible');
+                textPropertiesSection.classList.add('hidden');
             }
             
             // Handle fill properties visibility for image and website elements
@@ -6394,7 +5543,7 @@
             });
             
             // Update cursor
-            this.svg.style.cursor = toolName === 'select' ? 'default' : 'crosshair';
+            this.setCursor(toolName === 'select' ? 'default' : 'crosshair');
         }
         
         getScene() {
