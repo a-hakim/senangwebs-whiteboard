@@ -3115,6 +3115,22 @@
                             container.style.border = 'none';
                         }
                         
+                        // Apply fill style as background
+                        if (element.fillStyle === 'solid' && element.fillColor !== 'transparent') {
+                            container.style.backgroundColor = element.fillColor;
+                            container.style.backgroundImage = 'none';
+                        } else if (element.fillStyle === 'gradient') {
+                            const cssGradient = this.createCSSGradient(element);
+                            container.style.backgroundImage = cssGradient;
+                            container.style.backgroundColor = 'transparent';
+                        } else if (element.fillStyle === 'transparent') {
+                            container.style.backgroundColor = 'transparent';
+                            container.style.backgroundImage = 'none';
+                        } else {
+                            container.style.backgroundColor = 'white';
+                            container.style.backgroundImage = 'none';
+                        }
+                        
                         // Apply opacity
                         container.style.opacity = element.opacity;
                         
@@ -3176,6 +3192,22 @@
                             div.style.border = 'none';
                         }
                         
+                        // Apply fill style as background
+                        if (element.fillStyle === 'solid' && element.fillColor !== 'transparent') {
+                            div.style.backgroundColor = element.fillColor;
+                            div.style.backgroundImage = 'none';
+                        } else if (element.fillStyle === 'gradient') {
+                            const cssGradient = this.createCSSGradient(element);
+                            div.style.backgroundImage = cssGradient;
+                            div.style.backgroundColor = 'transparent';
+                        } else if (element.fillStyle === 'transparent') {
+                            div.style.backgroundColor = 'transparent';
+                            div.style.backgroundImage = 'none';
+                        } else {
+                            div.style.backgroundColor = 'white';
+                            div.style.backgroundImage = 'none';
+                        }
+                        
                         // Apply opacity
                         div.style.opacity = element.opacity;
                         
@@ -3209,6 +3241,22 @@
                             div.style.border = 'none';
                         }
                         
+                        // Apply fill style as background
+                        if (element.fillStyle === 'solid' && element.fillColor !== 'transparent') {
+                            div.style.backgroundColor = element.fillColor;
+                            div.style.backgroundImage = 'none';
+                        } else if (element.fillStyle === 'gradient') {
+                            const cssGradient = this.createCSSGradient(element);
+                            div.style.backgroundImage = cssGradient;
+                            div.style.backgroundColor = 'transparent';
+                        } else if (element.fillStyle === 'transparent') {
+                            div.style.backgroundColor = 'transparent';
+                            div.style.backgroundImage = 'none';
+                        } else {
+                            div.style.backgroundColor = 'white';
+                            div.style.backgroundImage = 'none';
+                        }
+                        
                         // Apply opacity
                         div.style.opacity = element.opacity;
                         
@@ -3233,6 +3281,22 @@
                             div.style.border = `${element.strokeWidth}px solid ${element.strokeColor}`;
                         } else {
                             div.style.border = 'none';
+                        }
+                        
+                        // Apply fill style as background
+                        if (element.fillStyle === 'solid' && element.fillColor !== 'transparent') {
+                            div.style.backgroundColor = element.fillColor;
+                            div.style.backgroundImage = 'none';
+                        } else if (element.fillStyle === 'gradient') {
+                            const cssGradient = this.createCSSGradient(element);
+                            div.style.backgroundImage = cssGradient;
+                            div.style.backgroundColor = 'transparent';
+                        } else if (element.fillStyle === 'transparent') {
+                            div.style.backgroundColor = 'transparent';
+                            div.style.backgroundImage = 'none';
+                        } else {
+                            div.style.backgroundColor = 'white';
+                            div.style.backgroundImage = 'none';
                         }
                         
                         // Apply opacity
@@ -3272,10 +3336,18 @@
                     // Apply fill color as background
                     if (element.fillStyle === 'solid' && element.fillColor !== 'transparent') {
                         div.style.backgroundColor = element.fillColor;
+                        div.style.backgroundImage = 'none';
+                    } else if (element.fillStyle === 'gradient') {
+                        // Convert gradient to CSS gradient
+                        const cssGradient = this.createCSSGradient(element);
+                        div.style.backgroundImage = cssGradient;
+                        div.style.backgroundColor = 'transparent';
                     } else if (element.fillStyle === 'transparent') {
                         div.style.backgroundColor = 'transparent';
+                        div.style.backgroundImage = 'none';
                     } else {
                         div.style.backgroundColor = 'white'; // Default background
+                        div.style.backgroundImage = 'none';
                     }
                     
                     // Apply opacity
@@ -3499,6 +3571,25 @@
             
             defs.appendChild(gradient);
             return gradientId;
+        }
+        
+        createCSSGradient(element) {
+            // Convert SVG gradient to CSS gradient for HTML elements
+            const stops = element.gradientStops || this.toolSettings.gradientStops;
+            const gradientType = element.gradientType || 'linear';
+            
+            // Create color stops string
+            const colorStops = stops
+                .sort((a, b) => a.offset - b.offset) // Sort by offset
+                .map(stop => `${stop.color} ${stop.offset}%`)
+                .join(', ');
+            
+            if (gradientType === 'radial') {
+                return `radial-gradient(circle, ${colorStops})`;
+            } else {
+                // Linear gradient (default direction: left to right)
+                return `linear-gradient(to right, ${colorStops})`;
+            }
         }
         
         parseMarkdown(text) {
