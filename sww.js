@@ -1534,6 +1534,16 @@
         }
         
         handleKeyDown(e) {
+            // Keyboard shortcuts:
+            // - Delete/Backspace: Delete selected elements
+            // - Escape: Clear selection
+            // - Ctrl+A: Select all elements
+            // - Ctrl+C: Copy selected elements
+            // - Ctrl+V: Paste copied elements
+            // - Ctrl+Z: Undo last action
+            // - Ctrl+Y / Ctrl+Shift+Z: Redo last undone action
+            // - Arrow keys: Move selected elements (Shift for larger steps)
+            
             // Check if the user is currently typing in an input field
             const activeElement = document.activeElement;
             const isEditingInput = activeElement && (
@@ -1566,6 +1576,14 @@
             } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
                 e.preventDefault();
                 this.redo();
+            } else if (e.ctrlKey && e.key === 'c') {
+                // Copy selected elements
+                e.preventDefault();
+                this.copySelected();
+            } else if (e.ctrlKey && e.key === 'v') {
+                // Paste from clipboard
+                e.preventDefault();
+                this.pasteClipboard();
             } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 // Arrow keys to move selected elements
                 e.preventDefault();
@@ -3766,7 +3784,10 @@
         
         // Clipboard Methods
         copySelected() {
-            if (this.selectedElements.size === 0) return;
+            if (this.selectedElements.size === 0) {
+                this.showNotification('No elements selected to copy', 'warning');
+                return;
+            }
             
             this.clipboard = [];
             this.selectedElements.forEach(element => {
@@ -3781,11 +3802,16 @@
                 this.clipboard.push(elementCopy);
             });
             
+            // Show visual feedback for copy operation
+            this.showNotification(`Copied ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`, 'copy');
             console.log(`Copied ${this.clipboard.length} elements to clipboard`);
         }
         
         pasteClipboard() {
-            if (this.clipboard.length === 0) return;
+            if (this.clipboard.length === 0) {
+                this.showNotification('Nothing to paste', 'warning');
+                return;
+            }
             
             // Save state before pasting
             this.saveStateToHistory('pasteElements');
@@ -3793,13 +3819,28 @@
             // Clear current selection
             this.clearSelection();
             
+            // Calculate paste position - center of current viewport
+            const centerX = this.viewBox.x + this.viewBox.width / 2;
+            const centerY = this.viewBox.y + this.viewBox.height / 2;
+            
+            // Find the center of the clipboard elements to maintain relative positioning
+            let minX = Infinity, minY = Infinity;
+            this.clipboard.forEach(element => {
+                minX = Math.min(minX, element.x);
+                minY = Math.min(minY, element.y);
+            });
+            
+            // Calculate offset to center the pasted elements
+            const offsetX = centerX - minX;
+            const offsetY = centerY - minY;
+            
             // Create new elements from clipboard
             this.clipboard.forEach(elementData => {
                 const newElement = {
                     ...elementData,
                     id: this.generateId(),
-                    x: elementData.x + 20, // Additional offset each time
-                    y: elementData.y + 20
+                    x: elementData.x + offsetX,
+                    y: elementData.y + offsetY
                 };
                 
                 // Create SVG element and add to canvas
@@ -3812,6 +3853,14 @@
                 this.selectElement(newElement);
             });
             
+            // Update clipboard positions for next paste (add small offset)
+            this.clipboard.forEach(element => {
+                element.x += 20;
+                element.y += 20;
+            });
+            
+            // Show visual feedback for paste operation
+            this.showNotification(`Pasted ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`, 'paste');
             console.log(`Pasted ${this.clipboard.length} elements from clipboard`);
         }
         
@@ -6325,6 +6374,83 @@
             element.svgElement = null;
             element._mouseDownHandler = null;
             element._touchStartHandler = null;
+        }
+        
+        // Notification system for user feedback
+        showNotification(message, type = 'info', duration = 2000) {
+            // Remove any existing notifications
+            const existingNotification = this.container.querySelector('.sww-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `sww-notification sww-notification-${type}`;
+            notification.textContent = message;
+            
+            // Add notification styles
+            Object.assign(notification.style, {
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                padding: '12px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '500',
+                zIndex: '10000',
+                pointerEvents: 'none',
+                transform: 'translateY(-10px)',
+                opacity: '0',
+                transition: 'all 0.3s ease',
+                maxWidth: '300px',
+                wordWrap: 'break-word'
+            });
+            
+            // Set colors based on type
+            switch (type) {
+                case 'copy':
+                    notification.style.backgroundColor = '#e3f2fd';
+                    notification.style.color = '#1976d2';
+                    notification.style.border = '1px solid #bbdefb';
+                    break;
+                case 'paste':
+                    notification.style.backgroundColor = '#e8f5e8';
+                    notification.style.color = '#2e7d32';
+                    notification.style.border = '1px solid #c8e6c9';
+                    break;
+                case 'warning':
+                    notification.style.backgroundColor = '#fff3e0';
+                    notification.style.color = '#f57c00';
+                    notification.style.border = '1px solid #ffcc02';
+                    break;
+                default:
+                    notification.style.backgroundColor = '#f5f5f5';
+                    notification.style.color = '#333';
+                    notification.style.border = '1px solid #ddd';
+            }
+            
+            // Add to container
+            this.container.appendChild(notification);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                notification.style.transform = 'translateY(0)';
+                notification.style.opacity = '1';
+            });
+            
+            // Auto remove after duration
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.transform = 'translateY(-10px)';
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 300);
+                }
+            }, duration);
         }
         
         cleanup() {
