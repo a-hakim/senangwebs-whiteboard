@@ -1048,6 +1048,7 @@
                     text-align: center;
                     cursor: pointer;
                     transition: background-color 0.2s ease;
+                    box-sizing: border-box;
                 }
                 
                 .sww-image-placeholder:hover {
@@ -2227,6 +2228,9 @@
                 this.updateElementDrag(point);
             } else if (this.isDrawing && this.currentElement) {
                 this.updateCurrentElement(point);
+            } else {
+                // Update cursor based on what's under the pointer for better UI/UX
+                this.updateHoverCursor(point);
             }
             
             this.lastPointerPosition = point;
@@ -2346,6 +2350,66 @@
             this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
         }
         
+        updateHoverCursor(point) {
+            // Skip cursor updates in preview mode
+            if (this.isPreviewMode) {
+                return;
+            }
+            
+            // First check if we're over the rotation handle (highest priority)
+            if (this.isPointOverRotationHandle(point)) {
+                this.svg.style.cursor = 'crosshair'; // Curved arrow cursor that suggests rotation
+                return;
+            }
+            
+            // Check if we're over an element for different cursor styles based on current tool
+            const elementAtPoint = this.getElementAtPoint(point);
+            
+            if (this.currentTool === 'select') {
+                if (elementAtPoint) {
+                    // Over an element in select mode - show grab cursor
+                    this.svg.style.cursor = 'grab';
+                } else {
+                    // Not over an element in select mode - show default cursor
+                    this.svg.style.cursor = 'default';
+                }
+            } else {
+                // In drawing modes, check if over an element to show interaction possibility
+                if (elementAtPoint) {
+                    // Over an element while drawing - show pointer to indicate it's clickable
+                    this.svg.style.cursor = 'pointer';
+                } else {
+                    // Not over an element while drawing - show crosshair for drawing
+                    this.svg.style.cursor = 'crosshair';
+                }
+            }
+        }
+        
+        isPointOverRotationHandle(point) {
+            // Only check if we have selected elements and are in select mode
+            if (this.selectedElements.size === 0 || this.currentTool !== 'select') {
+                return false;
+            }
+            
+            // Get the bounds of selected elements to determine rotation handle position
+            const bounds = this.getCombinedSelectionBounds();
+            if (!bounds) return false;
+            
+            // Rotation handle position (same as in addResizeHandles)
+            const rotateHandleX = bounds.x + bounds.width / 2;
+            const rotateHandleY = bounds.y - 20;
+            const rotateHandleRadius = 6;
+            const tolerance = 12; // Same tolerance as element selection
+            
+            // Check if point is within rotation handle area
+            const distance = Math.sqrt(
+                Math.pow(point.x - rotateHandleX, 2) + 
+                Math.pow(point.y - rotateHandleY, 2)
+            );
+            
+            return distance <= (rotateHandleRadius + tolerance);
+        }
+        
         handleDoubleClick(e) {
             e.preventDefault();
             
@@ -2421,6 +2485,9 @@
                 this.isDraggingElement = true;
                 this.manipulationMode = 'move';
                 this.dragStartPoint = point;
+                
+                // Update cursor to show grabbing state
+                this.svg.style.cursor = 'grabbing';
                 
                 // Store initial positions of all selected elements
                 this.selectedElements.forEach(el => {
@@ -3443,6 +3510,9 @@
             this.isDraggingElement = false;
             this.dragStartPoint = null;
             this.manipulationMode = null;
+            
+            // Reset cursor - will be updated by next pointer move
+            this.svg.style.cursor = 'grab';
         }
         
         updateResize(point) {
@@ -3802,6 +3872,9 @@
             this.isRotating = false;
             this.dragStartPoint = null;
             this.manipulationMode = null;
+            
+            // Reset cursor - will be updated by next pointer move
+            this.svg.style.cursor = 'default';
         }
         
         // Selection methods
@@ -4757,7 +4830,7 @@
             rotateHandle.setAttribute('cx', bounds.x + bounds.width/2);
             rotateHandle.setAttribute('cy', bounds.y - 20);
             rotateHandle.setAttribute('r', 6);
-            rotateHandle.style.cursor = 'crosshair';
+            rotateHandle.style.cursor = 'crosshair'; // Rotation cursor instead of crosshair
             
             rotateHandle.addEventListener('mousedown', (e) => {
                 e.stopPropagation();
@@ -4815,6 +4888,9 @@
             this.isRotating = true;
             this.manipulationMode = 'rotate';
             this.dragStartPoint = point;
+            
+            // Update cursor to show active rotation state
+            this.svg.style.cursor = 'crosshair'; // Consistent rotation cursor
             
             // Store initial rotation of selected elements
             this.selectedElements.forEach(element => {
@@ -5107,7 +5183,7 @@
         
         isPointInElement(point, element) {
             const bounds = this.getElementBounds(element);
-            const tolerance = 5; // Pixels tolerance for better selection
+            const tolerance = 12; // Minimum 12px tolerance for better UI/UX across all elements
             
             switch (element.type) {
                 case 'text':
@@ -5120,7 +5196,7 @@
                 case 'line':
                 case 'arrow':
                     // For lines, use increased tolerance for easier selection
-                    const lineSelectionTolerance = Math.max(element.strokeWidth / 2 + 8, 12); // Minimum 12px for easy clicking
+                    const lineSelectionTolerance = Math.max(element.strokeWidth / 2 + 8, tolerance); // Minimum 12px for easy clicking
                     return this.distanceToLine(point, 
                         { x: element.x, y: element.y }, 
                         { x: element.x + element.width, y: element.y + element.height }
@@ -5156,7 +5232,7 @@
                     return false;
                     
                 default:
-                    // For rectangles, ellipses, diamonds - use bounds
+                    // For rectangles, ellipses, diamonds, parallelograms, stars - use bounds with minimum 12px tolerance
                     return point.x >= bounds.x - tolerance && 
                            point.x <= bounds.x + bounds.width + tolerance &&
                            point.y >= bounds.y - tolerance && 
