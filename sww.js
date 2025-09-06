@@ -3595,48 +3595,210 @@
         parseMarkdown(text) {
             if (!text) return '';
             
-            // Simple markdown parser for common elements
+            // Enhanced markdown parser for comprehensive markdown support
             let html = text;
             
-            // Headers (# ## ### etc.)
+            // Escape HTML to prevent XSS, but preserve intentional HTML
+            // We'll handle this more carefully by only escaping in content, not in our generated tags
+            
+            // 1. HORIZONTAL RULES (---, ***, ___) - Process early to avoid conflicts
+            html = html.replace(/^(?:---|\*\*\*|___)$/gm, '<hr>');
+            
+            // 2. HEADINGS (# through ######)
+            html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+            html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+            html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
             html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
             html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
             html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            
+            // 3. CODE BLOCKS (``` or indented) - Process before other formatting
+            // Fenced code blocks with optional language
+            html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                const langClass = lang ? ` class="language-${lang}"` : '';
+                return `<pre><code${langClass}>${code.trim()}</code></pre>`;
+            });
+            // Indented code blocks (4+ spaces)
+            html = html.replace(/^(    .*)$/gm, '<pre><code>$1</code></pre>');
+            
+            // 4. BLOCKQUOTES (> prefix) - Support nested and multi-line blockquotes
+            // Process blockquotes line by line to handle nesting properly
+            html = html.replace(/^(>{1,})\s*(.*)$/gm, (match, markers, content) => {
+                const level = markers.length;
+                let result = content;
+                
+                // Wrap in nested blockquotes based on the number of > markers
+                for (let i = 0; i < level; i++) {
+                    result = `<blockquote>${result}</blockquote>`;
+                }
+                
+                return result;
+            });
+            
+            // Merge consecutive blockquotes at the same nesting level
+            // This handles multi-line blockquotes properly
+            let changed = true;
+            while (changed) {
+                changed = false;
+                const before = html;
+                
+                // Merge single-level blockquotes
+                html = html.replace(/(<blockquote>)([^<]*?)<\/blockquote>\s*\n\s*<blockquote>([^<]*?)<\/blockquote>/g, 
+                    (match, open, content1, content2) => {
+                        changed = true;
+                        return `${open}${content1}\n${content2}</blockquote>`;
+                    });
+                
+                // Merge nested blockquotes of the same level
+                html = html.replace(/(<blockquote><blockquote>)([^<]*?)<\/blockquote><\/blockquote>\s*\n\s*<blockquote><blockquote>([^<]*?)<\/blockquote><\/blockquote>/g, 
+                    (match, open, content1, content2) => {
+                        changed = true;
+                        return `${open}${content1}\n${content2}</blockquote></blockquote>`;
+                    });
+                
+                // Stop if no changes were made to prevent infinite loop
+                if (html === before) break;
+            }
+            
+            // 5. TABLES (pipe separated)
+            html = html.replace(/^\|(.+)\|\n\|[\s\-\:\|]+\|\n((?:\|.*\|\n?)*)/gm, (match, header, rows) => {
+                const headerCells = header.split('|').map(cell => `<th>${cell.trim()}</th>`).join('');
+                const rowsHtml = rows.trim().split('\n').map(row => {
+                    const cells = row.replace(/^\||\|$/g, '').split('|').map(cell => `<td>${cell.trim()}</td>`).join('');
+                    return `<tr>${cells}</tr>`;
+                }).join('');
+                return `<table><thead><tr>${headerCells}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+            });
+            
+            // 6. TASK LISTS (- [ ] and - [x])
+            html = html.replace(/^[\s]*-\s\[\s\]\s(.*)$/gm, '<li><input type="checkbox" disabled> $1</li>');
+            html = html.replace(/^[\s]*-\s\[x\]\s(.*)$/gm, '<li><input type="checkbox" checked disabled> $1</li>');
+            
+            // 7. ORDERED LISTS (1. 2. etc.)
+            html = html.replace(/^[\s]*(\d+)\.\s(.*)$/gm, '<li>$2</li>');
+            html = html.replace(/(<li>.*<\/li>)(?=\n<li>)/gs, '$1');
+            html = html.replace(/((?:<li>.*<\/li>\s*)+)/gs, '<ol>$1</ol>');
+            
+            // 8. UNORDERED LISTS (-, *, +)
+            html = html.replace(/^[\s]*[-\*\+]\s(.*)$/gm, '<li>$1</li>');
+            // Group consecutive list items and wrap them in <ul> if not already wrapped
+            html = html.replace(/((?:<li>(?!<input).*<\/li>\s*)+)/gs, (match) => {
+                // Don't wrap if it's already part of an ordered list or task list
+                if (match.includes('<input type="checkbox"')) return match;
+                return `<ul>${match}</ul>`;
+            });
+            
+            // 9. IMAGES (![alt](url) or ![alt](url "title")) - Process BEFORE definition lists to avoid conflicts
+            html = html.replace(/!\[([^\]]*)\]\(([^)]+?)(?:\s+"([^"]*)")?\)/g, 
+                (match, alt, url, title) => {
+                    const titleAttr = title ? ` title="${title}"` : '';
+                    return `<img src="${url}" alt="${alt}"${titleAttr}>`;
+                });
+            
+            // 10. LINKS ([text](url) or [text](url "title"))
+            html = html.replace(/\[([^\]]+)\]\(([^)]+?)(?:\s+"([^"]*)")?\)/g, 
+                (match, text, url, title) => {
+                    const titleAttr = title ? ` title="${title}"` : '';
+                    return `<a href="${url}" target="_blank"${titleAttr}>${text}</a>`;
+                });
+            
+            // 11. AUTOMATIC LINKS (<url>)
+            html = html.replace(/<(https?:\/\/[^\s>]+)>/g, '<a href="$1" target="_blank">$1</a>');
+            html = html.replace(/<([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})>/g, '<a href="mailto:$1">$1</a>');
+            
+            // 12. EMPHASIS - Process in specific order to handle nested emphasis
+            // Bold italic (***text*** or ___text___)
+            html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+            html = html.replace(/_{3}(.*?)_{3}/g, '<strong><em>$1</em></strong>');
             
             // Bold (**text** or __text__)
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
             
-            // Italic (*text* or _text_)
-            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+            // Italic (*text* or _text_) - but avoid conflicts with bold
+            html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em>$1</em>');
+            html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em>$1</em>');
             
-            // Code inline (`code`)
-            html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+            // 13. STRIKETHROUGH (~~text~~)
+            html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
             
-            // Code blocks (```code```)
-            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            // 14. HIGHLIGHT (==text==)
+            html = html.replace(/==(.*?)==/g, '<mark>$1</mark>');
             
-            // Links [text](url)
-            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+            // 15. INLINE CODE (`code`) - Process after other emphasis to avoid conflicts
+            html = html.replace(/`([^`\n]+?)`/g, '<code>$1</code>');
             
-            // Line breaks
-            html = html.replace(/\n\n/g, '</p><p>');
-            html = html.replace(/\n/g, '<br>');
+            // 16. FOOTNOTES ([^1] and [^1]: definition)
+            // First, extract footnote definitions
+            const footnotes = {};
+            html = html.replace(/^\[\^([^\]]+)\]:\s*(.*)$/gm, (match, id, definition) => {
+                footnotes[id] = definition;
+                return ''; // Remove the definition from main text
+            });
+            // Replace footnote references
+            html = html.replace(/\[\^([^\]]+)\]/g, (match, id) => {
+                if (footnotes[id]) {
+                    return `<sup><a href="#fn-${id}" id="fnref-${id}" title="${footnotes[id]}">${id}</a></sup>`;
+                }
+                return match;
+            });
             
-            // Wrap in paragraphs if not already wrapped
-            if (!html.startsWith('<h') && !html.startsWith('<p>')) {
-                html = '<p>' + html + '</p>';
-            }
+            // 17. DEFINITION LISTS (Term: Definition) - Process AFTER images/links to avoid conflicts
+            // Use more specific regex to avoid matching URLs
+            html = html.replace(/^([^:\n<>]+?):\s*(.*)$/gm, (match, term, definition) => {
+                // Don't process if it looks like a URL scheme (http:, https:, ftp:, etc.)
+                if (term.match(/^(https?|ftp|file|mailto)$/i)) {
+                    return match;
+                }
+                return `<dt>${term.trim()}</dt><dd>${definition.trim()}</dd>`;
+            });
+            html = html.replace(/((?:<dt>.*<\/dt>\s*<dd>.*<\/dd>\s*)+)/gs, '<dl>$1</dl>');
             
-            // Lists (- item or * item)
-            html = html.replace(/^[\s]*[-\*]\s(.*)$/gim, '<li>$1</li>');
-            html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+            // 18. ESCAPING (backslash before special characters)
+            html = html.replace(/\\([\\`*_{}[\]()#+\-.!])/g, '$1');
             
-            // Blockquotes (> text)
-            html = html.replace(/^>\s(.*)$/gim, '<blockquote>$1</blockquote>');
+            // 19. LINE BREAKS AND PARAGRAPHS
+            // Double space at end of line → <br>
+            html = html.replace(/  $/gm, '<br>');
             
-            return html;
+            // Paragraph handling - split by double newlines
+            const paragraphs = html.split(/\n\s*\n/);
+            html = paragraphs.map(para => {
+                para = para.trim();
+                if (!para) return '';
+                
+                // Don't wrap if it's already a block element
+                if (para.match(/^<(h[1-6]|blockquote|pre|code|ul|ol|li|table|hr|div|p)/)) {
+                    return para;
+                }
+                
+                // Don't wrap single line breaks within existing block elements
+                if (para.includes('<br>')) {
+                    return `<p>${para}</p>`;
+                }
+                
+                return `<p>${para}</p>`;
+            }).join('\n');
+            
+            // 20. SINGLE LINE BREAKS → <br> (if not double spaced)
+            html = html.replace(/(?<!<br>)\n(?!<)/g, '<br>');
+            
+            // 21. EMOJI SHORTCODES (basic implementation)
+            const emojiMap = {
+                ':smile:': '😊', ':heart:': '❤️', ':thumbsup:': '👍', ':thumbsdown:': '👎',
+                ':laugh:': '😂', ':cry:': '😢', ':angry:': '😠', ':surprised:': '😲',
+                ':wink:': '😉', ':neutral:': '😐', ':confused:': '😕', ':cool:': '😎'
+            };
+            Object.keys(emojiMap).forEach(shortcode => {
+                html = html.replace(new RegExp(shortcode.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), emojiMap[shortcode]);
+            });
+            
+            // Clean up multiple consecutive tags and normalize spacing
+            html = html.replace(/(<\/p>\s*<p>)/g, '</p>\n<p>');
+            html = html.replace(/(<\/li>\s*<li>)/g, '</li>\n<li>');
+            html = html.replace(/\n\s*\n/g, '\n');
+            
+            return html.trim();
         }
         
         createStarPoints(x, y, width, height) {

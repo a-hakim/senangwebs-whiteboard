@@ -574,3 +574,118 @@ body.sww-pseudo-fullscreen {
   background: #000 !important;
   overflow: hidden !important;
 }
+
+/* Markdown Element Styles */
+.sww-markdown-element {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+}
+
+.sww-markdown-element img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.sww-markdown-element table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.sww-markdown-element th,
+.sww-markdown-element td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.sww-markdown-element th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.sww-markdown-element code {
+  background-color: #f4f4f4;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.sww-markdown-element pre {
+  background-color: #f8f8f8;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.sww-markdown-element pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.sww-markdown-element blockquote {
+  border-left: 4px solid #ddd;
+  margin: 10px 0;
+  padding-left: 16px;
+  color: #666;
+}
+
+.sww-markdown-element h1,
+.sww-markdown-element h2,
+.sww-markdown-element h3,
+.sww-markdown-element h4,
+.sww-markdown-element h5,
+.sww-markdown-element h6 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.sww-markdown-element h1 { font-size: 2em; }
+.sww-markdown-element h2 { font-size: 1.5em; }
+.sww-markdown-element h3 { font-size: 1.25em; }
+.sww-markdown-element h4 { font-size: 1.1em; }
+.sww-markdown-element h5 { font-size: 1em; }
+.sww-markdown-element h6 { font-size: 0.9em; }
+
+.sww-markdown-element ul,
+.sww-markdown-element ol {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.sww-markdown-element li {
+  margin: 4px 0;
+}
+
+.sww-markdown-element a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.sww-markdown-element a:hover {
+  text-decoration: underline;
+}
+
+.sww-markdown-element hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 20px 0;
+}
+
+.sww-markdown-element mark {
+  background-color: #ffff99;
+  padding: 2px;
+}
+
+.sww-markdown-element del {
+  text-decoration: line-through;
+}
+
+.sww-markdown-element input[type="checkbox"] {
+  margin-right: 8px;
+}
