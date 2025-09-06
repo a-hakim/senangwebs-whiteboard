@@ -2389,6 +2389,12 @@
         }
         
         handleWheel(e) {
+            // Only zoom when Ctrl key is pressed for better UI/UX
+            if (!e.ctrlKey && !e.metaKey) {
+                // Allow normal scroll behavior when Ctrl is not pressed
+                return;
+            }
+            
             e.preventDefault();
             const point = this.getPointerPosition(e);
             const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
