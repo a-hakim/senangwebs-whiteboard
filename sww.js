@@ -2063,14 +2063,55 @@
             textColorInput.type = 'color';
             textColorInput.className = 'sww-color-input';
             textColorInput.value = this.toolSettings.textColor; // Use dedicated textColor property
+            
+            const textColorHexInput = document.createElement('input');
+            textColorHexInput.type = 'text';
+            textColorHexInput.className = 'sww-hex-input';
+            textColorHexInput.placeholder = '#000000';
+            textColorHexInput.value = this.toolSettings.textColor;
+            textColorHexInput.maxLength = 7;
+            
+            const updateTextColor = (value) => {
+                // Validate hex color
+                if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    this.toolSettings.textColor = value;
+                    textColorInput.value = value;
+                    textColorHexInput.value = value;
+                    this.updateSelectedElementProperty('textColor', value);
+                }
+            };
+            
             textColorInput.addEventListener('change', (e) => {
-                this.toolSettings.textColor = e.target.value;
-                // Update only textColor property for selected elements
-                this.updateSelectedElementProperty('textColor', e.target.value);
+                updateTextColor(e.target.value);
+            });
+            textColorInput.addEventListener('input', (e) => {
+                updateTextColor(e.target.value);
             });
             
+            textColorHexInput.addEventListener('change', (e) => {
+                let value = e.target.value.trim();
+                if (!value.startsWith('#')) {
+                    value = '#' + value;
+                }
+                updateTextColor(value);
+            });
+            textColorHexInput.addEventListener('input', (e) => {
+                let value = e.target.value.trim();
+                if (!value.startsWith('#')) {
+                    value = '#' + value;
+                }
+                if (value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    updateTextColor(value);
+                }
+            });
+            
+            const textColorInputGroup = document.createElement('div');
+            textColorInputGroup.className = 'sww-property-input-group';
+            textColorInputGroup.appendChild(textColorInput);
+            textColorInputGroup.appendChild(textColorHexInput);
+            
             textColorGroup.appendChild(textColorLabel);
-            textColorGroup.appendChild(textColorInput);
+            textColorGroup.appendChild(textColorInputGroup);
             
             // Text alignment
             const textAlignGroup = document.createElement('div');
@@ -4314,18 +4355,18 @@
                 
                 // Update text-specific properties if it's a text or markdown element
                 if (firstElement.type === 'text' || firstElement.type === 'markdown') {
+                    // Update font family select (for both text and markdown elements)
+                    const fontFamilySelect = this.propertiesPanel.querySelector('.sww-text-properties select');
+                    if (fontFamilySelect) {
+                        fontFamilySelect.value = firstElement.fontFamily || 'Arial';
+                    }
+                    
                     // Only show text color for markdown elements, all text properties for text elements
                     if (firstElement.type === 'text') {
                         // Update font size input
                         const fontSizeInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="number"][min="8"][max="72"]');
                         if (fontSizeInput) {
                             fontSizeInput.value = firstElement.fontSize || 16;
-                        }
-                        
-                        // Update font family select
-                        const fontFamilySelect = this.propertiesPanel.querySelector('.sww-text-properties select');
-                        if (fontFamilySelect) {
-                            fontFamilySelect.value = firstElement.fontFamily || 'Arial';
                         }
                         
                         // Update text alignment buttons (only for text elements)
@@ -4343,7 +4384,16 @@
                     // Update text color input (for both text and markdown elements)
                     const textColorInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="color"]');
                     if (textColorInput) {
-                        textColorInput.value = firstElement.textColor || firstElement.strokeColor || '#000000';
+                        const textColorValue = firstElement.textColor || firstElement.strokeColor || '#000000';
+                        textColorInput.value = textColorValue;
+                    }
+                    
+                    // Update text color hex input (for both text and markdown elements)
+                    const textColorHexInputs = this.propertiesPanel.querySelectorAll('.sww-text-properties .sww-hex-input');
+                    const textColorHexInput = textColorHexInputs[textColorHexInputs.length - 1]; // Last hex input should be text color
+                    if (textColorHexInput) {
+                        const textColorValue = firstElement.textColor || firstElement.strokeColor || '#000000';
+                        textColorHexInput.value = textColorValue;
                     }
                 }
             }
@@ -5480,7 +5530,7 @@
                 // Only update the specific property
                 if (propertyName === 'fontSize' && element.type === 'text') {
                     element.fontSize = value;
-                } else if (propertyName === 'fontFamily' && element.type === 'text') {
+                } else if (propertyName === 'fontFamily' && (element.type === 'text' || element.type === 'markdown')) {
                     element.fontFamily = value;
                 } else if (propertyName === 'textAlign' && element.type === 'text') {
                     element.textAlign = value;
@@ -5551,8 +5601,8 @@
                         const labelText = label.textContent.trim();
                         
                         if (hasMarkdownElements && !hasTextElements) {
-                            // For markdown elements only, hide font size, font family, and text align
-                            if (labelText === 'Font Size' || labelText === 'Font Family' || labelText === 'Text Align') {
+                            // For markdown elements only, hide font size and text align, but keep font family
+                            if (labelText === 'Font Size' || labelText === 'Text Align') {
                                 group.style.display = 'none';
                             } else {
                                 group.style.display = 'flex';
