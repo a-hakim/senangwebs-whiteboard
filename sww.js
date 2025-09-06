@@ -3376,6 +3376,11 @@
             // Ensure UI state is properly updated after selection change
             setTimeout(() => {
                 this.updateTextPropertiesVisibility();
+                
+                // Update layers panel to reflect selection changes
+                if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
+                    window.swwControlPanel.updateLayers();
+                }
             }, 0);
         }
         
@@ -3408,6 +3413,11 @@
             this.selectedElements.clear();
             this.clearSelectionHandles();
             this.syncPropertiesPanel();
+            
+            // Update layers panel to reflect selection changes
+            if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
+                window.swwControlPanel.updateLayers();
+            }
         }
         
         selectAll() {
@@ -4860,6 +4870,11 @@
             
             // Save state after property change
             this.saveStateToHistory('updateProperty');
+            
+            // Update layers panel to reflect any changes
+            if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
+                window.swwControlPanel.updateLayers();
+            }
         }
         
         updateTextPropertiesVisibility() {
@@ -6496,7 +6511,8 @@
         init() {
             this.setupMenuNavigation();
             this.showCurrentMenu();
-            this.startLayerUpdates();
+            // Remove automatic layer updates - we'll update only when needed
+            // this.startLayerUpdates();
         }
         
         setupMenuNavigation() {
@@ -6540,8 +6556,9 @@
         }
         
         startLayerUpdates() {
-            // Update layers every second
-            setInterval(() => this.updateLayers(), 1000);
+            // Disabled automatic layer updates to prevent constant refreshing
+            // Layers will be updated only when elements are added, removed, or modified
+            // setInterval(() => this.updateLayers(), 1000);
         }
         
         updateLayers() {
@@ -6550,8 +6567,8 @@
             const scene = this.instance.getScene();
             this.layers = scene.elements.map((element, index) => ({
                 ...element,
-                index: index,
-                visible: element.visible !== false
+                index: index
+                // Don't override the visible property - keep the actual element state
             })).reverse();
             
             if (this.currentMenu === 'layers') {
@@ -6600,11 +6617,20 @@
             const layerItem = document.createElement('div');
             layerItem.className = 'sww-layer-item';
             
+            // Get the actual element from the instance to ensure we have the current state
+            const actualElement = this.instance.elements.find(el => el.id === layer.id);
+            const currentLayer = actualElement || layer; // Use actual element if found, fallback to layer
+            
+            // Debug: Log the actual states to console
+            if (window.SWW_DEBUG) {
+                console.log(`Layer ${currentLayer.id}: visible=${currentLayer.visible}, locked=${currentLayer.locked}`);
+            }
+            
             // Add classes based on state
-            if (this.isLayerSelected(layer.id)) {
+            if (this.isLayerSelected(currentLayer.id)) {
                 layerItem.classList.add('selected');
             }
-            if (layer.locked) {
+            if (currentLayer.locked) {
                 layerItem.classList.add('locked');
             }
             
@@ -6624,23 +6650,26 @@
             // Visibility button
             const visibilityBtn = document.createElement('button');
             visibilityBtn.className = 'sww-layer-control-btn';
-            visibilityBtn.className += layer.visible !== false ? ' active' : ' inactive';
-            visibilityBtn.title = 'Toggle Visibility';
-            visibilityBtn.innerHTML = `<i class="${layer.visible !== false ? 'fas fa-eye' : 'fas fa-eye-slash'}"></i>`;
+            const isVisible = currentLayer.visible !== false; // Default to visible if not explicitly set to false
+            
+            visibilityBtn.classList.add(isVisible ? 'active' : 'inactive');
+            visibilityBtn.title = isVisible ? 'Hide Element' : 'Show Element';
+            visibilityBtn.innerHTML = `<i class="${isVisible ? 'fas fa-eye' : 'fas fa-eye-slash'}"></i>`;
             visibilityBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.toggleLayerVisibility(layer.id);
+                this.toggleLayerVisibility(currentLayer.id);
             });
             
             // Lock button
             const lockBtn = document.createElement('button');
             lockBtn.className = 'sww-layer-control-btn';
-            if (layer.locked) lockBtn.classList.add('active');
-            lockBtn.title = 'Toggle Lock';
-            lockBtn.innerHTML = `<i class="${layer.locked ? 'fas fa-lock' : 'fas fa-unlock'}"></i>`;
+            const isLocked = currentLayer.locked === true; // Explicit check for locked state
+            lockBtn.classList.add(isLocked ? 'active' : 'inactive');
+            lockBtn.title = isLocked ? 'Unlock Element' : 'Lock Element';
+            lockBtn.innerHTML = `<i class="${isLocked ? 'fas fa-lock' : 'fas fa-unlock'}"></i>`;
             lockBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.toggleLayerLock(layer.id);
+                this.toggleLayerLock(currentLayer.id);
             });
             
             controlsDiv.appendChild(visibilityBtn);
@@ -6654,7 +6683,7 @@
             // Create layer name
             const nameDiv = document.createElement('div');
             nameDiv.className = 'sww-layer-name';
-            nameDiv.textContent = this.getLayerName(layer);
+            nameDiv.textContent = this.getLayerName(currentLayer);
             
             // Assemble layer item
             layerItem.appendChild(controlsDiv);
@@ -6737,15 +6766,33 @@
             if (!element) return;
             
             this.instance.saveStateToHistory('visibility');
+            
+            // Toggle visibility state
             element.visible = element.visible !== false ? false : true;
             
-            const svgElement = this.instance.svg.querySelector(`[data-element-id="${layerId}"]`);
+            // Update SVG element display
+            const svgElement = element.svgElement;
             if (svgElement) {
-                svgElement.style.display = element.visible ? 'block' : 'none';
-                svgElement.style.opacity = element.visible ? (element.opacity || 1) : '0.3';
+                if (element.visible) {
+                    svgElement.style.display = 'block';
+                    svgElement.style.opacity = element.opacity || 1;
+                    svgElement.classList.remove('sww-hidden');
+                } else {
+                    svgElement.style.display = 'none';
+                    svgElement.classList.add('sww-hidden');
+                }
             }
             
-            this.updateLayers();
+            // If element is being hidden and is selected, deselect it
+            if (!element.visible && this.instance.selectedElements.has(element)) {
+                this.instance.selectedElements.delete(element);
+                this.instance.updateSelectionHandles();
+            }
+            
+            // Update the layer panel to reflect the new state
+            setTimeout(() => {
+                this.updateLayers();
+            }, 100); // Increased delay to ensure DOM and state changes are applied
         }
         
         toggleLayerLock(layerId) {
@@ -6755,9 +6802,12 @@
             if (!element) return;
             
             this.instance.saveStateToHistory('lock');
+            
+            // Toggle lock state
             element.locked = !element.locked;
             
-            const svgElement = this.instance.svg.querySelector(`[data-element-id="${layerId}"]`);
+            // Update SVG element classes
+            const svgElement = element.svgElement;
             if (svgElement) {
                 if (element.locked) {
                     svgElement.classList.add('sww-locked');
@@ -6766,12 +6816,16 @@
                 }
             }
             
+            // If element is being locked and is selected, deselect it
             if (element.locked && this.instance.selectedElements.has(element)) {
                 this.instance.selectedElements.delete(element);
                 this.instance.updateSelectionHandles();
             }
             
-            this.updateLayers();
+            // Update the layer panel to reflect the new state
+            setTimeout(() => {
+                this.updateLayers();
+            }, 100); // Increased delay to ensure DOM and state changes are applied
         }
         
         focusOnLayer(layerId) {
