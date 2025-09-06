@@ -2554,12 +2554,13 @@
         }
         
         handleWebsiteStart(point) {
-            // Position element in the center of the current viewport
-            const centerPoint = {
-                x: this.viewBox.x + this.viewBox.width / 2 - 150, // Half of default width (300/2)
-                y: this.viewBox.y + this.viewBox.height / 2 - 100  // Half of default height (200/2)
+            // Position element at cursor location for better UI/UX
+            // Offset by half the element size so it's centered on the cursor
+            const elementPoint = {
+                x: point.x - 150, // Half of default width (300/2)
+                y: point.y - 100  // Half of default height (200/2)
             };
-            const snappedPoint = this.snapToGridPoint(centerPoint);
+            const snappedPoint = this.snapToGridPoint(elementPoint);
             const element = this.createElement('website', snappedPoint);
             
             // Add element to the scene
@@ -2580,12 +2581,13 @@
         }
         
         handleImageStart(point) {
-            // Position element in the center of the current viewport
-            const centerPoint = {
-                x: this.viewBox.x + this.viewBox.width / 2 - 150, // Half of default width (300/2)
-                y: this.viewBox.y + this.viewBox.height / 2 - 100  // Half of default height (200/2)
+            // Position element at cursor location for better UI/UX
+            // Offset by half the element size so it's centered on the cursor
+            const elementPoint = {
+                x: point.x - 150, // Half of default width (300/2)
+                y: point.y - 100  // Half of default height (200/2)
             };
-            const snappedPoint = this.snapToGridPoint(centerPoint);
+            const snappedPoint = this.snapToGridPoint(elementPoint);
             const element = this.createElement('image', snappedPoint);
             
             // Add element to the scene
@@ -2606,12 +2608,13 @@
         }
         
         handleMarkdownStart(point) {
-            // Position element in the center of the current viewport
-            const centerPoint = {
-                x: this.viewBox.x + this.viewBox.width / 2 - 150, // Half of default width (300/2)
-                y: this.viewBox.y + this.viewBox.height / 2 - 100  // Half of default height (200/2)
+            // Position element at cursor location for better UI/UX
+            // Offset by half the element size so it's centered on the cursor
+            const elementPoint = {
+                x: point.x - 150, // Half of default width (300/2)
+                y: point.y - 100  // Half of default height (200/2)
             };
-            const snappedPoint = this.snapToGridPoint(centerPoint);
+            const snappedPoint = this.snapToGridPoint(elementPoint);
             const element = this.createElement('markdown', snappedPoint);
             
             // Add element to the scene
