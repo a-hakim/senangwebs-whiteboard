@@ -342,14 +342,21 @@
                 
                 this.elements.forEach(element => {
                     const bounds = this.getElementBounds(element);
-                    const isVisible = this.isElementInBounds(bounds, viewBounds);
+                    const isInViewport = this.isElementInBounds(bounds, viewBounds);
                     
-                    if (isVisible) {
+                    if (isInViewport) {
                         this.visibleElements.add(element);
                     }
                     
                     if (element.svgElement) {
-                        element.svgElement.style.display = isVisible ? 'block' : 'none';
+                        // Respect user's visibility setting - only show if element is not explicitly hidden
+                        if (element.visible === false) {
+                            // Element is intentionally hidden by user
+                            element.svgElement.style.display = 'none';
+                        } else {
+                            // Element is visible, apply viewport optimization
+                            element.svgElement.style.display = isInViewport ? 'block' : 'none';
+                        }
                     }
                 });
                 
@@ -6008,10 +6015,13 @@
         fitCanvasToElements() {
             if (this.elements.length === 0) return;
             
-            // Calculate bounds of all elements
+            // Calculate bounds of only visible elements (not hidden ones)
+            const visibleElements = this.elements.filter(element => element.visible !== false);
+            if (visibleElements.length === 0) return; // No visible elements to fit
+            
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             
-            this.elements.forEach(element => {
+            visibleElements.forEach(element => {
                 const bounds = this.getElementBounds(element);
                 minX = Math.min(minX, bounds.x);
                 minY = Math.min(minY, bounds.y);
