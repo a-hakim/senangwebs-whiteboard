@@ -345,7 +345,7 @@ SWW includes a comprehensive markdown parser that supports the full markdown spe
 - **Definition Lists**: `Term: Definition`
 
 ### Links & Images
-- **Links**: `[text](url)` or `[text](url "title")`
+- **Links**: `[text](https://github.com/a-hakim/senangwebs-whiteboard)` or `[text](https://github.com/a-hakim/senangwebs-whiteboard "title")`
 - **Images**: `![alt](url)` or `![alt](url "title")`
 - **Automatic Links**: `<https://example.com>`
 - **Email Links**: `<email@example.com>`
