@@ -1,6 +1,6 @@
 # SenangWebs Whiteboard (SWW)
 
-A powerful, client-side JavaScript drawing library for creating digital whiteboards and vector drawings. Similar to Excalidraw but entirely self-contained with built-in FontAwesome icons and Markdown support - no external dependencies required.
+A powerful, client-side JavaScript drawing library for creating digital whiteboards and vector drawings.
 
 ## 🚀 Features
 
@@ -48,7 +48,9 @@ A powerful, client-side JavaScript drawing library for creating digital whiteboa
 
 ## 📦 Installation
 
-Simply include the SWW files in your HTML - FontAwesome and Marked are now built-in:
+### Production Use (Recommended)
+
+Simply include the built SWW files in your HTML - FontAwesome and Marked are pre-bundled:
 
 ```html
 <!DOCTYPE html>
@@ -70,6 +72,55 @@ Simply include the SWW files in your HTML - FontAwesome and Marked are now built
     </script>
 </body>
 </html>
+```
+
+### Development Setup
+
+For development or customization, you'll need to build the library from source:
+
+```bash
+# Clone the repository
+git clone https://github.com/a-hakim/senangwebs-whiteboard.git
+cd senangwebs-whiteboard
+
+# Install dependencies
+npm install
+
+# Build for production
+npm run build
+
+# Or build with watch mode for development
+npm run dev
+```
+
+### Dependencies
+
+The library includes these dependencies that are bundled during the build process:
+
+- **@fortawesome/fontawesome-free** (^6.4.0) - Icon library for UI elements
+- **marked** (^9.0.0) - Markdown parser for document elements
+
+### Build Output
+
+After running `npm run build`, you'll find in the `dist/` folder:
+- `sww.js` (147 KB) - Main library bundle with all dependencies
+- `sww.css` (135 KB) - Stylesheet including FontAwesome icons
+- `fonts/` - FontAwesome font files (232 KB total)
+
+### Migration from External Dependencies
+
+**Previous versions** required external CDN links for FontAwesome and Marked:
+```html
+<!-- OLD METHOD - No longer required -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+```
+
+**Current version** bundles these dependencies automatically - simply include the built files:
+```html
+<!-- NEW METHOD - Dependencies included -->
+<link rel="stylesheet" href="sww.css">
+<script src="sww.js"></script>
 ```
 
 ## 🎯 Quick Start
@@ -676,7 +727,7 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My SWW App</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SWW includes FontAwesome and Marked built-in -->
     <link rel="stylesheet" href="sww.css">
     <script src="sww.js"></script>
 </head>
