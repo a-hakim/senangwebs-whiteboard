@@ -107,22 +107,6 @@ After running `npm run build`, you'll find in the `dist/` folder:
 - `sww.css` (135 KB) - Stylesheet including FontAwesome icons
 - `fonts/` - FontAwesome font files (232 KB total)
 
-### Migration from External Dependencies
-
-**Previous versions** required external CDN links for FontAwesome and Marked:
-```html
-<!-- OLD METHOD - No longer required -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-```
-
-**Current version** bundles these dependencies automatically - simply include the built files:
-```html
-<!-- NEW METHOD - Dependencies included -->
-<link rel="stylesheet" href="sww.css">
-<script src="sww.js"></script>
-```
-
 ## 🎯 Quick Start
 
 ### Basic Initialization
