@@ -3,11 +3,17 @@
  * Version: 1.0.0
  * 
  * A JavaScript library for creating digital whiteboards and vector drawings
- * Similar to Excalidraw, entirely client-side with no dependencies
+ * with built-in FontAwesome and Marked dependencies
  */
+
+// Import dependencies
+import { marked } from 'marked';
 
 (function(global) {
     'use strict';
+
+    // Make marked available globally for the library
+    global.marked = marked;
 
     /**
      * Performance utility classes for handling large number of elements

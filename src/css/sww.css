@@ -2,8 +2,11 @@
  * SenangWebs Whiteboard (SWW) - CSS Styles
  * Version: 1.0.0
  * 
- * Complete stylesheet for SWW drawing library and demo interface
+ * Complete stylesheet for SWW drawing library with built-in FontAwesome support
  */
+
+/* Import FontAwesome */
+@import '~@fortawesome/fontawesome-free/css/all.css';
 
 /* Base Styles */
 body,

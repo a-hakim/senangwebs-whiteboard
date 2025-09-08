@@ -1,6 +1,6 @@
 # SenangWebs Whiteboard (SWW)
 
-A powerful, client-side JavaScript drawing library for creating digital whiteboards and vector drawings. Similar to Excalidraw but entirely self-contained with no external dependencies.
+A powerful, client-side JavaScript drawing library for creating digital whiteboards and vector drawings. Similar to Excalidraw but entirely self-contained with built-in FontAwesome icons and Markdown support - no external dependencies required.
 
 ## 🚀 Features
 
@@ -48,13 +48,12 @@ A powerful, client-side JavaScript drawing library for creating digital whiteboa
 
 ## 📦 Installation
 
-Simply include the SWW files in your HTML:
+Simply include the SWW files in your HTML - FontAwesome and Marked are now built-in:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="sww.css" />
     <script src="sww.js"></script>
 </head>
