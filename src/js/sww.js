@@ -5557,6 +5557,48 @@ import { marked } from 'marked';
             return 'sww-' + Math.random().toString(36).substr(2, 9);
         }
         
+        getElementById(elementId) {
+            return this.elements.find(element => element.id === elementId) || null;
+        }
+        
+        toggleElementVisibility(elementId) {
+            const element = this.getElementById(elementId);
+            if (element) {
+                element.hidden = !element.hidden;
+                
+                // Update the SVG element visibility
+                if (element.svgElement) {
+                    element.svgElement.style.display = element.hidden ? 'none' : '';
+                }
+                
+                // Trigger an optimized render update
+                this.performOptimizedRender();
+                return true;
+            }
+            return false;
+        }
+        
+        selectElementById(elementId) {
+            const element = this.getElementById(elementId);
+            if (element) {
+                this.clearSelection();
+                this.selectElement(element);
+                return true;
+            }
+            return false;
+        }
+        
+        deleteElementById(elementId) {
+            const element = this.getElementById(elementId);
+            if (element) {
+                this.clearSelection();
+                this.selectElement(element);
+                this.deleteSelectedElements();
+                return true;
+            }
+            return false;
+        }
+        
         snapToGridPoint(point) {
             if (!this.snapToGrid) return point;
             
