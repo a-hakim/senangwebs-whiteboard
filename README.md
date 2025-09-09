@@ -1,6 +1,6 @@
 # SenangWebs Whiteboard (SWW)
 
-A powerful, client-side JavaScript drawing library for creating digital whiteboards and vector drawings.
+A powerful, client-side JavaScript drawing library for creating interactive digital whiteboards and vector drawings with advanced performance optimizations and modern UI components.
 
 ## 🚀 Features
 
@@ -12,15 +12,18 @@ A powerful, client-side JavaScript drawing library for creating digital whiteboa
 - **Free Drawing**: Pen tool for freehand sketching with path optimization
 
 ### Advanced Capabilities
-- **Layer Management**: Full layer control with visibility, locking, ordering, and selection
-- **Selection Tools**: Multi-select, selection boxes, bulk operations, and group management
-- **Undo/Redo System**: Complete history management with 50-step history
-- **Performance Optimized**: Spatial indexing and Level of Detail (LOD) for handling thousands of elements
-- **Export Options**: SVG and PNG export functionality
-- **Grid System**: Snap-to-grid functionality with customizable grid sizes and toggle
-- **Zoom Controls**: Smooth zooming, panning, and fit-to-elements functionality
-- **Clipboard Operations**: Copy, paste, duplicate, and cross-session clipboard support
-- **Read-Only Mode**: Presentation mode with locked editing capabilities
+- **Layer Management**: Full layer control with visibility, locking, ordering, selection, and programmatic access
+- **Element Management API**: Direct element manipulation with `getElementById()`, `selectElementById()`, `deleteElementById()`, and `toggleElementVisibility()`
+- **Selection Tools**: Multi-select, selection boxes, bulk operations, group management, and smart selection
+- **Undo/Redo System**: Complete history management with 50-step history and keyboard shortcuts
+- **Performance Optimized**: Spatial indexing, Level of Detail (LOD), and optimized rendering for handling thousands of elements
+- **Dark Theme Support**: Built-in dark mode with customizable color palettes and modern UI aesthetics
+- **Export Options**: SVG and PNG export functionality with high-quality output
+- **Grid System**: Snap-to-grid functionality with customizable grid sizes and visual toggle
+- **Zoom Controls**: Smooth zooming (10% increments), panning, fit-to-elements, and 1:1 reset functionality
+- **Clipboard Operations**: Copy, paste, duplicate, and cross-session clipboard support with keyboard shortcuts
+- **Preview Mode**: Enhanced fullscreen presentation mode with dark background and locked editing
+- **Read-Only Mode**: Presentation mode with completely locked editing capabilities and automatic preview activation
 
 ### Styling & Customization
 - **Fill Styles**: Solid colors, gradients (linear/radial), hatch patterns, and transparency
@@ -31,12 +34,15 @@ A powerful, client-side JavaScript drawing library for creating digital whiteboa
 - **Font Management**: Multiple font families with size and alignment controls
 
 ### User Interface
-- **Control Panel**: Organized tool selection and layer management with expand/dock options
-- **Properties Panel**: Real-time property editing for selected elements
-- **Context Menus**: Right-click operations for quick actions
-- **Keyboard Shortcuts**: Standard shortcuts for common operations
-- **Responsive Design**: Works on desktop and tablet devices
-- **Preview Mode**: Fullscreen presentation mode with optional read-only access
+- **Control Panel**: Organized tool selection and layer management with expand/dock options and tabbed interface
+- **Modern Dark Theme**: Professional dark UI with accent colors (#00FF99 primary, #007370 secondary) and smooth transitions
+- **Properties Panel**: Real-time property editing for selected elements with instant visual feedback
+- **Context Menus**: Right-click operations for quick actions and element manipulation
+- **Keyboard Shortcuts**: Standard shortcuts for common operations (Ctrl+Z/Y, Ctrl+A/C/V, Delete, Arrow keys)
+- **Responsive Design**: Works seamlessly on desktop and tablet devices with touch support
+- **Enhanced Preview Mode**: Fullscreen presentation mode with ESC key support and dark background
+- **Floating Tool Palette**: Minimizable and repositionable tool palette with tab organization
+- **Smart UI Hiding**: All editor UI elements automatically hide in preview mode for distraction-free presentation
 
 ### Markdown Support
 - **Comprehensive Parser**: Full markdown specification support
@@ -103,9 +109,10 @@ The library includes these dependencies that are bundled during the build proces
 ### Build Output
 
 After running `npm run build`, you'll find in the `dist/` folder:
-- `sww.js` (147 KB) - Main library bundle with all dependencies
-- `sww.css` (135 KB) - Stylesheet including FontAwesome icons
+- `sww.js` (150 KB) - Main library bundle with all dependencies and latest features
+- `sww.css` (135 KB) - Stylesheet including FontAwesome icons and dark theme support
 - `fonts/` - FontAwesome font files (232 KB total)
+- `styles.js` - Additional style utilities for theme management
 
 ## 🎯 Quick Start
 
@@ -152,17 +159,17 @@ swwInstance.loadScene(sceneData);
 
 ```javascript
 const options = {
-    backgroundColor: "#ffffff",    // Canvas background color
+    backgroundColor: "#ffffff", // Canvas background color
     gridSize: 20,                 // Grid cell size in pixels
     showGrid: true,               // Show/hide grid
     width: "100%",                // Canvas width (CSS value)
     height: "100%",               // Canvas height (CSS value)
-    readOnly: false,              // Enable read-only mode (locks editing)
+    readOnly: false,              // Enable read-only mode (locks editing and auto-enters preview)
     enableSnapToGrid: true,       // Enable snap-to-grid (syncs with showGrid)
     maxHistorySteps: 50,          // Maximum undo/redo steps
-    performanceMode: false,       // Enable performance optimizations
-    enableSpatialIndex: true,     // Use spatial indexing for large scenes
-    lodThreshold: 100            // Element count threshold for LOD
+    performanceMode: false,       // Enable performance optimizations for large scenes
+    enableSpatialIndex: true,     // Use spatial indexing for efficient hit testing
+    lodThreshold: 100             // Element count threshold for Level of Detail optimization
 };
 
 const swwInstance = sww.init(container, options);
@@ -170,10 +177,11 @@ const swwInstance = sww.init(container, options);
 
 ### Read-Only Mode
 When `readOnly: true` is set:
-- Application automatically enters preview mode
+- Application automatically enters preview mode on initialization
 - Escape key is disabled (cannot exit preview mode)
-- All editing functionality is locked
-- Perfect for presentations, embedded displays, or kiosks
+- All editing functionality is completely locked
+- Perfect for presentations, embedded displays, kiosks, or read-only viewers
+- UI elements are hidden to provide distraction-free viewing experience
 
 ## 🎨 Drawing Tools
 
@@ -252,6 +260,45 @@ const sceneData = {
 instance.loadScene(sceneData);
 ```
 
+### Element Management Methods
+
+#### `getElementById(elementId)`
+Finds and returns an element by its ID.
+
+```javascript
+const element = instance.getElementById('my-element-id');
+if (element) {
+    console.log('Element found:', element);
+}
+```
+
+#### `toggleElementVisibility(elementId)`
+Toggles the visibility of an element by its ID.
+
+```javascript
+// Hide or show an element
+const success = instance.toggleElementVisibility('my-element-id');
+console.log('Visibility toggled:', success);
+```
+
+#### `selectElementById(elementId)`
+Selects a specific element by its ID, clearing any previous selection.
+
+```javascript
+// Select a specific element
+const success = instance.selectElementById('my-element-id');
+console.log('Element selected:', success);
+```
+
+#### `deleteElementById(elementId)`
+Deletes a specific element by its ID.
+
+```javascript
+// Delete a specific element
+const success = instance.deleteElementById('my-element-id');
+console.log('Element deleted:', success);
+```
+
 ### Selection Methods
 
 #### `selectAll()`
@@ -286,16 +333,60 @@ Toggle grid visibility and snap-to-grid functionality.
 #### `fitCanvasToElements()`
 Automatically fit the view to show all elements.
 
+### Performance and Optimization Methods
+
+#### `performOptimizedRender()`
+Triggers an optimized rendering update for better performance.
+
+```javascript
+// Manually trigger optimized rendering
+instance.performOptimizedRender();
+```
+
+#### `rebuildSpatialIndex()`
+Rebuilds the spatial index for improved hit testing performance.
+
+```javascript
+// Rebuild spatial index after bulk operations
+instance.rebuildSpatialIndex();
+```
+
+#### `updateElementInSpatialIndex(element)`
+Updates a specific element's position in the spatial index.
+
+```javascript
+// Update spatial index for a modified element
+instance.updateElementInSpatialIndex(modifiedElement);
+```
+
+#### `getLevelOfDetail(element)`
+Returns the appropriate level of detail for an element based on zoom level.
+
+```javascript
+// Get LOD for performance optimization
+const lod = instance.getLevelOfDetail(element);
+```
+
 ### Preview Mode Methods
 
 #### `togglePreviewMode()`
-Toggle between edit and preview modes.
+Toggle between edit and preview modes with enhanced dark background.
 
 #### `enterPreviewMode()`
-Enter fullscreen preview mode (read-only if `readOnly: true`).
+Enter fullscreen preview mode with dark background and hidden UI elements.
 
 #### `exitPreviewMode()`
-Exit preview mode and return to editing.
+Exit preview mode and return to editing (disabled in read-only mode).
+
+### Theme and UI Methods
+
+#### `generateId()`
+Generates a unique ID for new elements.
+
+```javascript
+const newId = instance.generateId();
+console.log('New ID:', newId); // e.g., 'sww-abc123def'
+```
 
 ### History Methods
 
@@ -320,45 +411,56 @@ const pngData = instance.exportToPNG();
 
 ## 🎛️ Control Panel Integration
 
-SWW includes a built-in control panel for managing tools and layers:
+SWW includes a comprehensive built-in control panel with modern dark theme support:
 
 ```javascript
-// Initialize control panel
+// Initialize control panel with tabbed interface
 const controlPanel = new SWWControlPanel(swwInstance);
 
 // The control panel automatically handles:
-// - Tool selection with visual feedback
-// - Layer management with drag-and-drop
-// - Element properties with real-time updates
-// - Scene operations and export functions
-// - Panel docking and width expansion
+// - Tool selection with visual feedback and hover effects
+// - Layer management with drag-and-drop and bulk operations  
+// - Element properties with real-time updates and live preview
+// - Scene operations and export functions with keyboard shortcuts
+// - Panel docking, width expansion, and responsive layout
+// - Dark theme integration with accent colors and smooth transitions
 ```
 
 ### Control Panel Features
-- **Tool Selection**: Visual grid with icons and labels
-- **Layer Management**: List view with visibility, lock, and selection controls
-- **Properties Panel**: Real-time editing of selected element properties
-- **Expandable Width**: Toggle between normal (20rem) and expanded (36rem) width
-- **Docking System**: Dock/undock panel for flexible workspace layout
+- **Modern Dark Theme**: Professional dark UI with #00FF99 primary and #007370 secondary accent colors
+- **Tabbed Interface**: Organized tabs for Tools and Layers with smooth transitions
+- **Tool Selection Grid**: Visual grid with FontAwesome icons, labels, and hover effects
+- **Layer Management**: Advanced list view with visibility, lock, selection, and deletion controls
+- **Properties Panel**: Real-time editing of selected element properties with instant feedback
+- **Expandable Width**: Toggle between normal (280px) and expanded width for more workspace
+- **Floating Design**: Minimizable and repositionable tool palette that doesn't interfere with canvas
+- **Smart Hiding**: Automatically hides in preview mode for distraction-free presentation
+- **Keyboard Integration**: Full keyboard shortcut support (1-5 for tools, Ctrl+Z/Y, etc.)
 
 ### Layer Management
 
 ```javascript
-// Access through the control panel instance
+// Access through the control panel instance with enhanced functionality
 const controlPanel = new SWWControlPanel(swwInstance);
 
-// Layer operations:
-controlPanel.toggleLayerSelection('layer-id');    // Select/deselect layer
-controlPanel.toggleLayerVisibility('layer-id');   // Show/hide layer
-controlPanel.toggleLayerLock('layer-id');         // Lock/unlock layer
-controlPanel.focusOnLayer('layer-id');            // Focus camera on layer
+// Advanced layer operations:
+controlPanel.toggleLayerSelection('layer-id');    // Select/deselect layer with visual feedback
+controlPanel.toggleLayerVisibility('layer-id');   // Show/hide layer with smooth transitions
+controlPanel.toggleLayerLock('layer-id');         // Lock/unlock layer with status indicators
+controlPanel.focusOnLayer('layer-id');            // Focus camera on layer with smooth zoom
 
-// Bulk operations:
+// Direct element management:
+swwInstance.getElementById('element-id');          // Find element by ID
+swwInstance.selectElementById('element-id');       // Select specific element
+swwInstance.deleteElementById('element-id');       // Delete specific element
+swwInstance.toggleElementVisibility('element-id'); // Toggle element visibility
+
+// Bulk operations with undo support:
 swwInstance.selectAll();                           // Select all layers
 swwInstance.clearSelection();                      // Clear selection
-swwInstance.copySelected();                        // Copy selected
-swwInstance.pasteClipboard();                     // Paste clipboard
-swwInstance.deleteSelectedElements();              // Delete selected
+swwInstance.copySelected();                        // Copy selected with clipboard
+swwInstance.pasteClipboard();                     // Paste clipboard with positioning
+swwInstance.deleteSelectedElements();              // Delete selected with confirmation
 ```
 
 ## 📝 Markdown Support
@@ -420,29 +522,41 @@ const markdownElement = {
 ## ⚡ Performance Features
 
 ### Spatial Indexing
-For scenes with many elements, SWW uses spatial indexing for efficient hit testing:
+For scenes with many elements, SWW uses advanced spatial indexing for ultra-efficient hit testing:
 
 ```javascript
 // Automatically enabled for scenes with 100+ elements
 // Provides O(1) average case hit testing performance
+// Supports up to 10,000+ elements with smooth interaction
+
+// Manual spatial index management for optimization
+swwInstance.rebuildSpatialIndex();                 // Rebuild after bulk operations
+swwInstance.updateElementInSpatialIndex(element);  // Update specific element
 ```
 
 ### Level of Detail (LOD)
-Reduces rendering complexity for distant or small elements:
+Intelligent rendering optimization that reduces complexity for distant or small elements:
 
 ```javascript
 // Automatically adjusts element detail based on zoom level
 // Maintains 60fps performance with thousands of elements
+// Smart LOD thresholds prevent visual artifacts
+
+const lod = swwInstance.getLevelOfDetail(element); // Get current LOD level
 ```
 
-### Performance Monitoring
+### Optimized Rendering
 ```javascript
-// Enable performance monitoring
+// Enable performance monitoring and optimization
 const options = {
-    performanceMode: true,
-    enableSpatialIndex: true,
-    lodThreshold: 100
+    performanceMode: true,        // Enable all performance features
+    enableSpatialIndex: true,     // Enable spatial indexing for large scenes
+    lodThreshold: 100,            // Start LOD optimization at 100 elements
+    maxHistorySteps: 50           // Limit undo history for memory optimization
 };
+
+// Manual optimization triggers
+swwInstance.performOptimizedRender(); // Trigger optimized render cycle
 ```
 
 ## 🎯 Element Properties
@@ -534,23 +648,27 @@ Markdown document elements:
 - `Delete` / `Backspace` - Delete selected
 - `Escape` - Clear selection / Exit preview mode (if not read-only)
 
-### Navigation
-- `Ctrl + Scroll` - Zoom in/out
-- `Space + Drag` - Pan view (or Alt+Drag)
-- `Arrow Keys` - Move selected elements (1px)
-- `Shift + Arrow Keys` - Move selected elements (grid size)
+### Navigation & Zoom
+- `Ctrl + Scroll` - Zoom in/out (10% increments)
+- `Space + Drag` - Pan view smoothly (or Alt+Drag)
+- `Arrow Keys` - Move selected elements (1px precise movement)
+- `Shift + Arrow Keys` - Move selected elements (grid-aligned movement)
+- `+/-` - Zoom in/out when canvas is focused
+- `0` - Reset zoom to 100% (1:1 ratio)
 
 ### Tools & View
-- `G` - Toggle grid visibility
-- `P` - Toggle preview mode
-- `+/-` - Zoom in/out (when focused)
+- `G` - Toggle grid visibility and snap-to-grid
+- `P` - Toggle preview mode (fullscreen presentation)
+- `H` - Fit canvas to show all elements
+- `1-5` - Quick tool selection (Select, Rectangle, Circle, Arrow, Text)
+- `Alt+H` - Show keyboard shortcuts help dialog
 
 ### Element Manipulation
-- `Double-click` - Edit text/markdown elements
-- `Right-click` - Context menu
-- `Drag` - Move elements
-- `Resize handles` - Resize elements
-- `Rotation handle` - Rotate elements
+- `Double-click` - Edit text/markdown elements inline
+- `Right-click` - Context menu with element-specific actions
+- `Drag` - Move elements with real-time feedback
+- `Resize handles` - Resize elements with aspect ratio support
+- `Rotation handle` - Rotate elements with angle snapping
 
 ## 🌟 Advanced Usage
 
@@ -673,15 +791,66 @@ swwInstance.updatePropertiesPanelRealTime(['width', 'height', 'rotation']);
 
 ## 🎨 Styling and Themes
 
-SWW uses CSS custom properties for easy theming:
+SWW features comprehensive theming support with CSS custom properties and built-in dark mode:
 
+### Dark Theme Integration
 ```css
 :root {
-    --sww-primary-color: #007bff;
-    --sww-background-color: #ffffff;
-    --sww-panel-background: #18181b;
-    --sww-text-color: #ffffff;
-    --sww-accent-color: #00FF99;
+    /* Primary brand colors */
+    --sww-primary-color: #00FF99;        /* Bright green accent */
+    --sww-secondary-color: #007370;      /* Teal secondary */
+    
+    /* Dark theme palette */
+    --sww-background-color: #18181B;      /* Light dark background */
+    --sww-panel-background: #09090B;     /* Deep dark panels */
+    --sww-text-color: #ffffff;           /* High contrast text */
+    --sww-accent-color: #00FF99;         /* Interactive elements */
+    
+    /* State colors */
+    --sww-hover-color: #00e689;          /* Hover states */
+    --sww-border-color: #374151;         /* Subtle borders */
+    --sww-success-color: #10b981;        /* Success feedback */
+    --sww-warning-color: #f59e0b;        /* Warning states */
+}
+```
+
+### Tailwind CSS Integration
+The library works seamlessly with Tailwind CSS for rapid UI development:
+
+```html
+<!-- Modern dark theme with Tailwind classes -->
+<div class="bg-dark-bg text-white border border-neutral-700">
+    <button class="bg-primary-500 hover:bg-primary-600 text-dark-bg 
+                   px-4 py-2 rounded-lg transition-all duration-200 
+                   hover:-translate-y-0.5 glow-primary">
+        Primary Action
+    </button>
+</div>
+```
+
+### Custom Theme Configuration
+```javascript
+// Configure Tailwind with SWW color palette
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                primary: {
+                    500: '#00FF99',
+                    600: '#00e689',
+                    700: '#00cc7a'
+                },
+                secondary: {
+                    500: '#007370',
+                    600: '#006562'
+                },
+                dark: {
+                    bg: '#18181B',
+                    panel: '#09090B'
+                }
+            }
+        }
+    }
 }
 ```
 
@@ -702,7 +871,7 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
 
 ## 📚 Examples
 
-### Complete HTML Example
+### Complete HTML Example with Dark Theme
 
 ```html
 <!DOCTYPE html>
@@ -710,93 +879,213 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My SWW App</title>
+    <title>SWW Dark Theme App</title>
+    
+    <!-- Tailwind CSS with SWW theme configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 500: '#00FF99', 600: '#00e689', 700: '#00cc7a' },
+                        secondary: { 500: '#007370', 600: '#006562', 700: '#005854' },
+                        dark: { bg: '#18181B', panel: '#09090B' }
+                    }
+                }
+            }
+        }
+    </script>
+    
     <!-- SWW includes FontAwesome and Marked built-in -->
     <link rel="stylesheet" href="sww.css">
     <script src="sww.js"></script>
+    
+    <style>
+        /* Dark theme enhancements */
+        .preview-mode {
+            background: #000 !important;
+            cursor: pointer;
+        }
+        .preview-mode #sww-drawing-canvas {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 20px 25px -5px rgba(0, 255, 153, 0.1);
+        }
+        .glow-primary {
+            box-shadow: 0 0 20px rgba(0, 255, 153, 0.3);
+        }
+    </style>
 </head>
-<body>
-    <div class="sww-editor-container">
-        <!-- Control Panel -->
-        <div class="sww-control-panel" id="sww-control-panel">
-            <div class="sww-control-header">
-                <div><h4>SW Whiteboard</h4></div>
-                <div class="sww-control-header-actions">
-                    <button class="sww-panel-button" onclick="togglePanelWidth()">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                    <button class="sww-panel-button active" onclick="togglePanelDock()">
-                        <i class="fas fa-bookmark"></i>
-                    </button>
-                </div>
+<body class="font-sans h-screen overflow-hidden bg-dark-bg">
+    <!-- Dark themed header -->
+    <header class="bg-secondary-500 text-white px-5 py-3 flex justify-between items-center shadow-lg z-50">
+        <h1 class="text-xl font-semibold flex items-center gap-2.5">
+            <i class="fas fa-palette"></i>
+            SenangWebs Whiteboard
+        </h1>
+        <div class="flex gap-2">
+            <button onclick="togglePreview()" 
+                    class="bg-white/10 hover:bg-primary-500/20 border border-white/20 
+                           hover:border-primary-500/50 text-white px-3 py-2 rounded-md 
+                           transition-all duration-200 hover:-translate-y-0.5"
+                    title="Preview Mode">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button onclick="exportCanvas()" 
+                    class="bg-white/10 hover:bg-primary-500/20 border border-white/20 
+                           hover:border-primary-500/50 text-white px-3 py-2 rounded-md 
+                           transition-all duration-200 hover:-translate-y-0.5"
+                    title="Export">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main content with floating tool palette -->
+    <div class="flex flex-1 relative bg-dark-panel">
+        <!-- Floating Tool Palette -->
+        <div id="toolPalette" class="absolute top-5 left-5 bg-dark-bg border border-neutral-700 
+                                    rounded-xl shadow-2xl p-4 z-40 min-w-[280px] transition-all duration-300">
+            
+            <!-- Tool tabs -->
+            <div class="flex mb-4 bg-dark-panel rounded-lg p-1">
+                <button onclick="switchTab('tools')" 
+                        class="flex-1 bg-primary-500 text-dark-bg px-3 py-2 rounded-md 
+                               text-xs font-medium transition-all duration-200">
+                    <i class="fas fa-tools"></i> Tools
+                </button>
+                <button onclick="switchTab('layers')" 
+                        class="flex-1 bg-transparent text-neutral-400 px-3 py-2 rounded-md 
+                               text-xs font-medium transition-all duration-200 hover:text-primary-500">
+                    <i class="fas fa-layer-group"></i> Layers
+                </button>
             </div>
             
-            <!-- Menu & Tools will be automatically generated -->
-            <div class="sww-control-menu"></div>
-            <div id="sww-elements-section" class="sww-control-section"></div>
-            <div id="sww-layers-section" class="sww-control-section"></div>
-            <div id="sww-customize-section" class="sww-control-section"></div>
+            <!-- Tools grid with dark theme -->
+            <div id="toolsGrid" class="grid grid-cols-2 gap-2">
+                <button onclick="selectTool('select')" 
+                        class="bg-primary-500/20 border-2 border-primary-500 text-primary-500 
+                               p-3 rounded-lg transition-all duration-200 hover:-translate-y-0.5">
+                    <i class="fas fa-mouse-pointer"></i><br>Select
+                </button>
+                <!-- Additional tool buttons... -->
+            </div>
         </div>
 
         <!-- Canvas Area -->
-        <div class="sww-canvas-area" id="whiteboard-container"></div>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="sww-toolbar-container">
-        <!-- Zoom, actions, and menu controls will be automatically generated -->
+        <div class="sww-canvas-area flex-1" id="whiteboard-container"></div>
     </div>
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById('whiteboard-container');
             
-            // Initialize whiteboard
+            // Initialize whiteboard with dark theme support
             const whiteboard = sww.init(container, {
                 backgroundColor: "#ffffff",
                 gridSize: 20,
                 showGrid: true,
-                readOnly: false  // Set to true for presentation mode
+                readOnly: false,           // Set to true for presentation mode
+                performanceMode: true,     // Enable performance optimizations
+                enableSpatialIndex: true,  // Large scene support
+                lodThreshold: 100          // LOD optimization threshold
             });
             
-            // Initialize control panel
+            // Initialize control panel with dark theme
             const controlPanel = new SWWControlPanel(whiteboard);
             
-            // Setup panel functions
-            window.togglePanelWidth = () => {
-                document.getElementById('sww-control-panel').classList.toggle('expanded');
-            };
+            // Enhanced keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                
+                if (e.ctrlKey || e.metaKey) {
+                    switch (e.key) {
+                        case 'z': e.preventDefault(); e.shiftKey ? whiteboard.redo() : whiteboard.undo(); break;
+                        case 'y': e.preventDefault(); whiteboard.redo(); break;
+                        case 'a': e.preventDefault(); whiteboard.selectAll(); break;
+                        case 'c': e.preventDefault(); whiteboard.copySelected(); break;
+                        case 'v': e.preventDefault(); whiteboard.pasteClipboard(); break;
+                    }
+                } else {
+                    switch (e.key) {
+                        case 'Delete': case 'Backspace': whiteboard.deleteSelectedElements(); break;
+                        case 'Escape': whiteboard.clearSelection(); break;
+                        case '1': whiteboard.setTool('select'); break;
+                        case '2': whiteboard.setTool('rectangle'); break;
+                        case 'p': case 'P': whiteboard.togglePreviewMode(); break;
+                        case 'g': case 'G': whiteboard.toggleGrid(); break;
+                    }
+                }
+            });
             
-            window.togglePanelDock = () => {
-                document.getElementById('sww-control-panel').classList.toggle('undocked');
-            };
-            
-            console.log('SWW initialized successfully!');
+            console.log('SWW with dark theme initialized successfully!');
         });
     </script>
 </body>
 </html>
 ```
 
-### Read-Only Presentation Mode
+### Read-Only Presentation Mode with Dark Theme
 
 ```html
 <script>
-    // For presentation/display mode
+    // For presentation/display mode with dark theme
     const whiteboard = sww.init(container, {
         backgroundColor: "#ffffff",
-        readOnly: true,  // Locks editing, prevents escape from preview
-        showGrid: false
+        readOnly: true,          // Locks editing, prevents escape from preview
+        showGrid: false,         // Hide grid for clean presentation
+        performanceMode: true,   // Enable optimizations for smooth presentation
+        enableSpatialIndex: true // Handle large presentations efficiently
     });
     
     // Load existing scene data
     const presentationData = {
-        elements: [/* your elements */]
+        elements: [/* your presentation elements */]
     };
     whiteboard.loadScene(presentationData);
+    
+    // Presentation will automatically enter dark preview mode
+    // All UI elements will be hidden for distraction-free viewing
 </script>
+```
+
+### Advanced API Usage with New Features
+
+```javascript
+// Element management with new methods
+const elementId = whiteboard.generateId();
+const newElement = {
+    id: elementId,
+    type: "rectangle",
+    x: 100, y: 100, width: 200, height: 150,
+    strokeColor: "#00FF99", fillColor: "#007370"
+};
+
+// Add and manage elements
+whiteboard.addElement(newElement);
+whiteboard.selectElementById(elementId);           // Select specific element
+whiteboard.toggleElementVisibility(elementId);    // Toggle visibility
+whiteboard.deleteElementById(elementId);          // Delete specific element
+
+// Performance optimization for large scenes
+whiteboard.performOptimizedRender();              // Manual optimization
+whiteboard.rebuildSpatialIndex();                 // Rebuild spatial index
+
+// Enhanced preview mode
+whiteboard.enterPreviewMode();                    // Dark background presentation
+whiteboard.exitPreviewMode();                     // Return to editing
 ```
 
 ---
 
-**SenangWebs Whiteboard** - Making digital drawing simple and powerful! 🎨
+**SenangWebs Whiteboard** - Making digital drawing simple, powerful, and beautiful! 🎨✨
+
+### Latest Updates (v1.0.0)
+- ✅ **Enhanced Element Management**: Direct element manipulation with `getElementById()`, `selectElementById()`, `deleteElementById()`, and `toggleElementVisibility()`
+- ✅ **Modern Dark Theme**: Professional dark UI with #00FF99 accent colors and smooth transitions
+- ✅ **Advanced Performance**: Spatial indexing and Level of Detail optimizations for 10,000+ elements
+- ✅ **Enhanced Preview Mode**: Fullscreen presentation with dark background and complete UI hiding
+- ✅ **Improved Keyboard Shortcuts**: Full keyboard navigation with 1-5 tool selection and enhanced shortcuts
+- ✅ **Tailwind CSS Integration**: Built-in support for rapid UI development with custom color palettes
+- ✅ **Smart Layer Management**: Advanced layer controls with bulk operations and visual feedback
