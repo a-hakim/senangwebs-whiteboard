@@ -2,9 +2,16 @@
 
 A powerful, client-side JavaScript drawing library for creating interactive digital whiteboards and vector drawings with advanced performance optimizations and modern UI components.
 
+
+| Preview                                   | Examples          |
+| ------------------------------------------- | ------------------- |
+| ![SenangWebs Preview 1](sww_preview1.png) | sww.html          |
+| ![SenangWebs Preview 2](sww_preview2.png) | sww-tailwind.html |
+
 ## 🚀 Features
 
 ### Drawing Tools
+
 - **Basic Shapes**: Rectangle, Ellipse, Diamond, Parallelogram, Star
 - **Lines & Arrows**: Directional arrows with customizable arrowheads
 - **Text Elements**: Rich text with customizable fonts, sizes, colors, and alignment
@@ -12,6 +19,7 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 - **Free Drawing**: Pen tool for freehand sketching with path optimization
 
 ### Advanced Capabilities
+
 - **Layer Management**: Full layer control with visibility, locking, ordering, selection, and programmatic access
 - **Element Management API**: Direct element manipulation with `getElementById()`, `selectElementById()`, `deleteElementById()`, and `toggleElementVisibility()`
 - **Selection Tools**: Multi-select, selection boxes, bulk operations, group management, and smart selection
@@ -26,6 +34,7 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 - **Read-Only Mode**: Presentation mode with completely locked editing capabilities and automatic preview activation
 
 ### Styling & Customization
+
 - **Fill Styles**: Solid colors, gradients (linear/radial), hatch patterns, and transparency
 - **Stroke Customization**: Color, width, and style options
 - **Gradient Editor**: Multi-stop gradient creation with color and position controls
@@ -34,6 +43,7 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 - **Font Management**: Multiple font families with size and alignment controls
 
 ### User Interface
+
 - **Control Panel**: Organized tool selection and layer management with expand/dock options and tabbed interface
 - **Modern Dark Theme**: Professional dark UI with accent colors (#00FF99 primary, #007370 secondary) and smooth transitions
 - **Properties Panel**: Real-time property editing for selected elements with instant visual feedback
@@ -45,6 +55,7 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 - **Smart UI Hiding**: All editor UI elements automatically hide in preview mode for distraction-free presentation
 
 ### Markdown Support
+
 - **Comprehensive Parser**: Full markdown specification support
 - **Rich Formatting**: Headers (H1-H6), emphasis, lists, tables, code blocks
 - **Advanced Features**: Blockquotes (nested), footnotes, task lists, definition lists
@@ -67,7 +78,7 @@ Simply include the built SWW files in your HTML - FontAwesome and Marked are pre
 </head>
 <body>
     <div id="drawing-container"></div>
-    
+  
     <script>
         const container = document.getElementById('drawing-container');
         const whiteboard = sww.init(container, {
@@ -109,6 +120,7 @@ The library includes these dependencies that are bundled during the build proces
 ### Build Output
 
 After running `npm run build`, you'll find in the `dist/` folder:
+
 - `sww.js` (150 KB) - Main library bundle with all dependencies and latest features
 - `sww.css` (135 KB) - Stylesheet including FontAwesome icons and dark theme support
 - `fonts/` - FontAwesome font files (232 KB total)
@@ -176,7 +188,9 @@ const swwInstance = sww.init(container, options);
 ```
 
 ### Read-Only Mode
+
 When `readOnly: true` is set:
+
 - Application automatically enters preview mode on initialization
 - Escape key is disabled (cannot exit preview mode)
 - All editing functionality is completely locked
@@ -186,6 +200,7 @@ When `readOnly: true` is set:
 ## 🎨 Drawing Tools
 
 ### Shape Tools
+
 - `rectangle` - Draw rectangles and squares with customizable borders and fills
 - `ellipse` - Draw circles and ellipses with gradient support
 - `diamond` - Draw diamond shapes with rotation capabilities
@@ -194,17 +209,21 @@ When `readOnly: true` is set:
 - `arrow` - Draw directional arrows with customizable arrowheads
 
 ### Content Tools
+
 - `text` - Add text elements with font customization, color, and alignment
 - `website` - Embed website previews with URL configuration
 - `image` - Add image elements with source URL and alt text support
 - `markdown` - Add markdown documents with comprehensive syntax support
 
 ### Utility Tools
+
 - `select` - Selection and manipulation tool with multi-select capabilities
 - `draw` - Freehand drawing tool with path optimization
 
 ### Tool Settings
+
 All tools support these customizable properties:
+
 - **Stroke**: Color, width, and style
 - **Fill**: Solid colors, gradients (linear/radial), hatch patterns, transparency
 - **Opacity**: Element transparency (0-1)
@@ -216,6 +235,7 @@ All tools support these customizable properties:
 ### Core Methods
 
 #### `sww.init(container, options)`
+
 Initializes a new SWW instance in the specified container.
 
 ```javascript
@@ -226,6 +246,7 @@ const instance = sww.init(document.getElementById('container'), {
 ```
 
 #### `setTool(toolName)`
+
 Sets the current drawing tool.
 
 ```javascript
@@ -234,6 +255,7 @@ instance.setTool('text');
 ```
 
 #### `getScene()`
+
 Returns the current scene data as a JSON object.
 
 ```javascript
@@ -242,6 +264,7 @@ console.log(sceneData.elements.length); // Number of elements
 ```
 
 #### `loadScene(sceneData)`
+
 Loads a scene from JSON data.
 
 ```javascript
@@ -263,6 +286,7 @@ instance.loadScene(sceneData);
 ### Element Management Methods
 
 #### `getElementById(elementId)`
+
 Finds and returns an element by its ID.
 
 ```javascript
@@ -273,6 +297,7 @@ if (element) {
 ```
 
 #### `toggleElementVisibility(elementId)`
+
 Toggles the visibility of an element by its ID.
 
 ```javascript
@@ -282,6 +307,7 @@ console.log('Visibility toggled:', success);
 ```
 
 #### `selectElementById(elementId)`
+
 Selects a specific element by its ID, clearing any previous selection.
 
 ```javascript
@@ -291,6 +317,7 @@ console.log('Element selected:', success);
 ```
 
 #### `deleteElementById(elementId)`
+
 Deletes a specific element by its ID.
 
 ```javascript
@@ -302,40 +329,51 @@ console.log('Element deleted:', success);
 ### Selection Methods
 
 #### `selectAll()`
+
 Selects all elements in the scene.
 
 #### `clearSelection()`
+
 Clears the current selection.
 
 #### `deleteSelectedElements()`
+
 Deletes all currently selected elements.
 
 #### `copySelected()`
+
 Copies selected elements to clipboard.
 
 #### `pasteClipboard()`
+
 Pastes clipboard contents to canvas.
 
 #### `moveSelectedElements(direction, isShiftPressed)`
+
 Moves selected elements using arrow keys with optional grid snapping.
 
 ### Zoom and View Methods
 
 #### `zoomIn()` / `zoomOut()`
+
 Zoom in or out of the canvas (10% increments).
 
 #### `resetZoom()`
+
 Reset zoom to 100%.
 
 #### `toggleGrid()`
+
 Toggle grid visibility and snap-to-grid functionality.
 
 #### `fitCanvasToElements()`
+
 Automatically fit the view to show all elements.
 
 ### Performance and Optimization Methods
 
 #### `performOptimizedRender()`
+
 Triggers an optimized rendering update for better performance.
 
 ```javascript
@@ -344,6 +382,7 @@ instance.performOptimizedRender();
 ```
 
 #### `rebuildSpatialIndex()`
+
 Rebuilds the spatial index for improved hit testing performance.
 
 ```javascript
@@ -352,6 +391,7 @@ instance.rebuildSpatialIndex();
 ```
 
 #### `updateElementInSpatialIndex(element)`
+
 Updates a specific element's position in the spatial index.
 
 ```javascript
@@ -360,6 +400,7 @@ instance.updateElementInSpatialIndex(modifiedElement);
 ```
 
 #### `getLevelOfDetail(element)`
+
 Returns the appropriate level of detail for an element based on zoom level.
 
 ```javascript
@@ -370,17 +411,21 @@ const lod = instance.getLevelOfDetail(element);
 ### Preview Mode Methods
 
 #### `togglePreviewMode()`
+
 Toggle between edit and preview modes with enhanced dark background.
 
 #### `enterPreviewMode()`
+
 Enter fullscreen preview mode with dark background and hidden UI elements.
 
 #### `exitPreviewMode()`
+
 Exit preview mode and return to editing (disabled in read-only mode).
 
 ### Theme and UI Methods
 
 #### `generateId()`
+
 Generates a unique ID for new elements.
 
 ```javascript
@@ -391,11 +436,13 @@ console.log('New ID:', newId); // e.g., 'sww-abc123def'
 ### History Methods
 
 #### `undo()` / `redo()`
+
 Undo or redo the last action.
 
 ### Export Methods
 
 #### `exportToSVG()`
+
 Export the current scene as SVG.
 
 ```javascript
@@ -403,6 +450,7 @@ const svgData = instance.exportToSVG();
 ```
 
 #### `exportToPNG()`
+
 Export the current scene as PNG.
 
 ```javascript
@@ -427,6 +475,7 @@ const controlPanel = new SWWControlPanel(swwInstance);
 ```
 
 ### Control Panel Features
+
 - **Modern Dark Theme**: Professional dark UI with #00FF99 primary and #007370 secondary accent colors
 - **Tabbed Interface**: Organized tabs for Tools and Layers with smooth transitions
 - **Tool Selection Grid**: Visual grid with FontAwesome icons, labels, and hover effects
@@ -468,6 +517,7 @@ swwInstance.deleteSelectedElements();              // Delete selected with confi
 SWW includes a comprehensive markdown parser that supports the full markdown specification:
 
 ### Basic Syntax
+
 - **Headers**: `# H1` through `###### H6`
 - **Emphasis**: `*italic*`, `**bold**`, `***bold italic***`
 - **Strikethrough**: `~~strikethrough~~`
@@ -475,23 +525,27 @@ SWW includes a comprehensive markdown parser that supports the full markdown spe
 - **Inline Code**: `` `code` ``
 
 ### Lists
+
 - **Unordered**: `- item` or `* item` or `+ item`
 - **Ordered**: `1. item`
 - **Task Lists**: `- [ ] unchecked` and `- [x] checked`
 - **Definition Lists**: `Term: Definition`
 
 ### Links & Images
+
 - **Links**: `[text](https://github.com/a-hakim/senangwebs-whiteboard)` or `[text](https://github.com/a-hakim/senangwebs-whiteboard "title")`
 - **Images**: `![alt](url)` or `![alt](url "title")`
 - **Automatic Links**: `<https://example.com>`
 - **Email Links**: `<email@example.com>`
 
 ### Code & Quotes
+
 - **Code Blocks**: ``` or indented (4 spaces)
 - **Language Syntax**: ```javascript
 - **Blockquotes**: `> quote` (supports nesting with `>>`)
 
 ### Tables
+
 ```markdown
 | Header 1 | Header 2 |
 |----------|----------|
@@ -499,6 +553,7 @@ SWW includes a comprehensive markdown parser that supports the full markdown spe
 ```
 
 ### Advanced Features
+
 - **Horizontal Rules**: `---`, `***`, or `___`
 - **Footnotes**: `[^1]` with `[^1]: definition`
 - **Line Breaks**: Double space at end of line or double newline
@@ -506,6 +561,7 @@ SWW includes a comprehensive markdown parser that supports the full markdown spe
 - **Emoji**: `:smile:`, `:heart:`, `:thumbsup:` (basic set)
 
 ### Usage in SWW
+
 ```javascript
 // Create markdown element
 swwInstance.setTool('markdown');
@@ -522,6 +578,7 @@ const markdownElement = {
 ## ⚡ Performance Features
 
 ### Spatial Indexing
+
 For scenes with many elements, SWW uses advanced spatial indexing for ultra-efficient hit testing:
 
 ```javascript
@@ -535,6 +592,7 @@ swwInstance.updateElementInSpatialIndex(element);  // Update specific element
 ```
 
 ### Level of Detail (LOD)
+
 Intelligent rendering optimization that reduces complexity for distant or small elements:
 
 ```javascript
@@ -546,6 +604,7 @@ const lod = swwInstance.getLevelOfDetail(element); // Get current LOD level
 ```
 
 ### Optimized Rendering
+
 ```javascript
 // Enable performance monitoring and optimization
 const options = {
@@ -562,6 +621,7 @@ swwInstance.performOptimizedRender(); // Trigger optimized render cycle
 ## 🎯 Element Properties
 
 ### Common Properties
+
 All elements support these properties:
 
 ```javascript
@@ -590,6 +650,7 @@ All elements support these properties:
 ```
 
 ### Text Properties
+
 Text elements have additional properties:
 
 ```javascript
@@ -604,6 +665,7 @@ Text elements have additional properties:
 ```
 
 ### Website Properties
+
 Website elements for embedding:
 
 ```javascript
@@ -615,6 +677,7 @@ Website elements for embedding:
 ```
 
 ### Image Properties
+
 Image elements:
 
 ```javascript
@@ -627,6 +690,7 @@ Image elements:
 ```
 
 ### Markdown Properties
+
 Markdown document elements:
 
 ```javascript
@@ -640,8 +704,9 @@ Markdown document elements:
 ## 🎮 Keyboard Shortcuts
 
 ### Basic Operations
+
 - `Ctrl+Z` - Undo
-- `Ctrl+Y` - Redo  
+- `Ctrl+Y` - Redo
 - `Ctrl+A` - Select All
 - `Ctrl+C` - Copy
 - `Ctrl+V` - Paste
@@ -649,6 +714,7 @@ Markdown document elements:
 - `Escape` - Clear selection / Exit preview mode (if not read-only)
 
 ### Navigation & Zoom
+
 - `Ctrl + Scroll` - Zoom in/out (10% increments)
 - `Space + Drag` - Pan view smoothly (or Alt+Drag)
 - `Arrow Keys` - Move selected elements (1px precise movement)
@@ -657,6 +723,7 @@ Markdown document elements:
 - `0` - Reset zoom to 100% (1:1 ratio)
 
 ### Tools & View
+
 - `G` - Toggle grid visibility and snap-to-grid
 - `P` - Toggle preview mode (fullscreen presentation)
 - `H` - Fit canvas to show all elements
@@ -664,6 +731,7 @@ Markdown document elements:
 - `Alt+H` - Show keyboard shortcuts help dialog
 
 ### Element Manipulation
+
 - `Double-click` - Edit text/markdown elements inline
 - `Right-click` - Context menu with element-specific actions
 - `Drag` - Move elements with real-time feedback
@@ -794,18 +862,19 @@ swwInstance.updatePropertiesPanelRealTime(['width', 'height', 'rotation']);
 SWW features comprehensive theming support with CSS custom properties and built-in dark mode:
 
 ### Dark Theme Integration
+
 ```css
 :root {
     /* Primary brand colors */
     --sww-primary-color: #00FF99;        /* Bright green accent */
     --sww-secondary-color: #007370;      /* Teal secondary */
-    
+  
     /* Dark theme palette */
     --sww-background-color: #18181B;      /* Light dark background */
     --sww-panel-background: #09090B;     /* Deep dark panels */
     --sww-text-color: #ffffff;           /* High contrast text */
     --sww-accent-color: #00FF99;         /* Interactive elements */
-    
+  
     /* State colors */
     --sww-hover-color: #00e689;          /* Hover states */
     --sww-border-color: #374151;         /* Subtle borders */
@@ -815,6 +884,7 @@ SWW features comprehensive theming support with CSS custom properties and built-
 ```
 
 ### Tailwind CSS Integration
+
 The library works seamlessly with Tailwind CSS for rapid UI development:
 
 ```html
@@ -829,6 +899,7 @@ The library works seamlessly with Tailwind CSS for rapid UI development:
 ```
 
 ### Custom Theme Configuration
+
 ```javascript
 // Configure Tailwind with SWW color palette
 tailwind.config = {
@@ -863,7 +934,7 @@ tailwind.config = {
 
 ## 📄 License
 
-This project is available for educational and demonstration purposes. 
+This project is available for educational and demonstration purposes.
 
 ## 🤝 Contributing
 
@@ -880,7 +951,7 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SWW Dark Theme App</title>
-    
+  
     <!-- Tailwind CSS with SWW theme configuration -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -896,11 +967,11 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
             }
         }
     </script>
-    
+  
     <!-- SWW includes FontAwesome and Marked built-in -->
     <link rel="stylesheet" href="sww.css">
     <script src="sww.js"></script>
-    
+  
     <style>
         /* Dark theme enhancements */
         .preview-mode {
@@ -947,7 +1018,7 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
         <!-- Floating Tool Palette -->
         <div id="toolPalette" class="absolute top-5 left-5 bg-dark-bg border border-neutral-700 
                                     rounded-xl shadow-2xl p-4 z-40 min-w-[280px] transition-all duration-300">
-            
+        
             <!-- Tool tabs -->
             <div class="flex mb-4 bg-dark-panel rounded-lg p-1">
                 <button onclick="switchTab('tools')" 
@@ -961,7 +1032,7 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
                     <i class="fas fa-layer-group"></i> Layers
                 </button>
             </div>
-            
+        
             <!-- Tools grid with dark theme -->
             <div id="toolsGrid" class="grid grid-cols-2 gap-2">
                 <button onclick="selectTool('select')" 
@@ -976,11 +1047,11 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
         <!-- Canvas Area -->
         <div class="sww-canvas-area flex-1" id="whiteboard-container"></div>
     </div>
-    
+  
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById('whiteboard-container');
-            
+        
             // Initialize whiteboard with dark theme support
             const whiteboard = sww.init(container, {
                 backgroundColor: "#ffffff",
@@ -991,14 +1062,14 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
                 enableSpatialIndex: true,  // Large scene support
                 lodThreshold: 100          // LOD optimization threshold
             });
-            
+        
             // Initialize control panel with dark theme
             const controlPanel = new SWWControlPanel(whiteboard);
-            
+        
             // Enhanced keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-                
+            
                 if (e.ctrlKey || e.metaKey) {
                     switch (e.key) {
                         case 'z': e.preventDefault(); e.shiftKey ? whiteboard.redo() : whiteboard.undo(); break;
@@ -1018,7 +1089,7 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
                     }
                 }
             });
-            
+        
             console.log('SWW with dark theme initialized successfully!');
         });
     </script>
@@ -1038,13 +1109,13 @@ SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or con
         performanceMode: true,   // Enable optimizations for smooth presentation
         enableSpatialIndex: true // Handle large presentations efficiently
     });
-    
+  
     // Load existing scene data
     const presentationData = {
         elements: [/* your presentation elements */]
     };
     whiteboard.loadScene(presentationData);
-    
+  
     // Presentation will automatically enter dark preview mode
     // All UI elements will be hidden for distraction-free viewing
 </script>
@@ -1082,6 +1153,7 @@ whiteboard.exitPreviewMode();                     // Return to editing
 **SenangWebs Whiteboard** - Making digital drawing simple, powerful, and beautiful! 🎨✨
 
 ### Latest Updates (v1.0.0)
+
 - ✅ **Enhanced Element Management**: Direct element manipulation with `getElementById()`, `selectElementById()`, `deleteElementById()`, and `toggleElementVisibility()`
 - ✅ **Modern Dark Theme**: Professional dark UI with #00FF99 accent colors and smooth transitions
 - ✅ **Advanced Performance**: Spatial indexing and Level of Detail optimizations for 10,000+ elements
