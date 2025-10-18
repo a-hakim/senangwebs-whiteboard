@@ -1976,7 +1976,7 @@ import { marked } from 'marked';
                 defaultFillColor = '#ffffff';  // White fill for shapes
                 defaultFillStyle = 'solid';  // Solid fill for shapes
             } else if (['website', 'image', 'markdown'].includes(type)) {
-                defaultStrokeWidth = 1;  // Website, image, and markdown elements have 1px default stroke width
+                defaultStrokeWidth = 2;  // Website, image, and markdown elements have 2px default stroke width
                 defaultFillColor = this.toolSettings.fillColor;
                 defaultFillStyle = this.toolSettings.fillStyle;
             } else {
@@ -3034,14 +3034,32 @@ import { marked } from 'marked';
         updateResize(point) {
             if (!this.isResizing || !this.dragStartPoint) return;
             
-            const dx = point.x - this.dragStartPoint.x;
-            const dy = point.y - this.dragStartPoint.y;
+            let dx = point.x - this.dragStartPoint.x;
+            let dy = point.y - this.dragStartPoint.y;
             
             this.selectedElements.forEach(element => {
                 const startX = element.resizeStartX;
                 const startY = element.resizeStartY;
                 const startWidth = element.resizeStartWidth;
                 const startHeight = element.resizeStartHeight;
+                
+                // Transform dx/dy to account for element rotation
+                let localDx = dx;
+                let localDy = dy;
+                
+                if (element.rotation && element.rotation !== 0) {
+                    const angle = -element.rotation * Math.PI / 180; // Negative for inverse transformation
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+                    
+                    // Rotate the delta vector to match element's local coordinate system
+                    localDx = dx * cos - dy * sin;
+                    localDy = dx * sin + dy * cos;
+                }
+                
+                // Use local deltas for resize calculations
+                dx = localDx;
+                dy = localDy;
                 
                 // Store the original values in case we need to constrain
                 let newX = element.x;
