@@ -130,6 +130,20 @@ import { marked } from 'marked';
 
     // SWW Instance class
     class SWWInstance {
+        // Shared font families list
+        static FONT_FAMILIES = [
+            { value: 'Arial', text: 'Arial' },
+            { value: 'Helvetica', text: 'Helvetica' },
+            { value: 'Times New Roman', text: 'Times New Roman' },
+            { value: 'Georgia', text: 'Georgia' },
+            { value: 'Verdana', text: 'Verdana' },
+            { value: 'Courier New', text: 'Courier New' },
+            { value: 'Monaco', text: 'Monaco' },
+            { value: 'Comic Sans MS', text: 'Comic Sans MS' },
+            { value: 'Impact', text: 'Impact' },
+            { value: 'Trebuchet MS', text: 'Trebuchet MS' }
+        ];
+        
         constructor(container, options = {}) {
             this.container = container;
             this.options = {
@@ -1114,20 +1128,7 @@ import { marked } from 'marked';
             const fontFamilySelect = document.createElement('select');
             fontFamilySelect.className = 'sww-select-input';
             
-            const fontFamilies = [
-                { value: 'Arial', text: 'Arial' },
-                { value: 'Helvetica', text: 'Helvetica' },
-                { value: 'Times New Roman', text: 'Times New Roman' },
-                { value: 'Georgia', text: 'Georgia' },
-                { value: 'Verdana', text: 'Verdana' },
-                { value: 'Courier New', text: 'Courier New' },
-                { value: 'Monaco', text: 'Monaco' },
-                { value: 'Comic Sans MS', text: 'Comic Sans MS' },
-                { value: 'Impact', text: 'Impact' },
-                { value: 'Trebuchet MS', text: 'Trebuchet MS' }
-            ];
-            
-            fontFamilies.forEach(font => {
+            SWWInstance.FONT_FAMILIES.forEach(font => {
                 const option = document.createElement('option');
                 option.value = font.value;
                 option.textContent = font.text;
@@ -5326,7 +5327,7 @@ import { marked } from 'marked';
             }
             
             // Improved placeholder with helpful hint
-            textEditor.placeholder = '✏️ Type your text here... (Ctrl+Enter to save, Esc to cancel)';
+            textEditor.placeholder = 'Type your text here... (Ctrl+Enter to save, Esc to cancel)';
             
             document.body.appendChild(textEditor);
             
@@ -5609,6 +5610,38 @@ import { marked } from 'marked';
             const divider1 = document.createElement('div');
             divider1.className = 'sww-text-format-toolbar-divider';
             
+            // Font family control
+            const fontFamilyLabel = document.createElement('span');
+            fontFamilyLabel.textContent = 'Font:';
+            fontFamilyLabel.style.color = '#aaa';
+            fontFamilyLabel.style.fontSize = '12px';
+            fontFamilyLabel.style.marginRight = '4px';
+            
+            const fontFamilySelect = document.createElement('select');
+            fontFamilySelect.className = 'sww-text-format-font-select';
+            fontFamilySelect.title = 'Font Family';
+            
+            SWWInstance.FONT_FAMILIES.forEach(font => {
+                const option = document.createElement('option');
+                option.value = font.value;
+                option.textContent = font.text;
+                option.style.fontFamily = font.value;
+                fontFamilySelect.appendChild(option);
+            });
+            
+            // Set the current font family value
+            fontFamilySelect.value = element.fontFamily || 'Arial';
+            
+            fontFamilySelect.addEventListener('change', () => {
+                element.fontFamily = fontFamilySelect.value;
+                textEditor.style.fontFamily = fontFamilySelect.value;
+                this.updateSVGElement(element);
+            });
+            
+            // Divider
+            const divider2 = document.createElement('div');
+            divider2.className = 'sww-text-format-toolbar-divider';
+            
             // Alignment buttons
             const alignLeft = document.createElement('button');
             alignLeft.innerHTML = '<i class="fas fa-align-left"></i>';
@@ -5638,8 +5671,8 @@ import { marked } from 'marked';
             });
             
             // Divider
-            const divider2 = document.createElement('div');
-            divider2.className = 'sww-text-format-toolbar-divider';
+            const divider3 = document.createElement('div');
+            divider3.className = 'sww-text-format-toolbar-divider';
             
             // Color picker
             const colorLabel = document.createElement('span');
@@ -5663,10 +5696,13 @@ import { marked } from 'marked';
             toolbar.appendChild(fontSizeLabel);
             toolbar.appendChild(fontSizeInput);
             toolbar.appendChild(divider1);
+            toolbar.appendChild(fontFamilyLabel);
+            toolbar.appendChild(fontFamilySelect);
+            toolbar.appendChild(divider2);
             toolbar.appendChild(alignLeft);
             toolbar.appendChild(alignCenter);
             toolbar.appendChild(alignRight);
-            toolbar.appendChild(divider2);
+            toolbar.appendChild(divider3);
             toolbar.appendChild(colorLabel);
             toolbar.appendChild(colorInput);
             
