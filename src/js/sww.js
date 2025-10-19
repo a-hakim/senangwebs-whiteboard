@@ -3020,15 +3020,57 @@ import { marked } from 'marked';
                     }
                 } else if (element.type === 'path') {
                     // Special handling for path elements (freehand drawings)
-                    // Scale the relative points based on the resize
-                    const scaleX = (startWidth + dx) / startWidth;
-                    const scaleY = (startHeight + dy) / startHeight;
+                    // Path elements support proportional scaling from all 4 corners
                     
-                    // Only allow proportional scaling for paths to maintain shape
-                    const scale = Math.min(scaleX, scaleY);
+                    // Calculate the absolute scale based on the resize direction
+                    let scaleX, scaleY;
                     
+                    // Determine scale based on handle direction
+                    switch (this.resizeHandle) {
+                        case 'se': // Southeast - scale from NW origin
+                            scaleX = (startWidth + dx) / startWidth;
+                            scaleY = (startHeight + dy) / startHeight;
+                            break;
+                        case 'nw': // Northwest - scale from SE origin
+                            scaleX = (startWidth - dx) / startWidth;
+                            scaleY = (startHeight - dy) / startHeight;
+                            break;
+                        case 'ne': // Northeast - scale from SW origin
+                            scaleX = (startWidth + dx) / startWidth;
+                            scaleY = (startHeight - dy) / startHeight;
+                            break;
+                        case 'sw': // Southwest - scale from NE origin
+                            scaleX = (startWidth - dx) / startWidth;
+                            scaleY = (startHeight + dy) / startHeight;
+                            break;
+                        default:
+                            scaleX = 1;
+                            scaleY = 1;
+                    }
+                    
+                    // Use uniform scale to maintain proportions (aspect ratio)
+                    const scale = Math.min(Math.abs(scaleX), Math.abs(scaleY));
+                    
+                    // Apply the scale
                     newWidth = startWidth * scale;
                     newHeight = startHeight * scale;
+                    
+                    // Adjust position based on which corner is being dragged
+                    switch (this.resizeHandle) {
+                        case 'se': // Southeast - origin stays at NW
+                            // No position change needed
+                            break;
+                        case 'nw': // Northwest - origin moves, SE corner stays fixed
+                            newX = startX + startWidth - newWidth;
+                            newY = startY + startHeight - newHeight;
+                            break;
+                        case 'ne': // Northeast - origin moves vertically, SW corner stays fixed
+                            newY = startY + startHeight - newHeight;
+                            break;
+                        case 'sw': // Southwest - origin moves horizontally, NE corner stays fixed
+                            newX = startX + startWidth - newWidth;
+                            break;
+                    }
                     
                     // Scale the points from the original stored points
                     if (element.resizeStartPoints) {
@@ -4238,8 +4280,8 @@ import { marked } from 'marked';
                         if (element.type === 'line' || element.type === 'arrow') {
                             this.addLineResizeHandles(element);
                         } else {
-                            // Use standard 8-handle resize for all elements including text
-                            this.addResizeHandles(bounds);
+                            // Pass element to addResizeHandles for type-specific handle configuration
+                            this.addResizeHandles(bounds, element);
                         }
                     });
                 }
@@ -4315,18 +4357,35 @@ import { marked } from 'marked';
             });
         }
         
-        addResizeHandles(bounds) {
+        addResizeHandles(bounds, element = null) {
             const handleSize = 8;
-            const handles = [
-                { x: bounds.x - handleSize/2, y: bounds.y - handleSize/2, cursor: 'nw-resize', type: 'nw' },
-                { x: bounds.x + bounds.width/2 - handleSize/2, y: bounds.y - handleSize/2, cursor: 'n-resize', type: 'n' },
-                { x: bounds.x + bounds.width - handleSize/2, y: bounds.y - handleSize/2, cursor: 'ne-resize', type: 'ne' },
-                { x: bounds.x + bounds.width - handleSize/2, y: bounds.y + bounds.height/2 - handleSize/2, cursor: 'e-resize', type: 'e' },
-                { x: bounds.x + bounds.width - handleSize/2, y: bounds.y + bounds.height - handleSize/2, cursor: 'se-resize', type: 'se' },
-                { x: bounds.x + bounds.width/2 - handleSize/2, y: bounds.y + bounds.height - handleSize/2, cursor: 's-resize', type: 's' },
-                { x: bounds.x - handleSize/2, y: bounds.y + bounds.height - handleSize/2, cursor: 'sw-resize', type: 'sw' },
-                { x: bounds.x - handleSize/2, y: bounds.y + bounds.height/2 - handleSize/2, cursor: 'w-resize', type: 'w' }
-            ];
+            
+            // For path elements (freehand drawings), only show 4 corner handles
+            // since they only support proportional scaling from corners
+            const isPathElement = element && element.type === 'path';
+            
+            let handles;
+            if (isPathElement) {
+                // Show only 4 corner handles for path elements
+                handles = [
+                    { x: bounds.x - handleSize/2, y: bounds.y - handleSize/2, cursor: 'nw-resize', type: 'nw' },
+                    { x: bounds.x + bounds.width - handleSize/2, y: bounds.y - handleSize/2, cursor: 'ne-resize', type: 'ne' },
+                    { x: bounds.x + bounds.width - handleSize/2, y: bounds.y + bounds.height - handleSize/2, cursor: 'se-resize', type: 'se' },
+                    { x: bounds.x - handleSize/2, y: bounds.y + bounds.height - handleSize/2, cursor: 'sw-resize', type: 'sw' }
+                ];
+            } else {
+                // Show all 8 handles for other elements
+                handles = [
+                    { x: bounds.x - handleSize/2, y: bounds.y - handleSize/2, cursor: 'nw-resize', type: 'nw' },
+                    { x: bounds.x + bounds.width/2 - handleSize/2, y: bounds.y - handleSize/2, cursor: 'n-resize', type: 'n' },
+                    { x: bounds.x + bounds.width - handleSize/2, y: bounds.y - handleSize/2, cursor: 'ne-resize', type: 'ne' },
+                    { x: bounds.x + bounds.width - handleSize/2, y: bounds.y + bounds.height/2 - handleSize/2, cursor: 'e-resize', type: 'e' },
+                    { x: bounds.x + bounds.width - handleSize/2, y: bounds.y + bounds.height - handleSize/2, cursor: 'se-resize', type: 'se' },
+                    { x: bounds.x + bounds.width/2 - handleSize/2, y: bounds.y + bounds.height - handleSize/2, cursor: 's-resize', type: 's' },
+                    { x: bounds.x - handleSize/2, y: bounds.y + bounds.height - handleSize/2, cursor: 'sw-resize', type: 'sw' },
+                    { x: bounds.x - handleSize/2, y: bounds.y + bounds.height/2 - handleSize/2, cursor: 'w-resize', type: 'w' }
+                ];
+            }
             
             handles.forEach(handle => {
                 const handleRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
