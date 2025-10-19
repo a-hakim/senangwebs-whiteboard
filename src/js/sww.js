@@ -3144,72 +3144,45 @@ import { marked } from 'marked';
                 } else {
                     const isTextElement = element.type === 'text';
                     
-                    // Standard resize behavior for shapes and special handling for text
+                    // Standard resize behavior for shapes
                     switch (this.resizeHandle) {
                         case 'se': // Southeast handle - works for all elements
                             newWidth = startWidth + dx;
                             newHeight = startHeight + dy;
                             break;
                         case 'sw': // Southwest handle
-                            if (!isTextElement) {
-                                newX = startX + dx;
-                                newWidth = startWidth - dx;
-                            } else {
-                                // Text: position locked, only height grows naturally
-                                newWidth = startWidth; // Width stays the same
-                                newHeight = startHeight + dy;
-                            }
+                            newX = startX + dx;
+                            newWidth = startWidth - dx;
+                            newHeight = startHeight + dy;
                             break;
                         case 'ne': // Northeast handle
-                            if (!isTextElement) {
-                                newY = startY + dy;
-                                newHeight = startHeight - dy;
-                                newWidth = startWidth + dx;
-                            } else {
-                                // Text: position locked, only width grows naturally
-                                newWidth = startWidth + dx;
-                                newHeight = startHeight; // Height stays the same
-                            }
+                            newY = startY + dy;
+                            newWidth = startWidth + dx;
+                            newHeight = startHeight - dy;
                             break;
                         case 'nw': // Northwest handle
-                            if (!isTextElement) {
-                                newX = startX + dx;
-                                newY = startY + dy;
-                                newWidth = startWidth - dx;
-                                newHeight = startHeight - dy;
-                            } else {
-                                // Text: position fully locked, no resize from this handle
-                                newWidth = startWidth;
-                                newHeight = startHeight;
-                            }
+                            newX = startX + dx;
+                            newY = startY + dy;
+                            newWidth = startWidth - dx;
+                            newHeight = startHeight - dy;
                             break;
                         case 'e': // East handle - adjust width only
                             newWidth = startWidth + dx;
                             break;
                         case 'w': // West handle
-                            if (!isTextElement) {
-                                newX = startX + dx;
-                                newWidth = startWidth - dx;
-                            } else {
-                                // Text: position locked, width stays the same
-                                newWidth = startWidth;
-                            }
+                            newX = startX + dx;
+                            newWidth = startWidth - dx;
                             break;
                         case 'n': // North handle
-                            if (!isTextElement) {
-                                newY = startY + dy;
-                                newHeight = startHeight - dy;
-                            } else {
-                                // Text: position locked, height stays the same
-                                newHeight = startHeight;
-                            }
+                            newY = startY + dy;
+                            newHeight = startHeight - dy;
                             break;
                         case 's': // South handle - adjust height only
                             newHeight = startHeight + dy;
                             break;
                     }
                     
-                    // For text elements: prevent flipping and enforce minimum size
+                    // For text elements: prevent flipping and enforce minimum size with anchor-based position adjustment
                     if (isTextElement) {
                         // Calculate minimum size based on text content
                         const textContent = element.originalText || element.text || 'Text';
@@ -3219,12 +3192,35 @@ import { marked } from 'marked';
                         const minWidth = Math.max(100, measuredBounds.width + padding);
                         const minHeight = Math.max(40, element.fontSize * 1.5 + padding);
                         
-                        // Prevent dimensions below minimum (no flipping for text)
-                        if (newWidth < minWidth) {
-                            newWidth = minWidth;
+                        // For handles that would cause flipping (W, NW, N, NE, SW sides):
+                        // Enforce minimum size and adjust position to keep anchor point fixed
+                        
+                        // Handle width constraints for west-side handles
+                        if (['w', 'nw', 'sw'].includes(this.resizeHandle)) {
+                            if (newWidth < minWidth) {
+                                // Adjust position so the RIGHT edge (anchor) stays in place
+                                newX = startX + startWidth - minWidth;
+                                newWidth = minWidth;
+                            }
+                        } else {
+                            // For east-side handles, just enforce minimum
+                            if (newWidth < minWidth) {
+                                newWidth = minWidth;
+                            }
                         }
-                        if (newHeight < minHeight) {
-                            newHeight = minHeight;
+                        
+                        // Handle height constraints for north-side handles
+                        if (['n', 'nw', 'ne'].includes(this.resizeHandle)) {
+                            if (newHeight < minHeight) {
+                                // Adjust position so the BOTTOM edge (anchor) stays in place
+                                newY = startY + startHeight - minHeight;
+                                newHeight = minHeight;
+                            }
+                        } else {
+                            // For south-side handles, just enforce minimum
+                            if (newHeight < minHeight) {
+                                newHeight = minHeight;
+                            }
                         }
                     }
                 }
