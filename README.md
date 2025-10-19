@@ -1436,25 +1436,6 @@ tailwind.config = {
 }
 ```
 
-## FAQ & Troubleshooting
-
-### Common Questions
-
-**Q: How many elements can SWW handle?**  
-A: SWW efficiently handles 10,000+ elements with automatic performance optimizations. Spatial indexing and LOD rendering are automatically enabled for scenes with 100+ elements.
-
-**Q: Can I use SWW in a React/Vue/Angular application?**  
-A: Yes! SWW is framework-agnostic. Just initialize it in a container ref/element after the component mounts.
-
-**Q: Does SWW support touch devices?**  
-A: Yes, SWW uses pointer events which work with mouse, touch, and pen input.
-
-**Q: Can I export to other formats besides SVG and PNG?**  
-A: Currently SVG and PNG are supported. You can extend the export functionality using the scene data returned by `getScene()`.
-
-**Q: How do I implement custom tools?**  
-A: SWW's architecture allows extending with custom tools by adding new tool handlers and SVG element creators. See Advanced Usage section.
-
 ### Troubleshooting
 
 **Issue: Elements not rendering**
@@ -1499,11 +1480,11 @@ SWW is built with modern web standards and supports all current browsers:
 
 ## License
 
-This project is available for educational and demonstration purposes.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Contributing
 
-SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or contributions, please contact the development team.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Examples
 
@@ -1876,49 +1857,3 @@ if (!loadAutoSave(whiteboard)) {
     console.log('No auto-save found, starting fresh');
 }
 ```
-
----
-
-**SenangWebs Whiteboard** - Making digital drawing simple, powerful, and beautiful!
-
-### Version Information
-
-- **Current Version**: 1.0.0
-- **License**: MIT
-- **Repository**: [github.com/a-hakim/senangwebs-whiteboard](https://github.com/a-hakim/senangwebs-whiteboard)
-- **Author**: a-hakim
-
-### Latest Updates (v1.0.0)
-
-#### Core Features
-- ✅ **Enhanced Element Management**: Direct element manipulation with `getElementById()`, `selectElementById()`, `deleteElementById()`, and `toggleElementVisibility()`
-- ✅ **Advanced Performance**: Spatial indexing and Level of Detail optimizations for 10,000+ elements
-- ✅ **Modern Dark Theme**: Professional dark UI with #00FF99 accent colors and smooth transitions
-- ✅ **Enhanced Preview Mode**: Fullscreen presentation with dark background and complete UI hiding
-- ✅ **Read-Only Mode**: Presentation mode with locked editing and disabled ESC key exit
-
-#### API Improvements
-- ✅ **Complete API Documentation**: Comprehensive method documentation with parameters and return values
-- ✅ **Element Property System**: Full property documentation with type-specific properties
-- ✅ **Event System**: Custom events for scene changes, selection changes, and preview mode
-- ✅ **Performance Optimization**: Auto-enabled optimizations based on scene complexity
-
-#### User Interface
-- ✅ **Improved Keyboard Shortcuts**: Full keyboard navigation with 1-5 tool selection
-- ✅ **Smart Layer Management**: Advanced layer controls with bulk operations and visual feedback
-- ✅ **Tailwind CSS Integration**: Built-in support for rapid UI development with custom color palettes
-- ✅ **Floating Tool Palette**: Minimizable and repositionable tool palette with tab organization
-
-#### Performance & Optimization
-- ✅ **Spatial Indexing**: O(1) hit testing for scenes with 100+ elements
-- ✅ **Level of Detail Rendering**: Three-tier LOD system for efficient rendering
-- ✅ **Viewport Culling**: Only render visible elements in large scenes
-- ✅ **Optimized History**: Auto-reducing history size for large scenes (20 steps for 500+ elements)
-
-### Browser Compatibility
-
-- ✅ Chrome 80+ (Fully Supported)
-- ✅ Firefox 75+ (Fully Supported)
-- ✅ Safari 13+ (Fully Supported)
-- ✅ Edge 80+ (Fully Supported)
-- ⚠️ Internet Explorer (Not Supported)
