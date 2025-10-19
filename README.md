@@ -5,8 +5,8 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 
 | Preview                                   | Examples          |
 | ------------------------------------------- | ------------------- |
-| ![SenangWebs Preview 1](sww_preview1.png) | sww.html          |
-| ![SenangWebs Preview 2](sww_preview2.png) | sww-tailwind.html |
+| ![SenangWebs Preview 1](https://raw.githubusercontent.com/a-hakim/senangwebs-whiteboard/master/sww_preview1.png) | sww.html          |
+| ![SenangWebs Preview 2](https://raw.githubusercontent.com/a-hakim/senangwebs-whiteboard/master/sww_preview2.png) | sww-tailwind.html |
 
 ## Features
 
