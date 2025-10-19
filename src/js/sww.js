@@ -5237,10 +5237,16 @@ import { marked } from 'marked';
                 return;
             }
             
-            // Create an elegant, seamless text editor
-            const textEditor = document.createElement('textarea');
-            textEditor.className = 'sww-text-editor-elegant';
-            textEditor.value = element.originalText || element.text || '';
+            // Hide the original SVG text element completely during editing for clean WYSIWYG
+            if (element.svgElement) {
+                element.svgElement.style.visibility = 'hidden';
+            }
+            
+            // Create an inline contentEditable div for seamless editing
+            const textEditor = document.createElement('div');
+            textEditor.className = 'sww-text-editor-inline';
+            textEditor.contentEditable = true;
+            textEditor.textContent = element.originalText || element.text || '';
             
             // Get accurate screen coordinates using SVG transformation
             let svgPoint, screenPoint;
@@ -5290,44 +5296,37 @@ import { marked } from 'marked';
                 editorHeight = element.fontSize * 1.5;
             }
             
-            // Apply elegant, seamless styling
+            // Apply inline styling to match the SVG element exactly
             textEditor.style.position = 'fixed';
             textEditor.style.left = `${screenPoint.x}px`;
             textEditor.style.top = `${screenPoint.y}px`;
             textEditor.style.width = `${editorWidth}px`;
-            textEditor.style.height = `${editorHeight}px`;
+            textEditor.style.height = element.width && element.height ? `${editorHeight}px` : 'auto';
+            textEditor.style.minHeight = `${element.fontSize * 1.3}px`;
             textEditor.style.fontSize = `${element.fontSize}px`;
-            textEditor.style.fontFamily = element.fontFamily;
+            textEditor.style.fontFamily = element.fontFamily || 'Arial';
             
-            // Elegant styling - seamless integration
-            textEditor.style.border = '2px solid rgba(0, 255, 153, 0.5)'; // Subtle teal border
-            textEditor.style.borderRadius = '8px';
-            textEditor.style.background = 'rgba(255, 255, 255, 0.95)';
-            textEditor.style.backdropFilter = 'blur(8px)';
-            textEditor.style.boxShadow = '0 8px 32px rgba(0, 255, 153, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1)';
-            
-            // Typography and interaction
-            textEditor.style.resize = 'none';
-            textEditor.style.overflow = 'hidden';
-            textEditor.style.whiteSpace = 'pre-wrap';
-            textEditor.style.wordWrap = 'break-word';
-            textEditor.style.padding = '12px';
+            // Inline styling - appears directly on the element
+            textEditor.style.background = 'transparent';
+            textEditor.style.padding = '8px';
             textEditor.style.boxSizing = 'border-box';
             textEditor.style.zIndex = '10000';
             textEditor.style.outline = 'none';
-            textEditor.style.color = element.textColor || element.strokeColor || '#333';
+            textEditor.style.color = element.textColor || element.strokeColor || '#000';
             textEditor.style.lineHeight = '1.3';
-            
-            // Smooth transitions
-            textEditor.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+            textEditor.style.whiteSpace = 'pre-wrap';
+            textEditor.style.wordWrap = 'break-word';
+            textEditor.style.overflow = element.width && element.height ? 'auto' : 'visible';
             
             // Set text alignment to match element alignment
             if (element.textAlign) {
                 textEditor.style.textAlign = element.textAlign;
             }
             
-            // Improved placeholder with helpful hint
-            textEditor.placeholder = 'Type your text here... (Ctrl+Enter to save, Esc to cancel)';
+            // Add empty placeholder attribute
+            if (!textEditor.textContent) {
+                textEditor.setAttribute('data-placeholder', 'Type text here...');
+            }
             
             document.body.appendChild(textEditor);
             
@@ -5349,38 +5348,17 @@ import { marked } from 'marked';
             `;
             document.body.appendChild(hintOverlay);
             
-            // Create formatting toolbar
-            const formatToolbar = this.createTextFormatToolbar(element, textEditor);
-            document.body.appendChild(formatToolbar);
-            
-            // Position toolbar above the text editor
-            const positionToolbar = () => {
-                const editorRect = textEditor.getBoundingClientRect();
-                const toolbarRect = formatToolbar.getBoundingClientRect();
-                
-                let toolbarLeft = editorRect.left + (editorRect.width / 2) - (toolbarRect.width / 2);
-                let toolbarTop = editorRect.top - toolbarRect.height - 10;
-                
-                // Keep toolbar on screen
-                if (toolbarLeft < 10) toolbarLeft = 10;
-                if (toolbarLeft + toolbarRect.width > window.innerWidth - 10) {
-                    toolbarLeft = window.innerWidth - toolbarRect.width - 10;
-                }
-                if (toolbarTop < 10) {
-                    toolbarTop = editorRect.bottom + 10; // Position below if not enough space above
-                }
-                
-                formatToolbar.style.left = `${toolbarLeft}px`;
-                formatToolbar.style.top = `${toolbarTop}px`;
-            };
-            
             // Add focus styling with animation
             setTimeout(() => {
-                textEditor.style.borderColor = 'rgba(0, 255, 153, 0.8)';
-                textEditor.style.transform = 'scale(1.02)';
+                textEditor.style.borderColor = 'rgba(0, 255, 153, 1)';
                 textEditor.focus();
-                textEditor.select();
-                positionToolbar();
+                
+                // Select all text in contentEditable
+                const range = document.createRange();
+                range.selectNodeContents(textEditor);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
             }, 50);
             
             let isEditing = true; // Flag to prevent double cleanup
@@ -5393,15 +5371,12 @@ import { marked } from 'marked';
                 isEditing = false;
                 
                 // Smooth exit animation
-                textEditor.style.transform = 'scale(0.98)';
-                textEditor.style.opacity = '0.8';
+                textEditor.style.opacity = '0.5';
                 textEditor.style.borderColor = 'rgba(0, 255, 153, 0.3)';
-                formatToolbar.style.opacity = '0';
-                formatToolbar.style.transform = 'scale(0.9)';
                 hintOverlay.style.opacity = '0';
                 
                 setTimeout(() => {
-                    const newText = textEditor.value || 'Text';
+                    const newText = textEditor.textContent || 'Text';
                     element.originalText = newText; // Store original text for future wrapping
                     
                     // If element has boundary, adjust text to fit and wrap
@@ -5412,11 +5387,15 @@ import { marked } from 'marked';
                         element.text = newText;
                     }
                     
+                    // Show the original SVG element again
+                    if (element.svgElement) {
+                        element.svgElement.style.visibility = 'visible';
+                    }
+                    
                     this.updateSVGElement(element);
                     
                     // Safely remove the elements
                     if (textEditor.parentNode) textEditor.remove();
-                    if (formatToolbar.parentNode) formatToolbar.remove();
                     if (hintOverlay.parentNode) hintOverlay.remove();
                     
                     // Clean up click-outside listener
@@ -5441,17 +5420,18 @@ import { marked } from 'marked';
                 isEditing = false;
                 
                 // Smooth exit animation for cancel
-                textEditor.style.transform = 'scale(0.95)';
-                textEditor.style.opacity = '0.5';
+                textEditor.style.opacity = '0.3';
                 textEditor.style.borderColor = 'rgba(255, 0, 0, 0.3)';
-                formatToolbar.style.opacity = '0';
-                formatToolbar.style.transform = 'scale(0.9)';
                 hintOverlay.style.opacity = '0';
                 
                 setTimeout(() => {
+                    // Show the original SVG element again
+                    if (element.svgElement) {
+                        element.svgElement.style.visibility = 'visible';
+                    }
+                    
                     // Safely remove the elements without saving changes
                     if (textEditor.parentNode) textEditor.remove();
-                    if (formatToolbar.parentNode) formatToolbar.remove();
                     if (hintOverlay.parentNode) hintOverlay.remove();
                     
                     // Clean up click-outside listener
@@ -5466,46 +5446,27 @@ import { marked } from 'marked';
                 }, 150);
             };
             
-            // Enhanced auto-resize function with smooth animations
+            // Enhanced auto-resize function for contentEditable
             const autoResize = () => {
                 if (!textEditor.parentNode) return;
                 
                 // Only auto-resize for unbounded text elements
                 if (!(element.width && element.height)) {
-                    // Reset dimensions to get accurate measurements
-                    const currentWidth = textEditor.style.width;
-                    const currentHeight = textEditor.style.height;
+                    // ContentEditable automatically sizes to content
+                    // Just ensure minimum dimensions
+                    const minWidth = Math.max(element.fontSize * 3, 50);
+                    const minHeight = element.fontSize * 1.3;
                     
-                    textEditor.style.height = 'auto';
-                    textEditor.style.width = 'auto';
-                    
-                    // Calculate required dimensions
-                    const content = textEditor.value || textEditor.placeholder || '';
-                    const lines = content.split('\n');
-                    const maxLineLength = Math.max(...lines.map(line => line.length), 1);
-                    
-                    // Calculate width based on content with better accuracy
-                    const charWidth = element.fontSize * 0.65; // More accurate character width
-                    const contentWidth = Math.max(maxLineLength * charWidth + 24, 120); // Padding + minimum
-                    const finalWidth = Math.min(contentWidth, 500); // Reasonable maximum
-                    
-                    // Calculate height based on scroll height
-                    const finalHeight = Math.max(textEditor.scrollHeight + 4, element.fontSize * 1.4);
-                    
-                    // Smooth resize animation
-                    textEditor.style.width = currentWidth;
-                    textEditor.style.height = currentHeight;
-                    
-                    // Animate to new size
-                    requestAnimationFrame(() => {
-                        textEditor.style.width = finalWidth + 'px';
-                        textEditor.style.height = finalHeight + 'px';
-                        positionToolbar();
-                    });
+                    if (textEditor.offsetWidth < minWidth) {
+                        textEditor.style.minWidth = minWidth + 'px';
+                    }
+                    if (textEditor.offsetHeight < minHeight) {
+                        textEditor.style.minHeight = minHeight + 'px';
+                    }
                 }
             };
             
-            // Enhanced keyboard interactions
+            // Enhanced keyboard interactions for contentEditable
             textEditor.addEventListener('keydown', (e) => {
                 // Enhanced keyboard shortcuts
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -5516,13 +5477,8 @@ import { marked } from 'marked';
                     cancelEditing();
                 } else if (e.key === 'Tab') {
                     e.preventDefault();
-                    // Insert tab character for better formatting
-                    const start = textEditor.selectionStart;
-                    const end = textEditor.selectionEnd;
-                    const value = textEditor.value;
-                    textEditor.value = value.substring(0, start) + '    ' + value.substring(end);
-                    textEditor.selectionStart = textEditor.selectionEnd = start + 4;
-                    autoResize();
+                    // Insert tab character (4 spaces) in contentEditable
+                    document.execCommand('insertText', false, '    ');
                 }
             });
             
@@ -5534,19 +5490,13 @@ import { marked } from 'marked';
             });
             
             textEditor.addEventListener('blur', (e) => {
-                // Don't finish editing if clicking on the toolbar
-                if (formatToolbar.contains(e.relatedTarget)) {
-                    return;
-                }
                 finishEditing();
             });
             
             // Add click-outside listener for intuitive editing
             handleClickOutside = (e) => {
-                // Check if click is outside the textarea and toolbar
-                if (!textEditor.contains(e.target) && 
-                    !formatToolbar.contains(e.target) && 
-                    textEditor.parentNode) {
+                // Check if click is outside the text editor
+                if (!textEditor.contains(e.target) && textEditor.parentNode) {
                     // Don't finish editing if clicking on toolbar buttons or other UI elements
                     const isToolbarClick = e.target.closest('.sww-toolbar') || 
                                          e.target.closest('button') || 
@@ -5577,136 +5527,6 @@ import { marked } from 'marked';
             
             // Initial resize to fit existing content
             autoResize();
-        }
-        
-        createTextFormatToolbar(element, textEditor) {
-            const toolbar = document.createElement('div');
-            toolbar.className = 'sww-text-format-toolbar';
-            
-            // Font size control
-            const fontSizeLabel = document.createElement('span');
-            fontSizeLabel.textContent = 'Size:';
-            fontSizeLabel.style.color = '#aaa';
-            fontSizeLabel.style.fontSize = '12px';
-            fontSizeLabel.style.marginRight = '4px';
-            
-            const fontSizeInput = document.createElement('input');
-            fontSizeInput.type = 'number';
-            fontSizeInput.value = element.fontSize;
-            fontSizeInput.min = '8';
-            fontSizeInput.max = '200';
-            fontSizeInput.title = 'Font Size';
-            
-            fontSizeInput.addEventListener('change', () => {
-                const newSize = parseInt(fontSizeInput.value);
-                if (newSize >= 8 && newSize <= 200) {
-                    element.fontSize = newSize;
-                    textEditor.style.fontSize = newSize + 'px';
-                    this.updateSVGElement(element);
-                }
-            });
-            
-            // Divider
-            const divider1 = document.createElement('div');
-            divider1.className = 'sww-text-format-toolbar-divider';
-            
-            // Font family control
-            const fontFamilyLabel = document.createElement('span');
-            fontFamilyLabel.textContent = 'Font:';
-            fontFamilyLabel.style.color = '#aaa';
-            fontFamilyLabel.style.fontSize = '12px';
-            fontFamilyLabel.style.marginRight = '4px';
-            
-            const fontFamilySelect = document.createElement('select');
-            fontFamilySelect.className = 'sww-text-format-font-select';
-            fontFamilySelect.title = 'Font Family';
-            
-            SWWInstance.FONT_FAMILIES.forEach(font => {
-                const option = document.createElement('option');
-                option.value = font.value;
-                option.textContent = font.text;
-                option.style.fontFamily = font.value;
-                fontFamilySelect.appendChild(option);
-            });
-            
-            // Set the current font family value
-            fontFamilySelect.value = element.fontFamily || 'Arial';
-            
-            fontFamilySelect.addEventListener('change', () => {
-                element.fontFamily = fontFamilySelect.value;
-                textEditor.style.fontFamily = fontFamilySelect.value;
-                this.updateSVGElement(element);
-            });
-            
-            // Divider
-            const divider2 = document.createElement('div');
-            divider2.className = 'sww-text-format-toolbar-divider';
-            
-            // Alignment buttons
-            const alignLeft = document.createElement('button');
-            alignLeft.innerHTML = '<i class="fas fa-align-left"></i>';
-            alignLeft.title = 'Align Left';
-            alignLeft.addEventListener('click', () => {
-                element.textAlign = 'left';
-                textEditor.style.textAlign = 'left';
-                this.updateSVGElement(element);
-            });
-            
-            const alignCenter = document.createElement('button');
-            alignCenter.innerHTML = '<i class="fas fa-align-center"></i>';
-            alignCenter.title = 'Align Center';
-            alignCenter.addEventListener('click', () => {
-                element.textAlign = 'center';
-                textEditor.style.textAlign = 'center';
-                this.updateSVGElement(element);
-            });
-            
-            const alignRight = document.createElement('button');
-            alignRight.innerHTML = '<i class="fas fa-align-right"></i>';
-            alignRight.title = 'Align Right';
-            alignRight.addEventListener('click', () => {
-                element.textAlign = 'right';
-                textEditor.style.textAlign = 'right';
-                this.updateSVGElement(element);
-            });
-            
-            // Divider
-            const divider3 = document.createElement('div');
-            divider3.className = 'sww-text-format-toolbar-divider';
-            
-            // Color picker
-            const colorLabel = document.createElement('span');
-            colorLabel.textContent = 'Color:';
-            colorLabel.style.color = '#aaa';
-            colorLabel.style.fontSize = '12px';
-            colorLabel.style.marginRight = '4px';
-            
-            const colorInput = document.createElement('input');
-            colorInput.type = 'color';
-            colorInput.value = element.textColor || element.strokeColor || '#000000';
-            colorInput.title = 'Text Color';
-            
-            colorInput.addEventListener('change', () => {
-                element.textColor = colorInput.value;
-                textEditor.style.color = colorInput.value;
-                this.updateSVGElement(element);
-            });
-            
-            // Assemble toolbar
-            toolbar.appendChild(fontSizeLabel);
-            toolbar.appendChild(fontSizeInput);
-            toolbar.appendChild(divider1);
-            toolbar.appendChild(fontFamilyLabel);
-            toolbar.appendChild(fontFamilySelect);
-            toolbar.appendChild(divider2);
-            toolbar.appendChild(alignLeft);
-            toolbar.appendChild(alignCenter);
-            toolbar.appendChild(alignRight);
-            toolbar.appendChild(divider3);
-            toolbar.appendChild(colorLabel);
-            toolbar.appendChild(colorInput);
-            
-            return toolbar;
         }
         
         // Utility methods

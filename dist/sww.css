@@ -11612,13 +11612,29 @@ marker {
 
 .sww-text-editor {
   position: absolute;
-  border: 2px solid #007370;
-  background: transparent;
-  resize: none;
+  border: 1px solid rgba(0, 115, 112, 0.3);
+  background: rgba(255, 255, 255, 0.95);
   outline: none;
   padding: 2px;
   font-family: inherit;
   z-index: 1001;
+  min-width: 50px;
+  min-height: 1.3em;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0, 115, 112, 0.1);
+}
+
+.sww-text-editor:focus {
+  border-color: rgba(0, 115, 112, 0.6);
+  box-shadow: 0 0 0 2px rgba(0, 115, 112, 0.1);
+}
+
+.sww-text-editor:empty:before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none;
 }
 
 .sww-text-properties {
@@ -12227,121 +12243,6 @@ marker {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
-}
-
-/* Text formatting toolbar */
-.sww-text-format-toolbar {
-  position: fixed;
-  background: rgba(0, 0, 0, 0.9);
-  border: 1px solid rgba(0, 255, 153, 0.3);
-  border-radius: 8px;
-  padding: 6px;
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  z-index: 10000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  opacity: 0;
-  transform: scale(0.9) translateY(-10px);
-  animation: popIn 0.2s ease-out forwards;
-  pointer-events: all;
-}
-
-@keyframes popIn {
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.sww-text-format-toolbar button {
-  background: transparent;
-  border: 1px solid transparent;
-  color: #fff;
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 13px;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-.sww-text-format-toolbar button:hover {
-  background: rgba(0, 255, 153, 0.1);
-  border-color: rgba(0, 255, 153, 0.3);
-  color: #00FF99;
-}
-
-.sww-text-format-toolbar button:active {
-  background: rgba(0, 255, 153, 0.2);
-  transform: scale(0.95);
-}
-
-.sww-text-format-toolbar input[type="number"],
-.sww-text-format-toolbar input[type="color"] {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  width: 50px;
-  transition: all 0.15s ease;
-}
-
-.sww-text-format-toolbar input[type="number"]:focus,
-.sww-text-format-toolbar input[type="color"]:focus {
-  outline: none;
-  border-color: #00FF99;
-  background: rgba(0, 255, 153, 0.1);
-}
-
-.sww-text-format-toolbar input[type="color"] {
-  width: 32px;
-  height: 32px;
-  padding: 2px;
-  cursor: pointer;
-}
-
-.sww-text-format-font-select {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-width: 120px;
-}
-
-.sww-text-format-font-select:hover {
-  border-color: rgba(0, 255, 153, 0.3);
-  background: rgba(0, 255, 153, 0.05);
-}
-
-.sww-text-format-font-select:focus {
-  outline: none;
-  border-color: #00FF99;
-  background: rgba(0, 255, 153, 0.1);
-}
-
-.sww-text-format-font-select option {
-  background: #1a1a1a;
-  color: #fff;
-  padding: 4px;
-}
-
-.sww-text-format-toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.2);
-  margin: 0 4px;
 }
 
 /* Fullscreen styles for preview mode */
