@@ -8,7 +8,7 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 | ![SenangWebs Preview 1](sww_preview1.png) | sww.html          |
 | ![SenangWebs Preview 2](sww_preview2.png) | sww-tailwind.html |
 
-## 🚀 Features
+## Features
 
 ### Drawing Tools
 
@@ -63,7 +63,7 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 - **Special Syntax**: Strikethrough, highlighting, emoji shortcodes
 - **Live Editing**: Real-time markdown rendering with edit/preview toggle
 
-## 📦 Installation
+## Installation
 
 ### Production Use (Recommended)
 
@@ -126,7 +126,7 @@ After running `npm run build`, you'll find in the `dist/` folder:
 - `fonts/` - FontAwesome font files (232 KB total)
 - `styles.js` - Additional style utilities for theme management
 
-## 🎯 Quick Start
+## Quick Start
 
 ### Basic Initialization
 
@@ -203,7 +203,7 @@ swwInstance.fitCanvasToElements();
 swwInstance.toggleGrid();
 ```
 
-## 🔧 Configuration Options
+## Configuration Options
 
 All configuration options are optional and have sensible defaults:
 
@@ -277,7 +277,7 @@ const swwInstance = sww.init(container, {
 swwInstance.loadScene(presentationData);
 ```
 
-## 🎨 Drawing Tools
+## Drawing Tools
 
 ### Shape Tools
 
@@ -312,7 +312,7 @@ All tools support these customizable properties:
 - **Gradients**: Multi-stop gradients with color and position controls
 - **Grid Snapping**: Optional snap-to-grid with customizable grid size
 
-## 📋 API Reference
+## API Reference
 
 ### Core Initialization
 
@@ -802,7 +802,7 @@ container.addEventListener('previewModeExited', (event) => {
 });
 ```
 
-## 🎛️ Control Panel Integration
+## Control Panel Integration
 
 SWW includes a comprehensive built-in control panel with modern dark theme support:
 
@@ -857,7 +857,7 @@ swwInstance.pasteClipboard();                     // Paste clipboard with positi
 swwInstance.deleteSelectedElements();              // Delete selected with confirmation
 ```
 
-## 📝 Markdown Support
+## Markdown Support
 
 SWW includes a comprehensive markdown parser that supports the full markdown specification:
 
@@ -920,7 +920,7 @@ const markdownElement = {
 };
 ```
 
-## ⚡ Performance Features
+## Performance Features
 
 SWW is designed to handle large scenes with thousands of elements efficiently. Performance optimizations are automatically enabled based on scene complexity.
 
@@ -1001,7 +1001,7 @@ swwInstance.updateVisibleElements();   // Update viewport culling
 4. **History Management**: History automatically reduces for large scenes (20 steps for 500+ elements)
 5. **Throttled Updates**: Real-time property updates are throttled to maintain 60fps
 
-## 🎯 Element Properties
+## Element Properties
 
 ### Common Properties
 
@@ -1103,7 +1103,7 @@ All elements support these properties:
 }
 ```
 
-## 🎮 Keyboard Shortcuts
+## Keyboard Shortcuts
 
 ### Basic Operations
 
@@ -1146,7 +1146,7 @@ All elements support these properties:
 - `Drag rotation handle` - Rotate elements (angles snap to 15° increments)
 - `Ctrl + Drag` - Duplicate element while dragging
 
-## 🌟 Advanced Usage
+## Advanced Usage
 
 ### Custom Element Creation
 
@@ -1368,7 +1368,7 @@ if (stats.elementCount > 1000) {
 }
 ```
 
-## 🎨 Styling and Themes
+## Styling and Themes
 
 SWW features comprehensive theming support with CSS custom properties and built-in dark mode:
 
@@ -1436,7 +1436,7 @@ tailwind.config = {
 }
 ```
 
-## ❓ FAQ & Troubleshooting
+## FAQ & Troubleshooting
 
 ### Common Questions
 
@@ -1481,7 +1481,7 @@ A: SWW's architecture allows extending with custom tools by adding new tool hand
 - Maximum 50 steps (20 for 500+ element scenes)
 - Some direct element manipulations may bypass history
 
-## 🔧 Browser Support
+## Browser Support
 
 SWW is built with modern web standards and supports all current browsers:
 
@@ -1497,15 +1497,15 @@ SWW is built with modern web standards and supports all current browsers:
 - CSS Grid and Flexbox
 - Modern event handling (pointer events)
 
-## 📄 License
+## License
 
 This project is available for educational and demonstration purposes.
 
-## 🤝 Contributing
+## Contributing
 
 SenangWebs Whiteboard is actively maintained. For bugs, feature requests, or contributions, please contact the development team.
 
-## 📚 Examples
+## Examples
 
 ### Complete HTML Example with Dark Theme
 
@@ -1879,7 +1879,7 @@ if (!loadAutoSave(whiteboard)) {
 
 ---
 
-**SenangWebs Whiteboard** - Making digital drawing simple, powerful, and beautiful! 🎨✨
+**SenangWebs Whiteboard** - Making digital drawing simple, powerful, and beautiful!
 
 ### Version Information
 
