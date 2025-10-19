@@ -1511,6 +1511,148 @@ marker {
   box-shadow: 0 4px 16px rgba(0, 255, 153, 0.1), 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
 
+/* Text editor keyboard hint overlay */
+.sww-text-editor-hint {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #00FF99;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: none;
+  z-index: 10001;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  animation: slideUpFade 0.3s ease-out forwards;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.sww-text-editor-hint-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sww-text-editor-hint kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: monospace;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.sww-text-editor-hint-separator {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Text formatting toolbar */
+.sww-text-format-toolbar {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(0, 255, 153, 0.3);
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  z-index: 10000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: scale(0.9) translateY(-10px);
+  animation: popIn 0.2s ease-out forwards;
+  pointer-events: all;
+}
+
+@keyframes popIn {
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.sww-text-format-toolbar button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #fff;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.sww-text-format-toolbar button:hover {
+  background: rgba(0, 255, 153, 0.1);
+  border-color: rgba(0, 255, 153, 0.3);
+  color: #00FF99;
+}
+
+.sww-text-format-toolbar button:active {
+  background: rgba(0, 255, 153, 0.2);
+  transform: scale(0.95);
+}
+
+.sww-text-format-toolbar input[type="number"],
+.sww-text-format-toolbar input[type="color"] {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  width: 50px;
+  transition: all 0.15s ease;
+}
+
+.sww-text-format-toolbar input[type="number"]:focus,
+.sww-text-format-toolbar input[type="color"]:focus {
+  outline: none;
+  border-color: #00FF99;
+  background: rgba(0, 255, 153, 0.1);
+}
+
+.sww-text-format-toolbar input[type="color"] {
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.sww-text-format-toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 4px;
+}
+
 /* Fullscreen styles for preview mode */
 .sww-container:fullscreen {
   background: #000;

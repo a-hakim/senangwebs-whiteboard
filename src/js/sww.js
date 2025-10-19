@@ -1858,26 +1858,36 @@ import { marked } from 'marked';
         handleTextStart(point) {
             const snappedPoint = this.snapToGridPoint(point);
             const element = this.createElement('text', snappedPoint);
-            element.text = 'Click to edit text';
+            element.text = ''; // Start with empty text for better UX
             
             // Calculate initial dimensions for consistent boundary behavior
-            const measuredBounds = this.measureText(element.text, element.fontSize, element.fontFamily);
             const padding = 10;
+            const minWidth = 200; // Minimum comfortable width for typing
+            const minHeight = element.fontSize * 2 + (padding * 2); // At least 2 lines
             
-            // Set initial width and height based on content
-            element.width = measuredBounds.width + (padding * 2);
-            element.height = measuredBounds.height + (padding * 2);
+            // Set initial width and height
+            element.width = minWidth;
+            element.height = minHeight;
             
-            // Set up drawing state like other tools
-            this.currentElement = element;
-            this.isDrawing = true;
-            
-            // Add element to the scene
+            // Add element to the scene immediately
             this.addSVGElementToDOM(element);
+            this.elements.push(element);
             this.updateSVGElement(element);
             
-            // We'll finish the element on pointer up, which will auto-switch to select tool
-            // and then we can start editing
+            // Save state for undo/redo
+            this.saveStateToHistory('createElement');
+            
+            // Select the element
+            this.clearSelection();
+            this.selectElement(element);
+            
+            // Immediately start editing for intuitive UX
+            setTimeout(() => {
+                this.startTextEditing(element);
+            }, 50);
+            
+            // Switch to select tool (will activate after editing finishes)
+            this.setTool('select');
         }
         
         handleWebsiteStart(point) {
@@ -2188,7 +2198,7 @@ import { marked } from 'marked';
                     
                 case 'text':
                     // Handle multi-line text with proper positioning
-                    const textContent = element.text || '';
+                    const textContent = element.text || 'Text'; // Show placeholder if empty
                     const lines = textContent.split('\n');
                     
                     // Always position text with padding inside the boundary
@@ -2201,6 +2211,14 @@ import { marked } from 'marked';
                     svg.setAttribute('font-size', element.fontSize);
                     svg.setAttribute('font-family', element.fontFamily);
                     svg.setAttribute('fill', element.textColor || element.strokeColor); // Use textColor for fill
+                    
+                    // Show placeholder styling for empty text
+                    if (!element.text || element.text.trim() === '') {
+                        svg.setAttribute('opacity', '0.4');
+                        svg.setAttribute('font-style', 'italic');
+                    } else {
+                        svg.setAttribute('font-style', 'normal');
+                    }
                     
                     // Text can have stroke for outline effect
                     if (element.strokeWidth > 0) {
@@ -3124,43 +3142,90 @@ import { marked } from 'marked';
                         }));
                     }
                 } else {
-                    // Standard resize for rectangles, ellipses, diamonds, etc.
-                    // Always use southeast direction logic for consistent UI/UX regardless of original creation direction
+                    const isTextElement = element.type === 'text';
+                    
+                    // Standard resize behavior for shapes and special handling for text
                     switch (this.resizeHandle) {
-                        case 'se': // Southeast handle
+                        case 'se': // Southeast handle - works for all elements
                             newWidth = startWidth + dx;
                             newHeight = startHeight + dy;
                             break;
                         case 'sw': // Southwest handle
-                            newX = startX + dx;
-                            newWidth = startWidth - dx;
-                            newHeight = startHeight + dy;
+                            if (!isTextElement) {
+                                newX = startX + dx;
+                                newWidth = startWidth - dx;
+                            } else {
+                                // Text: position locked, only height grows naturally
+                                newWidth = startWidth; // Width stays the same
+                                newHeight = startHeight + dy;
+                            }
                             break;
                         case 'ne': // Northeast handle
-                            newWidth = startWidth + dx;
-                            newY = startY + dy;
-                            newHeight = startHeight - dy;
+                            if (!isTextElement) {
+                                newY = startY + dy;
+                                newHeight = startHeight - dy;
+                                newWidth = startWidth + dx;
+                            } else {
+                                // Text: position locked, only width grows naturally
+                                newWidth = startWidth + dx;
+                                newHeight = startHeight; // Height stays the same
+                            }
                             break;
                         case 'nw': // Northwest handle
-                            newX = startX + dx;
-                            newY = startY + dy;
-                            newWidth = startWidth - dx;
-                            newHeight = startHeight - dy;
+                            if (!isTextElement) {
+                                newX = startX + dx;
+                                newY = startY + dy;
+                                newWidth = startWidth - dx;
+                                newHeight = startHeight - dy;
+                            } else {
+                                // Text: position fully locked, no resize from this handle
+                                newWidth = startWidth;
+                                newHeight = startHeight;
+                            }
                             break;
-                        case 'e': // East handle
+                        case 'e': // East handle - adjust width only
                             newWidth = startWidth + dx;
                             break;
                         case 'w': // West handle
-                            newX = startX + dx;
-                            newWidth = startWidth - dx;
+                            if (!isTextElement) {
+                                newX = startX + dx;
+                                newWidth = startWidth - dx;
+                            } else {
+                                // Text: position locked, width stays the same
+                                newWidth = startWidth;
+                            }
                             break;
                         case 'n': // North handle
-                            newY = startY + dy;
-                            newHeight = startHeight - dy;
+                            if (!isTextElement) {
+                                newY = startY + dy;
+                                newHeight = startHeight - dy;
+                            } else {
+                                // Text: position locked, height stays the same
+                                newHeight = startHeight;
+                            }
                             break;
-                        case 's': // South handle
+                        case 's': // South handle - adjust height only
                             newHeight = startHeight + dy;
                             break;
+                    }
+                    
+                    // For text elements: prevent flipping and enforce minimum size
+                    if (isTextElement) {
+                        // Calculate minimum size based on text content
+                        const textContent = element.originalText || element.text || 'Text';
+                        const measuredBounds = this.measureText(textContent, element.fontSize, element.fontFamily);
+                        const padding = 20; // Padding around text
+                        
+                        const minWidth = Math.max(100, measuredBounds.width + padding);
+                        const minHeight = Math.max(40, element.fontSize * 1.5 + padding);
+                        
+                        // Prevent dimensions below minimum (no flipping for text)
+                        if (newWidth < minWidth) {
+                            newWidth = minWidth;
+                        }
+                        if (newHeight < minHeight) {
+                            newHeight = minHeight;
+                        }
                     }
                 }
                 
@@ -4293,6 +4358,7 @@ import { marked } from 'marked';
                         if (element.type === 'line' || element.type === 'arrow') {
                             this.addLineResizeHandles(element);
                         } else {
+                            // Use standard 8-handle resize for all elements including text
                             this.addResizeHandles(bounds);
                         }
                     });
@@ -5375,7 +5441,7 @@ import { marked } from 'marked';
             textEditor.style.boxSizing = 'border-box';
             textEditor.style.zIndex = '10000';
             textEditor.style.outline = 'none';
-            textEditor.style.color = element.strokeColor || '#333';
+            textEditor.style.color = element.textColor || element.strokeColor || '#333';
             textEditor.style.lineHeight = '1.3';
             
             // Smooth transitions
@@ -5386,10 +5452,53 @@ import { marked } from 'marked';
                 textEditor.style.textAlign = element.textAlign;
             }
             
-            // Add a subtle placeholder
-            textEditor.placeholder = 'Type your text here...';
+            // Improved placeholder with helpful hint
+            textEditor.placeholder = '✏️ Type your text here... (Ctrl+Enter to save, Esc to cancel)';
             
             document.body.appendChild(textEditor);
+            
+            // Create keyboard shortcuts hint overlay
+            const hintOverlay = document.createElement('div');
+            hintOverlay.className = 'sww-text-editor-hint';
+            hintOverlay.innerHTML = `
+                <div class="sww-text-editor-hint-item">
+                    <kbd>Ctrl</kbd>+<kbd>Enter</kbd> <span>Save</span>
+                </div>
+                <div class="sww-text-editor-hint-separator"></div>
+                <div class="sww-text-editor-hint-item">
+                    <kbd>Esc</kbd> <span>Cancel</span>
+                </div>
+                <div class="sww-text-editor-hint-separator"></div>
+                <div class="sww-text-editor-hint-item">
+                    <kbd>Tab</kbd> <span>Indent</span>
+                </div>
+            `;
+            document.body.appendChild(hintOverlay);
+            
+            // Create formatting toolbar
+            const formatToolbar = this.createTextFormatToolbar(element, textEditor);
+            document.body.appendChild(formatToolbar);
+            
+            // Position toolbar above the text editor
+            const positionToolbar = () => {
+                const editorRect = textEditor.getBoundingClientRect();
+                const toolbarRect = formatToolbar.getBoundingClientRect();
+                
+                let toolbarLeft = editorRect.left + (editorRect.width / 2) - (toolbarRect.width / 2);
+                let toolbarTop = editorRect.top - toolbarRect.height - 10;
+                
+                // Keep toolbar on screen
+                if (toolbarLeft < 10) toolbarLeft = 10;
+                if (toolbarLeft + toolbarRect.width > window.innerWidth - 10) {
+                    toolbarLeft = window.innerWidth - toolbarRect.width - 10;
+                }
+                if (toolbarTop < 10) {
+                    toolbarTop = editorRect.bottom + 10; // Position below if not enough space above
+                }
+                
+                formatToolbar.style.left = `${toolbarLeft}px`;
+                formatToolbar.style.top = `${toolbarTop}px`;
+            };
             
             // Add focus styling with animation
             setTimeout(() => {
@@ -5397,6 +5506,7 @@ import { marked } from 'marked';
                 textEditor.style.transform = 'scale(1.02)';
                 textEditor.focus();
                 textEditor.select();
+                positionToolbar();
             }, 50);
             
             let isEditing = true; // Flag to prevent double cleanup
@@ -5412,6 +5522,9 @@ import { marked } from 'marked';
                 textEditor.style.transform = 'scale(0.98)';
                 textEditor.style.opacity = '0.8';
                 textEditor.style.borderColor = 'rgba(0, 255, 153, 0.3)';
+                formatToolbar.style.opacity = '0';
+                formatToolbar.style.transform = 'scale(0.9)';
+                hintOverlay.style.opacity = '0';
                 
                 setTimeout(() => {
                     const newText = textEditor.value || 'Text';
@@ -5427,10 +5540,10 @@ import { marked } from 'marked';
                     
                     this.updateSVGElement(element);
                     
-                    // Safely remove the textarea
-                    if (textEditor.parentNode) {
-                        textEditor.remove();
-                    }
+                    // Safely remove the elements
+                    if (textEditor.parentNode) textEditor.remove();
+                    if (formatToolbar.parentNode) formatToolbar.remove();
+                    if (hintOverlay.parentNode) hintOverlay.remove();
                     
                     // Clean up click-outside listener
                     if (handleClickOutside) {
@@ -5457,12 +5570,15 @@ import { marked } from 'marked';
                 textEditor.style.transform = 'scale(0.95)';
                 textEditor.style.opacity = '0.5';
                 textEditor.style.borderColor = 'rgba(255, 0, 0, 0.3)';
+                formatToolbar.style.opacity = '0';
+                formatToolbar.style.transform = 'scale(0.9)';
+                hintOverlay.style.opacity = '0';
                 
                 setTimeout(() => {
-                    // Safely remove the textarea without saving changes
-                    if (textEditor.parentNode) {
-                        textEditor.remove();
-                    }
+                    // Safely remove the elements without saving changes
+                    if (textEditor.parentNode) textEditor.remove();
+                    if (formatToolbar.parentNode) formatToolbar.remove();
+                    if (hintOverlay.parentNode) hintOverlay.remove();
                     
                     // Clean up click-outside listener
                     if (handleClickOutside) {
@@ -5510,6 +5626,7 @@ import { marked } from 'marked';
                     requestAnimationFrame(() => {
                         textEditor.style.width = finalWidth + 'px';
                         textEditor.style.height = finalHeight + 'px';
+                        positionToolbar();
                     });
                 }
             };
@@ -5542,12 +5659,20 @@ import { marked } from 'marked';
                 resizeTimeout = setTimeout(autoResize, 50); // Debounced resize
             });
             
-            textEditor.addEventListener('blur', finishEditing);
+            textEditor.addEventListener('blur', (e) => {
+                // Don't finish editing if clicking on the toolbar
+                if (formatToolbar.contains(e.relatedTarget)) {
+                    return;
+                }
+                finishEditing();
+            });
             
             // Add click-outside listener for intuitive editing
             handleClickOutside = (e) => {
-                // Check if click is outside the textarea
-                if (!textEditor.contains(e.target) && textEditor.parentNode) {
+                // Check if click is outside the textarea and toolbar
+                if (!textEditor.contains(e.target) && 
+                    !formatToolbar.contains(e.target) && 
+                    textEditor.parentNode) {
                     // Don't finish editing if clicking on toolbar buttons or other UI elements
                     const isToolbarClick = e.target.closest('.sww-toolbar') || 
                                          e.target.closest('button') || 
@@ -5566,8 +5691,113 @@ import { marked } from 'marked';
                 document.addEventListener('click', handleClickOutside);
             }, 100);
             
+            // Fade out hint after a few seconds
+            setTimeout(() => {
+                if (hintOverlay.parentNode) {
+                    hintOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        if (hintOverlay.parentNode) hintOverlay.remove();
+                    }, 300);
+                }
+            }, 5000);
+            
             // Initial resize to fit existing content
             autoResize();
+        }
+        
+        createTextFormatToolbar(element, textEditor) {
+            const toolbar = document.createElement('div');
+            toolbar.className = 'sww-text-format-toolbar';
+            
+            // Font size control
+            const fontSizeLabel = document.createElement('span');
+            fontSizeLabel.textContent = 'Size:';
+            fontSizeLabel.style.color = '#aaa';
+            fontSizeLabel.style.fontSize = '12px';
+            fontSizeLabel.style.marginRight = '4px';
+            
+            const fontSizeInput = document.createElement('input');
+            fontSizeInput.type = 'number';
+            fontSizeInput.value = element.fontSize;
+            fontSizeInput.min = '8';
+            fontSizeInput.max = '200';
+            fontSizeInput.title = 'Font Size';
+            
+            fontSizeInput.addEventListener('change', () => {
+                const newSize = parseInt(fontSizeInput.value);
+                if (newSize >= 8 && newSize <= 200) {
+                    element.fontSize = newSize;
+                    textEditor.style.fontSize = newSize + 'px';
+                    this.updateSVGElement(element);
+                }
+            });
+            
+            // Divider
+            const divider1 = document.createElement('div');
+            divider1.className = 'sww-text-format-toolbar-divider';
+            
+            // Alignment buttons
+            const alignLeft = document.createElement('button');
+            alignLeft.innerHTML = '◧';
+            alignLeft.title = 'Align Left';
+            alignLeft.addEventListener('click', () => {
+                element.textAlign = 'left';
+                textEditor.style.textAlign = 'left';
+                this.updateSVGElement(element);
+            });
+            
+            const alignCenter = document.createElement('button');
+            alignCenter.innerHTML = '▬';
+            alignCenter.title = 'Align Center';
+            alignCenter.addEventListener('click', () => {
+                element.textAlign = 'center';
+                textEditor.style.textAlign = 'center';
+                this.updateSVGElement(element);
+            });
+            
+            const alignRight = document.createElement('button');
+            alignRight.innerHTML = '◨';
+            alignRight.title = 'Align Right';
+            alignRight.addEventListener('click', () => {
+                element.textAlign = 'right';
+                textEditor.style.textAlign = 'right';
+                this.updateSVGElement(element);
+            });
+            
+            // Divider
+            const divider2 = document.createElement('div');
+            divider2.className = 'sww-text-format-toolbar-divider';
+            
+            // Color picker
+            const colorLabel = document.createElement('span');
+            colorLabel.textContent = 'Color:';
+            colorLabel.style.color = '#aaa';
+            colorLabel.style.fontSize = '12px';
+            colorLabel.style.marginRight = '4px';
+            
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.value = element.textColor || element.strokeColor || '#000000';
+            colorInput.title = 'Text Color';
+            
+            colorInput.addEventListener('change', () => {
+                element.textColor = colorInput.value;
+                textEditor.style.color = colorInput.value;
+                this.updateSVGElement(element);
+            });
+            
+            // Assemble toolbar
+            toolbar.appendChild(fontSizeLabel);
+            toolbar.appendChild(fontSizeInput);
+            toolbar.appendChild(divider1);
+            toolbar.appendChild(alignLeft);
+            toolbar.appendChild(alignCenter);
+            toolbar.appendChild(alignRight);
+            toolbar.appendChild(divider2);
+            toolbar.appendChild(colorLabel);
+            toolbar.appendChild(colorInput);
+            
+            return toolbar;
         }
         
         // Utility methods
