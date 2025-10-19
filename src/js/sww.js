@@ -5734,7 +5734,7 @@ import { marked } from 'marked';
             
             // Alignment buttons
             const alignLeft = document.createElement('button');
-            alignLeft.innerHTML = '◧';
+            alignLeft.innerHTML = '<i class="fas fa-align-left"></i>';
             alignLeft.title = 'Align Left';
             alignLeft.addEventListener('click', () => {
                 element.textAlign = 'left';
@@ -5743,7 +5743,7 @@ import { marked } from 'marked';
             });
             
             const alignCenter = document.createElement('button');
-            alignCenter.innerHTML = '▬';
+            alignCenter.innerHTML = '<i class="fas fa-align-center"></i>';
             alignCenter.title = 'Align Center';
             alignCenter.addEventListener('click', () => {
                 element.textAlign = 'center';
@@ -5752,7 +5752,7 @@ import { marked } from 'marked';
             });
             
             const alignRight = document.createElement('button');
-            alignRight.innerHTML = '◨';
+            alignRight.innerHTML = '<i class="fas fa-align-right"></i>';
             alignRight.title = 'Align Right';
             alignRight.addEventListener('click', () => {
                 element.textAlign = 'right';
