@@ -282,16 +282,6 @@ import { marked } from 'marked';
         }
         
         setupPerformanceMonitoring() {
-            // Optional: Add performance monitoring for large element counts
-            if (window.SWW_DEBUG) {
-                setInterval(() => {
-                    if (this.elements.length > 100) {
-                        console.log(`SWW Performance: ${this.elements.length} elements, ${this.visibleElements.size} visible`);
-                    }
-                }, 5000);
-            }
-            
-            // Set up performance-optimized render loop for large scenes
             if (this.elements.length > 200) {
                 this.setupOptimizedRenderLoop();
             }
@@ -585,55 +575,23 @@ import { marked } from 'marked';
                 { id: 'select', icon: 'fas fa-mouse-pointer', title: 'Select' },
                 { id: 'rectangle', icon: 'far fa-square', title: 'Rectangle' },
                 { id: 'ellipse', icon: 'far fa-circle', title: 'Ellipse' },
-                // { id: 'diamond', icon: 'far fa-gem', title: 'Diamond' },
                 { id: 'line', icon: 'fas fa-minus', title: 'Line' },
                 { id: 'arrow', icon: 'fas fa-arrow-right', title: 'Arrow' },
-                // { id: 'draw', icon: 'fas fa-pen', title: 'Draw' },
                 { id: 'text', icon: 'fas fa-font', title: 'Text' },
                 { id: 'website', icon: 'fas fa-globe', title: 'Website (iframe)' },
                 { id: 'image', icon: 'fas fa-image', title: 'Image' },
                 { id: 'markdown', icon: 'fab fa-markdown', title: 'Markdown Document' }
             ];
             
-            // const toolGroup = document.createElement('div');
-            // toolGroup.className = 'sww-tool-group';
-            
-            // tools.forEach(tool => {
-            //     const button = document.createElement('button');
-            //     button.className = 'sww-tool-button';
-            //     button.setAttribute('data-tool', tool.id);
-                
-            //     const icon = document.createElement('i');
-            //     icon.className = tool.icon;
-            //     button.appendChild(icon);
-                
-            //     button.title = tool.title;
-            //     button.addEventListener('click', () => this.setTool(tool.id));
-                
-            //     if (tool.id === this.currentTool) {
-            //         button.classList.add('active');
-            //     }
-                
-            //     toolGroup.appendChild(button);
-            // });
-            
-            // toolbar.appendChild(toolGroup);
-            
-            // Action buttons
             const actionGroup = document.createElement('div');
             actionGroup.className = 'sww-tool-group';
             
             const actions = [
-                // { id: 'undo', icon: 'fas fa-undo', title: 'Undo (Ctrl+Z)', action: () => this.undo() },
-                // { id: 'redo', icon: 'fas fa-redo', title: 'Redo (Ctrl+Y)', action: () => this.redo() },
                 { id: 'lock', icon: 'fas fa-lock', title: 'Lock/Unlock Selected', action: () => this.toggleLockSelected() },
                 { id: 'group', icon: 'fas fa-object-group', title: 'Group Selected', action: () => this.groupSelected() },
                 { id: 'ungroup', icon: 'fas fa-object-ungroup', title: 'Ungroup Selected', action: () => this.ungroupSelected() },
-                // { id: 'snap-grid', icon: 'fas fa-border-all', title: 'Toggle Grid Snap', action: () => this.toggleGridSnapButton() },
                 { id: 'select', icon: 'fas fa-check-square', title: 'Select All', action: () => this.selectAll() },
-                { id: 'clear', icon: 'fas fa-trash', title: 'Clear All', action: () => this.clearAll() },
-                // { id: 'export-svg', icon: 'fas fa-file-code', title: 'Export SVG', action: () => this.exportToSVG() },
-                // { id: 'export-png', icon: 'fas fa-file-image', title: 'Export PNG', action: () => this.exportToPNG() }
+                { id: 'clear', icon: 'fas fa-trash', title: 'Clear All', action: () => this.clearAll() }
             ];
             
             actions.forEach(action => {
@@ -648,24 +606,10 @@ import { marked } from 'marked';
                 button.title = action.title;
                 button.addEventListener('click', action.action);
                 
-                // Set initial state for grid snap button
-                if (action.id === 'snap-grid' && this.snapToGrid) {
-                    button.classList.add('active');
-                }
-                
-                // Set initial state for undo/redo buttons
-                if (action.id === 'undo' && this.historyIndex < 0) {
-                    button.disabled = true;
-                }
-                if (action.id === 'redo' && this.historyIndex >= this.historyStack.length - 1) {
-                    button.disabled = true;
-                }
-                
                 actionGroup.appendChild(button);
             });
             
             toolbar.appendChild(actionGroup);
-            // this.container.appendChild(toolbar);
         }
         
         createPropertiesPanel() {
@@ -1117,14 +1061,6 @@ import { marked } from 'marked';
             const textSection = document.createElement('div');
             textSection.className = 'sww-text-properties sww-text-section hidden';
             
-            // const textSectionTitle = document.createElement('h4');
-            // textSectionTitle.textContent = 'Text Properties';
-            // textSectionTitle.style.margin = '0 0 10px 0';
-            // textSectionTitle.style.fontSize = '12px';
-            // textSectionTitle.style.color = '#666';
-            // textSection.appendChild(textSectionTitle);
-            
-            // Font size
             const fontSizeGroup = document.createElement('div');
             fontSizeGroup.className = 'sww-property-group';
             
@@ -1444,12 +1380,6 @@ import { marked } from 'marked';
             const point = this.getPointerPosition(e);
             this.lastPointerPosition = point;
             
-            // Debug: Show click position (remove in production)
-            if (window.SWW_DEBUG) {
-                console.log('Click at:', point);
-                this.showDebugPoint(point);
-            }
-            
             if (e.button === 1 || (e.button === 0 && e.altKey) || this.isPreviewMode) {
                 // Middle mouse, Alt+click, or preview mode - enable panning for better viewing
                 this.isPanning = true;
@@ -1547,17 +1477,6 @@ import { marked } from 'marked';
         }
         
         handleKeyDown(e) {
-            // Keyboard shortcuts:
-            // - Delete/Backspace: Delete selected elements
-            // - Escape: Clear selection
-            // - Ctrl+A: Select all elements
-            // - Ctrl+C: Copy selected elements
-            // - Ctrl+V: Paste copied elements
-            // - Ctrl+Z: Undo last action
-            // - Ctrl+Y / Ctrl+Shift+Z: Redo last undone action
-            // - Arrow keys: Move selected elements (Shift for larger steps)
-            
-            // Check if the user is currently typing in an input field
             const activeElement = document.activeElement;
             const isEditingInput = activeElement && (
                 activeElement.tagName === 'INPUT' || 
@@ -1566,12 +1485,10 @@ import { marked } from 'marked';
                 activeElement.contentEditable === 'true'
             );
             
-            // Don't trigger shortcuts when user is editing input fields
             if (isEditingInput) {
                 return;
             }
             
-            // In preview mode, only allow ESC to exit (already handled in preview mode)
             if (this.isPreviewMode) {
                 return;
             }
@@ -1605,7 +1522,6 @@ import { marked } from 'marked';
         }
         
         handleWheel(e) {
-            // Only zoom when Ctrl key is pressed for better UI/UX
             if (!e.ctrlKey && !e.metaKey) {
                 // Allow normal scroll behavior when Ctrl is not pressed
                 return;
@@ -1618,7 +1534,6 @@ import { marked } from 'marked';
             this.zoom *= zoomFactor;
             this.zoom = Math.max(0.1, Math.min(5, this.zoom));
             
-            // Zoom towards mouse position
             const newWidth = this.viewBox.width / zoomFactor;
             const newHeight = this.viewBox.height / zoomFactor;
             const dx = (this.viewBox.width - newWidth) * (point.x - this.viewBox.x) / this.viewBox.width;
@@ -1632,11 +1547,8 @@ import { marked } from 'marked';
             this.updateViewBox();
         }
         
-        // Helper method to set cursor with CSS classes
         setCursor(cursorType) {
-            // Remove all cursor classes
             this.svg.classList.remove('grabbing', 'grab', 'crosshair', 'default');
-            // Add the specific cursor class
             if (cursorType !== 'default') {
                 this.svg.classList.add(cursorType);
             }
@@ -1647,7 +1559,6 @@ import { marked } from 'marked';
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             
-            // Use SVG's built-in coordinate transformation for more accuracy
             if (this.svg.getScreenCTM) {
                 const point = this.svg.createSVGPoint();
                 point.x = clientX;
@@ -1656,11 +1567,9 @@ import { marked } from 'marked';
                 return { x: transformedPoint.x, y: transformedPoint.y };
             }
             
-            // Fallback method with improved calculation
             const relativeX = clientX - rect.left;
             const relativeY = clientY - rect.top;
             
-            // Transform from screen coordinates to SVG coordinates
             const x = (relativeX / rect.width) * this.viewBox.width + this.viewBox.x;
             const y = (relativeY / rect.height) * this.viewBox.height + this.viewBox.y;
             
@@ -2127,7 +2036,6 @@ import { marked } from 'marked';
                     break;
                     
                 case 'ellipse':
-                    // Handle negative dimensions for northwest direction
                     const ellipseCx = element.x + element.width / 2;
                     const ellipseCy = element.y + element.height / 2;
                     svg.setAttribute('cx', ellipseCx);
@@ -2137,7 +2045,6 @@ import { marked } from 'marked';
                     break;
                     
                 case 'diamond':
-                    // Handle negative dimensions for northwest direction
                     const diamondCx = element.x + element.width / 2;
                     const diamondCy = element.y + element.height / 2;
                     const diamondW = Math.abs(element.width) / 2;
@@ -2147,15 +2054,12 @@ import { marked } from 'marked';
                     break;
                     
                 case 'parallelogram':
-                    // Since elements are normalized to positive dimensions after creation,
-                    // we can use the element properties directly
-                    const skew = element.width * 0.2; // 20% skew
+                    const skew = element.width * 0.2;
                     const parallelogramPoints = `${element.x + skew},${element.y} ${element.x + element.width},${element.y} ${element.x + element.width - skew},${element.y + element.height} ${element.x},${element.y + element.height}`;
                     svg.setAttribute('points', parallelogramPoints);
                     break;
                     
                 case 'star':
-                    // Handle star shape with proper dimension handling during resize
                     const starPoints = this.createStarPoints(element.x, element.y, element.width, element.height);
                     svg.setAttribute('points', starPoints);
                     break;
@@ -2177,13 +2081,9 @@ import { marked } from 'marked';
                     if (element.points && element.points.length > 0) {
                         let pathData;
                         
-                        // Check if this is the current element being drawn (points are absolute)
-                        // or a finished element (points are relative)
                         if (this.currentElement && this.currentElement.id === element.id) {
-                            // During drawing: points are absolute coordinates
                             pathData = this.pointsToPath(element.points);
                         } else {
-                            // Finished element: convert relative points to absolute coordinates
                             const absolutePoints = element.points.map(point => ({
                                 x: point.x + element.x,
                                 y: point.y + element.y
@@ -2197,8 +2097,7 @@ import { marked } from 'marked';
                     break;
                     
                 case 'text':
-                    // Handle multi-line text with proper positioning
-                    const textContent = element.text || 'Text'; // Show placeholder if empty
+                    const textContent = element.text || 'Text';
                     const lines = textContent.split('\n');
                     
                     // Always position text with padding inside the boundary
@@ -2838,13 +2737,9 @@ import { marked } from 'marked';
                     
                     return marked.parse(text);
                 } catch (error) {
-                    console.warn('Error parsing markdown with marked.js:', error);
-                    // Fallback to simple text with line breaks
                     return text.replace(/\n/g, '<br>');
                 }
             } else {
-                console.warn('marked.js library not loaded, using simple text formatting');
-                // Simple fallback if marked.js is not available
                 return text.replace(/\n/g, '<br>');
             }
         }
@@ -3933,9 +3828,7 @@ import { marked } from 'marked';
                 this.clipboard.push(elementCopy);
             });
             
-            // Show visual feedback for copy operation
             this.showNotification(`Copied ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`, 'copy');
-            console.log(`Copied ${this.clipboard.length} elements to clipboard`);
         }
         
         pasteClipboard() {
@@ -3990,9 +3883,7 @@ import { marked } from 'marked';
                 element.y += 20;
             });
             
-            // Show visual feedback for paste operation
             this.showNotification(`Pasted ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`, 'paste');
-            console.log(`Pasted ${this.clipboard.length} elements from clipboard`);
         }
         
         editSelected() {
@@ -4055,8 +3946,6 @@ import { marked } from 'marked';
                     }
                 }
             });
-            
-            console.log(`Locked ${this.selectedElements.size} elements`);
         }
         
         unlockSelected() {
@@ -4070,8 +3959,6 @@ import { marked } from 'marked';
                     element.svgElement.setAttribute('class', currentClass.replace('sww-locked', '').trim());
                 }
             });
-            
-            console.log(`Unlocked ${this.selectedElements.size} elements`);
         }
         
         // Edit methods for new element types
@@ -4216,8 +4103,6 @@ import { marked } from 'marked';
             elementsToMove.forEach(({ element }) => {
                 this.elements.push(element);
             });
-            
-            console.log(`Brought ${selectedArray.length} elements to front`);
         }
         
         sendToBack() {
@@ -4248,8 +4133,6 @@ import { marked } from 'marked';
             elementsToMove.reverse().forEach(({ element }) => {
                 this.elements.unshift(element);
             });
-            
-            console.log(`Sent ${selectedArray.length} elements to back`);
         }
         
         startSelectionBox(startPoint) {
@@ -4526,8 +4409,6 @@ import { marked } from 'marked';
                 element.resizeStartWidth = element.width;
                 element.resizeStartHeight = element.height;
             });
-            
-            console.log('Resize started:', handleType);
         }
         
         startRotation(point) {
@@ -4535,15 +4416,11 @@ import { marked } from 'marked';
             this.manipulationMode = 'rotate';
             this.dragStartPoint = point;
             
-            // Update cursor to show active rotation state
-            this.svg.style.cursor = 'crosshair'; // Consistent rotation cursor
+            this.svg.style.cursor = 'crosshair';
             
-            // Store initial rotation of selected elements
             this.selectedElements.forEach(element => {
                 element.rotateStartAngle = element.rotation || 0;
             });
-            
-            console.log('Rotation started');
         }
         
         clearSelectionHandles() {
@@ -6085,8 +5962,6 @@ import { marked } from 'marked';
             this.selectedElements.forEach(element => {
                 element.groupId = groupId;
             });
-            
-            console.log(`Grouped ${this.selectedElements.size} elements with ID: ${groupId}`);
         }
         
         ungroupSelected() {
@@ -6105,8 +5980,6 @@ import { marked } from 'marked';
                     });
                 }
             });
-            
-            console.log('Ungrouped selected elements');
         }
         
         // Zoom functionality
@@ -6275,7 +6148,6 @@ import { marked } from 'marked';
         exitPreviewMode() {
             if (!this.isPreviewMode) return;
             
-            console.log('Exiting preview mode...');
             this.isPreviewMode = false;
             
             // Disable browser-frame fullscreen
@@ -6308,10 +6180,7 @@ import { marked } from 'marked';
             // Unlock all elements
             this.unlockAllElements();
             
-            // Force a redraw to ensure UI is restored
             setTimeout(() => {
-                console.log('Preview mode exit complete');
-                // Additional cleanup for browser-frame fullscreen
                 if (this.isBrowserFrameFullscreen) {
                     this.disableBrowserFrameFullscreen();
                 }
@@ -6497,11 +6366,8 @@ import { marked } from 'marked';
         // Undo/Redo History Management
         saveStateToHistory(actionType, beforeState = null) {
             if (this.isPerformingHistoryAction) return;
-            if (!this.elements) return; // Don't save if elements array isn't initialized yet
+            if (!this.elements) return;
             
-            console.log(`Saving state for action: ${actionType}, current elements: ${this.elements.length}`);
-            
-            // Optimize history size more aggressively for large scenes
             const maxSize = this.elements.length > 500 ? 20 : this.maxHistorySize;
             
             // Create optimized state copy - only store essential data
@@ -6560,18 +6426,13 @@ import { marked } from 'marked';
         
         undo() {
             if (this.historyIndex <= 0) {
-                console.log('Cannot undo: no previous history');
                 return;
             }
-            
-            console.log(`Undo: going from index ${this.historyIndex} to ${this.historyIndex - 1}`);
-            console.log(`Current elements: ${this.elements.length}`);
             
             this.isPerformingHistoryAction = true;
             this.historyIndex--;
             
             const previousState = this.historyStack[this.historyIndex];
-            console.log(`Restoring state with ${previousState.elements.length} elements`);
             this.restoreState(previousState);
             
             this.isPerformingHistoryAction = false;
@@ -6580,11 +6441,8 @@ import { marked } from 'marked';
         
         redo() {
             if (this.historyIndex >= this.historyStack.length - 1) {
-                console.log('Cannot redo: at latest state');
                 return;
             }
-            
-            console.log(`Redo: going from index ${this.historyIndex} to ${this.historyIndex + 1}`);
             
             this.isPerformingHistoryAction = true;
             this.historyIndex++;
@@ -6685,30 +6543,6 @@ import { marked } from 'marked';
             }
         }
         
-        // Debug method to visualize click positions
-        showDebugPoint(point) {
-            // Remove previous debug point
-            const existingDebug = this.svg.querySelector('.debug-point');
-            if (existingDebug) existingDebug.remove();
-            
-            // Create debug point
-            const debugPoint = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            debugPoint.setAttribute('class', 'debug-point');
-            debugPoint.setAttribute('cx', point.x);
-            debugPoint.setAttribute('cy', point.y);
-            debugPoint.setAttribute('r', '3');
-            debugPoint.setAttribute('fill', 'red');
-            debugPoint.setAttribute('stroke', 'white');
-            debugPoint.setAttribute('stroke-width', '1');
-            this.svg.appendChild(debugPoint);
-            
-            // Remove after 2 seconds
-            setTimeout(() => {
-                if (debugPoint.parentNode) debugPoint.remove();
-            }, 2000);
-        }
-        
-        // Memory management and cleanup
         cleanupElement(element) {
             // Remove event listeners
             if (element.svgElement) {
