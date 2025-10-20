@@ -8,6 +8,13 @@
 /* Import FontAwesome */
 @import '~@fortawesome/fontawesome-free/css/all.css';
 
+/* CSS Variables for Theme Colors */
+:root {
+  --sww-panel-bg: #18181b;
+  --sww-accent-color: #00FF99;
+  --sww-secondary-accent: #007370;
+}
+
 /* Base Styles */
 body,
 html {
@@ -66,7 +73,7 @@ html {
 .sww-control-panel {
   min-width: 20rem;
   max-width: 20rem;
-  background: #18181b;
+  background: var(--sww-panel-bg);
   overflow-y: auto;
   z-index: 1000;
   display: flex;
@@ -137,14 +144,14 @@ html {
 
 .sww-control-menu-button:hover,
 .sww-control-menu-button.active {
-  color: #00FF99;
-  border-color: #00FF99;
+  color: var(--sww-accent-color);
+  border-color: var(--sww-accent-color);
 }
 
 /* Toolbar */
 .sww-toolbar-container {
   height: 48px;
-  background: #18181b;
+  background: var(--sww-panel-bg);
   color: white;
   display: flex;
   align-items: center;
@@ -189,7 +196,7 @@ html {
 .sww-toolbar-button:hover,
 .sww-panel-button.active,
 .sww-panel-button:hover {
-  color: #00FF99;
+  color: var(--sww-accent-color);
   background: #09090B;
 }
 
@@ -232,8 +239,8 @@ html {
 
 .sww-action-button.active,
 .sww-action-button:hover {
-  color: #00FF99;
-  border: 1px solid #00FF99;
+  color: var(--sww-accent-color);
+  border: 1px solid var(--sww-accent-color);
 }
 
 .sww-action-button.primary {
@@ -324,11 +331,11 @@ html {
 }
 
 .sww-layer-control-btn:hover {
-  color: #00FF99;
+  color: var(--sww-accent-color);
 }
 
 .sww-layer-control-btn.active {
-  color: #00FF99;
+  color: var(--sww-accent-color);
 }
 
 .sww-layer-control-btn.inactive {
@@ -364,8 +371,8 @@ html {
 }
 
 .sww-layer-action-btn:hover {
-  color: #00FF99;
-  border-color: #00FF99;
+  color: var(--sww-accent-color);
+  border-color: var(--sww-accent-color);
 }
 
 .sww-layers-container {
@@ -469,8 +476,8 @@ html {
 
 .sww-gradient-add-stop:hover {
   background: #525252;
-  color: #00FF99;
-  border-color: #00FF99;
+  color: var(--sww-accent-color);
+  border-color: var(--sww-accent-color);
 }
 
 .sww-gradient-remove-stop {
@@ -716,7 +723,7 @@ body.sww-pseudo-fullscreen {
   left: 8px;
   display: flex;
   flex-direction: column;
-  background: #18181B;
+  background: var(--sww-panel-bg);
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   z-index: 1000;
@@ -748,20 +755,20 @@ body.sww-pseudo-fullscreen {
 
 .sww-tool-button:hover {
   background: #09090B;
-  color: #00FF99;
+  color: var(--sww-accent-color);
 }
 
 .sww-tool-button:hover i {
-  color: #00FF99;
+  color: var(--sww-accent-color);
 }
 
 .sww-tool-button.active {
   background: #09090B;
-  color: #00FF99;
+  color: var(--sww-accent-color);
 }
 
 .sww-tool-button.active i {
-  color: #00FF99;
+  color: var(--sww-accent-color);
 }
 
 .sww-tool-button:disabled {
@@ -833,8 +840,8 @@ body.sww-pseudo-fullscreen {
 
 .sww-number-input:focus {
   outline: none;
-  border-color: #00FF99;
-  box-shadow: 0 0 0 1px #00FF99;
+  border-color: var(--sww-accent-color);
+  box-shadow: 0 0 0 1px var(--sww-accent-color);
 }
 
 .sww-number-input:hover {
@@ -856,8 +863,8 @@ body.sww-pseudo-fullscreen {
 
 .sww-hex-input:focus {
   outline: none;
-  border-color: #00FF99;
-  box-shadow: 0 0 0 1px #00FF99;
+  border-color: var(--sww-accent-color);
+  box-shadow: 0 0 0 1px var(--sww-accent-color);
 }
 
 .sww-hex-input:hover {
@@ -1016,12 +1023,12 @@ marker {
 }
 
 .sww-align-button:hover {
-  background: #00FF99;
+  background: var(--sww-accent-color);
   color: #09090B;
 }
 
 .sww-align-button.active {
-  background: #00FF99;
+  background: var(--sww-accent-color);
   color: #09090B;
 }
 
@@ -1092,7 +1099,7 @@ marker {
   height: 40px;
   font-size: 14px;
   color: #ffffff80;
-  background: #18181B;
+  background: var(--sww-panel-bg);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1107,7 +1114,7 @@ marker {
 .sww-panel-header-button {
   width: 40px;
   height: 40px;
-  background: #18181B;
+  background: var(--sww-panel-bg);
   border: none;
   color: #ffffff80;
   display: flex;
@@ -1120,7 +1127,7 @@ marker {
 
 .sww-panel-header-button:hover {
   background: #09090B;
-  color: #00FF99;
+  color: var(--sww-accent-color);
 }
 
 /* Hidden properties panel by default */
@@ -1131,7 +1138,7 @@ marker {
   right: 0px;
   width: 20rem;
   height: calc(100vh - 48px);
-  background: #18181B;
+  background: var(--sww-panel-bg);
   z-index: 1000;
   display: none;
 }
@@ -1534,7 +1541,7 @@ marker {
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.85);
-  color: #00FF99;
+  color: var(--sww-accent-color);
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 12px;

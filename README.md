@@ -35,6 +35,7 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 
 ### Styling & Customization
 
+- **Custom Theme Colors**: Configurable panel background and accent colors for personalized UI theming
 - **Fill Styles**: Solid colors, gradients (linear/radial), hatch patterns, and transparency
 - **Stroke Customization**: Color, width, and style options
 - **Gradient Editor**: Multi-stop gradient creation with color and position controls
@@ -45,7 +46,8 @@ A powerful, client-side JavaScript drawing library for creating interactive digi
 ### User Interface
 
 - **Control Panel**: Organized tool selection and layer management with expand/dock options and tabbed interface
-- **Modern Dark Theme**: Professional dark UI with accent colors (#00FF99 primary, #007370 secondary) and smooth transitions
+- **Configurable Theme**: Customizable panel background and accent colors to match your brand or preference
+- **Modern Dark Theme**: Professional dark UI with customizable accent colors (default: #00FF99 primary, #007370 secondary) and smooth transitions
 - **Properties Panel**: Real-time property editing for selected elements with instant visual feedback
 - **Context Menus**: Right-click operations for quick actions and element manipulation
 - **Keyboard Shortcuts**: Standard shortcuts for common operations (Ctrl+Z/Y, Ctrl+A/C/V, Delete, Arrow keys)
@@ -137,6 +139,21 @@ const swwInstance = sww.init(container, {
     backgroundColor: "#ffffff",
     gridSize: 20,
     showGrid: true
+});
+```
+
+### Custom Theme Colors
+
+```javascript
+// Initialize with custom theme colors
+const swwInstance = sww.init(container, {
+    backgroundColor: "#ffffff",
+    gridSize: 20,
+    showGrid: true,
+    // Customize control panel colors
+    panelBackgroundColor: '#1a1f3a',  // Dark blue panel
+    accentColor: '#4c9aff',            // Light blue accent
+    secondaryAccentColor: '#2563eb'    // Deeper blue secondary
 });
 ```
 

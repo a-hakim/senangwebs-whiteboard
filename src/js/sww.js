@@ -152,6 +152,10 @@ import { marked } from 'marked';
                 backgroundColor: options.backgroundColor || '#ffffff',
                 gridSize: options.gridSize || 20,
                 showGrid: options.showGrid !== false,
+                // Theme colors
+                panelBackgroundColor: options.panelBackgroundColor || '#18181b',
+                accentColor: options.accentColor || '#00FF99',
+                secondaryAccentColor: options.secondaryAccentColor || '#007370',
                 ...options
             };
             
@@ -238,6 +242,9 @@ import { marked } from 'marked';
         init() {
             this.createUI();
             this.setupEventListeners();
+            
+            // Apply theme colors
+            this.applyThemeColors();
             
             // Initialize performance optimizations
             this.initPerformanceOptimizations();
@@ -333,6 +340,24 @@ import { marked } from 'marked';
                 const bounds = this.getElementBounds(element);
                 this.spatialIndex.insert(element, bounds);
             });
+        }
+        
+        applyThemeColors() {
+            // Apply CSS custom properties for theme colors
+            if (!this.svg) return;
+            
+            // Set CSS variables on the SVG container or a parent element
+            const container = this.container;
+            if (container) {
+                container.style.setProperty('--sww-panel-bg', this.options.panelBackgroundColor);
+                container.style.setProperty('--sww-accent-color', this.options.accentColor);
+                container.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
+            }
+            
+            // Also set on document root for global access
+            document.documentElement.style.setProperty('--sww-panel-bg', this.options.panelBackgroundColor);
+            document.documentElement.style.setProperty('--sww-accent-color', this.options.accentColor);
+            document.documentElement.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
         }
         
         updateVisibleElements() {
