@@ -161,7 +161,7 @@
                 </div>
                 
                 <!-- Tool Tabs -->
-                <div class="flex mb-4 bg-slate-50 rounded-lg p-1">
+                <div id="toolsTab" class="flex mb-4 bg-slate-50 rounded-lg p-1">
                     <button onclick="switchTab('tools')" 
                             data-tab="tools"
                             class="flex-1 bg-primary-500 text-white shadow-sm border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5">
@@ -203,12 +203,12 @@
                         <i class="far fa-star text-lg"></i>
                         <span>Star</span>
                     </button>
-                    <button onclick="selectTool('draw')" data-tool="arrow"
+                    <button onclick="selectTool('draw')" data-tool="draw"
                             class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fas fa-pencil text-lg"></i>
                         <span>Draw</span>
                     </button>
-                    <button onclick="selectTool('line')" data-tool="arrow"
+                    <button onclick="selectTool('line')" data-tool="line"
                             class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fas fa-minus text-lg"></i>
                         <span>Line</span>
@@ -341,8 +341,9 @@
                 gridSize: 20, 
                 showGrid: true, 
                 readOnly: false,
-                panelBackgroundColor: '#1a1f3a',
-                accentColor: '#4c9aff',           
+                panelBackgroundColor: '#ffffff',
+                panelTextColor: '#000000',
+                accentColor: '#3b82f6',           
                 secondaryAccentColor: '#2563eb'
             });
             window.swwInstance = swwInstance;

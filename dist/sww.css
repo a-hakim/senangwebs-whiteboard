@@ -10673,6 +10673,7 @@
 /* CSS Variables for Theme Colors */
 :root {
   --sww-panel-bg: #18181b;
+  --sww-panel-text: #ffffff80;
   --sww-accent-color: #00FF99;
   --sww-secondary-accent: #007370;
 }
@@ -11411,26 +11412,29 @@ body.sww-pseudo-fullscreen {
 
 .sww-tool-button i {
   font-size: 16px;
-  color: #ffffff80;
-  transition: color 0.2s;
+  color: var(--sww-panel-text, #ffffff);
+  opacity: 0.5;
+  transition: color 0.2s, opacity 0.2s;
 }
 
 .sww-tool-button:hover {
-  background: #09090B;
+  background: var(--sww-panel-bg, #09090B);
   color: var(--sww-accent-color);
 }
 
 .sww-tool-button:hover i {
   color: var(--sww-accent-color);
+  opacity: 1;
 }
 
 .sww-tool-button.active {
-  background: #09090B;
+  background: var(--sww-panel-bg, #09090B);
   color: var(--sww-accent-color);
 }
 
 .sww-tool-button.active i {
   color: var(--sww-accent-color);
+  opacity: 1;
 }
 
 .sww-tool-button:disabled {
@@ -11458,7 +11462,7 @@ body.sww-pseudo-fullscreen {
   display: block;
   margin-bottom: 6px;
   font-size: 12px;
-  color: #ffffff80;
+  color: var(--sww-panel-text);
   margin-right: 10px;
   min-width: 80px;
   flex-shrink: 0;
@@ -11483,7 +11487,7 @@ body.sww-pseudo-fullscreen {
   height: 32px;
   border-radius: 8px;
   cursor: pointer;
-  background: #09090B;
+  background: var(--sww-panel-bg, #09090B);
   padding: 0;
 }
 
@@ -11493,8 +11497,8 @@ body.sww-pseudo-fullscreen {
   border-radius: 8px;
   font-size: 12px;
   height: 32px;
-  background: #09090B;
-  color: white;
+  background: var(--sww-panel-bg, #09090B);
+  color: var(--sww-panel-text, white);
   border: 1px solid #262626;
   box-sizing: border-box;
   text-align: center;
@@ -11516,8 +11520,8 @@ body.sww-pseudo-fullscreen {
   border-radius: 8px;
   font-size: 12px;
   height: 32px;
-  background: #09090B;
-  color: white;
+  background: var(--sww-panel-bg, #09090B);
+  color: var(--sww-panel-text, white);
   border: 1px solid #262626;
   box-sizing: border-box;
   text-align: center;
@@ -11540,7 +11544,8 @@ body.sww-pseudo-fullscreen {
 .sww-property-unit {
   margin-left: 8px;
   font-size: 11px;
-  color: #ffffff80;
+  color: var(--sww-panel-text, #ffffff);
+  opacity: 0.5;
   display: inline-block;
   min-width: 20px;
 }
@@ -11555,8 +11560,8 @@ body.sww-pseudo-fullscreen {
   border-radius: 8px;
   font-size: 12px;
   height: 32px;
-  background: #09090B;
-  color: white;
+  background: var(--sww-panel-bg, #09090B);
+  color: var(--sww-panel-text, white);
   border: none;
 }
 
@@ -11594,13 +11599,13 @@ marker {
 
 .sww-element.selected .sww-text-boundary {
   opacity: 1;
-  stroke: #007370;
+  stroke: var(--sww-secondary-accent, #007370);
   stroke-width: 1.5;
 }
 
 .sww-selection-box {
   fill: none;
-  stroke: #007370;
+  stroke: var(--sww-secondary-accent, #007370);
   stroke-width: 1;
   stroke-dasharray: 5,5;
   pointer-events: none;
@@ -11608,7 +11613,7 @@ marker {
 
 .sww-handle {
   fill: white;
-  stroke: #007370;
+  stroke: var(--sww-secondary-accent, #007370);
   stroke-width: 2;
   cursor: pointer;
 }
@@ -11619,7 +11624,7 @@ marker {
 
 .sww-text-editor {
   position: absolute;
-  border: 1px solid rgba(0, 115, 112, 0.3);
+  border: 1px solid rgba(var(--sww-secondary-accent-rgb, 0, 115, 112), 0.3);
   background: rgba(255, 255, 255, 0.95);
   outline: none;
   padding: 2px;
@@ -11760,7 +11765,7 @@ marker {
 .sww-panel-header {
   height: 40px;
   font-size: 14px;
-  color: #ffffff80;
+  color: var(--sww-panel-text);
   background: var(--sww-panel-bg);
   display: flex;
   align-items: center;
@@ -11770,7 +11775,7 @@ marker {
 .sww-panel-header span {
   line-height: 40px;
   padding-left: 16px;
-  color: white;
+  color: var(--sww-panel-text);
 }
 
 .sww-panel-header-button {
@@ -11778,18 +11783,20 @@ marker {
   height: 40px;
   background: var(--sww-panel-bg);
   border: none;
-  color: #ffffff80;
+  color: var(--sww-panel-text);
+  opacity: 0.5;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 16px;
-  transition: all 0.2s;
+  transition: all 0.2s, opacity 0.2s;
 }
 
 .sww-panel-header-button:hover {
-  background: #09090B;
+  background: var(--sww-panel-bg);
   color: var(--sww-accent-color);
+  opacity: 1;
 }
 
 /* Hidden properties panel by default */

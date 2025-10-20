@@ -154,6 +154,7 @@ import { marked } from 'marked';
                 showGrid: options.showGrid !== false,
                 // Theme colors
                 panelBackgroundColor: options.panelBackgroundColor || '#18181b',
+                panelTextColor: options.panelTextColor || '#ffffff',
                 accentColor: options.accentColor || '#00FF99',
                 secondaryAccentColor: options.secondaryAccentColor || '#007370',
                 ...options
@@ -346,18 +347,42 @@ import { marked } from 'marked';
             // Apply CSS custom properties for theme colors
             if (!this.svg) return;
             
+            // Helper function to convert hex to RGB
+            const hexToRgb = (hex) => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            };
+            
             // Set CSS variables on the SVG container or a parent element
             const container = this.container;
             if (container) {
                 container.style.setProperty('--sww-panel-bg', this.options.panelBackgroundColor);
+                container.style.setProperty('--sww-panel-text', this.options.panelTextColor);
                 container.style.setProperty('--sww-accent-color', this.options.accentColor);
                 container.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
+                
+                // Convert secondary accent to RGB for alpha transparency usage
+                const rgb = hexToRgb(this.options.secondaryAccentColor);
+                if (rgb) {
+                    container.style.setProperty('--sww-secondary-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+                }
             }
             
             // Also set on document root for global access
             document.documentElement.style.setProperty('--sww-panel-bg', this.options.panelBackgroundColor);
+            document.documentElement.style.setProperty('--sww-panel-text', this.options.panelTextColor);
             document.documentElement.style.setProperty('--sww-accent-color', this.options.accentColor);
             document.documentElement.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
+            
+            // Convert secondary accent to RGB for alpha transparency usage
+            const rgb = hexToRgb(this.options.secondaryAccentColor);
+            if (rgb) {
+                document.documentElement.style.setProperty('--sww-secondary-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+            }
         }
         
         updateVisibleElements() {
