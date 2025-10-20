@@ -13,20 +13,25 @@
                 extend: {
                     colors: {
                         primary: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#00FF99',
-                            600: '#00e689',
-                            700: '#00cc7a'
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
                         },
                         secondary: {
-                            500: '#007370',
-                            600: '#006562',
-                            700: '#005854'
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1'
                         },
-                        dark: {
-                            bg: '#18181B',
-                            panel: '#09090B'
+                        light: {
+                            bg: '#f8fafc',
+                            panel: '#ffffff'
                         }
                     }
                 }
@@ -43,14 +48,14 @@
         
         /* Preview mode styles */
         .preview-mode {
-            background: #000 !important;
+            background: #1e3a8a !important;
             cursor: pointer;
         }
         
         .preview-mode #sww-drawing-canvas {
             background: white;
             border-radius: 8px;
-            box-shadow: 0 20px 25px -5px rgba(0, 255, 153, 0.1), 0 10px 10px -5px rgba(0, 255, 153, 0.04);
+            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.2), 0 10px 10px -5px rgba(59, 130, 246, 0.1);
         }
         
         #exitPreviewHint {
@@ -73,68 +78,68 @@
             transition: all 0.3s ease;
         }
         
-        /* Dark theme enhancements */
-        .bg-dark-bg {
-            background-color: #18181B;
+        /* Light theme enhancements */
+        .bg-light-bg {
+            background-color: #f8fafc;
         }
         
-        .bg-dark-panel {
-            background-color: #09090B;
+        .bg-light-panel {
+            background-color: #ffffff;
         }
         
-        /* Scrollbar styling for dark theme */
+        /* Scrollbar styling for light theme */
         ::-webkit-scrollbar {
             width: 8px;
         }
         
         ::-webkit-scrollbar-track {
-            background: #18181B;
+            background: #f1f5f9;
         }
         
         ::-webkit-scrollbar-thumb {
-            background: #00FF99;
+            background: #3b82f6;
             border-radius: 4px;
         }
         
         ::-webkit-scrollbar-thumb:hover {
-            background: #00e689;
+            background: #2563eb;
         }
         
         /* Focus states for accessibility */
         button:focus {
-            outline: 2px solid #00FF99;
+            outline: 2px solid #3b82f6;
             outline-offset: 2px;
         }
         
         /* Glowing effect for primary buttons */
         .glow-primary {
-            box-shadow: 0 0 20px rgba(0, 255, 153, 0.3);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
         }
     </style>
 </head>
-<body class="font-sans h-screen overflow-hidden bg-dark-bg">
+<body class="font-sans h-screen overflow-hidden bg-light-bg">
     <!-- Main Container -->
-    <div class="flex flex-col h-screen bg-dark-panel">
+    <div class="flex flex-col h-screen bg-light-panel">
         
         <!-- Top Header -->
-        <header class="bg-secondary-500 text-white px-5 py-3 flex justify-between items-center shadow-lg z-50">
+        <header class="bg-primary-600 text-white px-5 py-3 flex justify-between items-center shadow-lg z-50">
             <h1 class="text-xl font-semibold flex items-center gap-2.5">
                 <i class="fas fa-palette"></i>
                 SenangWebs Whiteboard
             </h1>
             <div class="flex gap-2">
                 <button onclick="toggleFullscreen()" 
-                        class="bg-white/10 hover:bg-primary-500/20 border border-white/20 hover:border-primary-500/50 text-white px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-1.5 hover:-translate-y-0.5"
+                        class="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-white px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-1.5 hover:-translate-y-0.5"
                         title="Fullscreen">
                     <i class="fas fa-expand"></i>
                 </button>
                 <button onclick="togglePreview()" 
-                        class="bg-white/10 hover:bg-primary-500/20 border border-white/20 hover:border-primary-500/50 text-white px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-1.5 hover:-translate-y-0.5"
+                        class="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-white px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-1.5 hover:-translate-y-0.5"
                         title="Preview Mode">
                     <i class="fas fa-eye"></i>
                 </button>
                 <button onclick="exportCanvas()" 
-                        class="bg-white/10 hover:bg-primary-500/20 border border-white/20 hover:border-primary-500/50 text-white px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-1.5 hover:-translate-y-0.5"
+                        class="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-white px-3 py-2 rounded-md text-sm transition-all duration-200 flex items-center gap-1.5 hover:-translate-y-0.5"
                         title="Export">
                     <i class="fas fa-download"></i>
                 </button>
@@ -145,27 +150,27 @@
         <div class="flex flex-1 relative">
             
             <!-- Floating Tool Palette -->
-            <div id="toolPalette" class="absolute top-5 left-5 bg-dark-bg border border-neutral-700 rounded-xl shadow-2xl p-4 z-40 min-w-[280px] max-w-[280px] transition-all duration-300">
-                <div class="flex justify-between items-center mb-4 pb-3 border-b border-neutral-700">
-                    <span class="font-semibold text-white text-base">Tools</span>
+            <div id="toolPalette" class="absolute top-5 left-5 bg-white border border-slate-200 rounded-xl shadow-xl p-4 z-40 min-w-[280px] max-w-[280px] transition-all duration-300">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
+                    <span class="font-semibold text-slate-800 text-base">Tools</span>
                     <button onclick="togglePalette()" 
-                            class="bg-transparent border-0 p-1 rounded text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                            class="bg-transparent border-0 p-1 rounded text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                             title="Toggle Palette">
                         <i id="paletteToggleIcon" class="fas fa-chevron-left"></i>
                     </button>
                 </div>
                 
                 <!-- Tool Tabs -->
-                <div class="flex mb-4 bg-dark-panel rounded-lg p-1">
+                <div class="flex mb-4 bg-slate-50 rounded-lg p-1">
                     <button onclick="switchTab('tools')" 
                             data-tab="tools"
-                            class="flex-1 bg-primary-500 text-dark-bg shadow-sm border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5">
+                            class="flex-1 bg-primary-500 text-white shadow-sm border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5">
                         <i class="fas fa-tools"></i>
                         <span>Tools</span>
                     </button>
                     <button onclick="switchTab('layers')" 
                             data-tab="layers"
-                            class="flex-1 bg-transparent text-neutral-400 border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5 hover:bg-neutral-800 hover:text-primary-500">
+                            class="flex-1 bg-transparent text-slate-600 border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5 hover:bg-slate-100 hover:text-primary-600">
                         <i class="fas fa-layer-group"></i>
                         <span>Layers</span>
                     </button>
@@ -174,62 +179,62 @@
                 <!-- Tools Grid -->
                 <div id="toolsGrid" class="grid grid-cols-2 gap-2">
                     <button onclick="selectTool('select')" data-tool="select"
-                            class="bg-primary-500/20 border-2 border-primary-500 text-primary-500 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:-translate-y-0.5">
+                            class="bg-primary-50 border-2 border-primary-500 text-primary-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:-translate-y-0.5">
                         <i class="fas fa-mouse-pointer text-lg"></i>
                         <span>Select</span>
                     </button>
                     <button onclick="selectTool('rectangle')" data-tool="rectangle"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="far fa-square text-lg"></i>
                         <span>Rectangle</span>
                     </button>
                     <button onclick="selectTool('ellipse')" data-tool="ellipse"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="far fa-circle text-lg"></i>
                         <span>Circle</span>
                     </button>
                     <button onclick="selectTool('diamond')" data-tool="diamond"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="far fa-square text-lg" style="rotate: 45deg;"></i>
                         <span>Diamond</span>
                     </button>
                     <button onclick="selectTool('star')" data-tool="star"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="far fa-star text-lg"></i>
                         <span>Star</span>
                     </button>
                     <button onclick="selectTool('draw')" data-tool="arrow"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fas fa-pencil text-lg"></i>
                         <span>Draw</span>
                     </button>
                     <button onclick="selectTool('line')" data-tool="arrow"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fas fa-minus text-lg"></i>
                         <span>Line</span>
                     </button>
                     <button onclick="selectTool('arrow')" data-tool="arrow"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fas fa-arrow-right text-lg"></i>
                         <span>Arrow</span>
                     </button>
                     <button onclick="selectTool('text')" data-tool="text"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fas fa-font text-lg"></i>
                         <span>Text</span>
                     </button>
                     <button onclick="selectTool('image')" data-tool="image"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fas fa-image text-lg"></i>
                         <span>Image</span>
                     </button>
                     <button onclick="selectTool('website')" data-tool="website"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fas fa-globe text-lg"></i>
                         <span>Website</span>
                     </button>
                     <button onclick="selectTool('markdown')" data-tool="markdown"
-                            class="bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5">
+                            class="bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5">
                         <i class="fab fa-markdown text-lg"></i>
                         <span>Document</span>
                     </button>
@@ -239,7 +244,7 @@
                 <div id="layersContent" class="hidden">
                     <div class="max-h-96 overflow-y-auto">
                         <div id="layersContainer">
-                            <div class="text-center py-5 text-neutral-400">
+                            <div class="text-center py-5 text-slate-500">
                                 No elements in the scene.<br>
                                 <small>Add elements to see them here.</small>
                             </div>
@@ -256,56 +261,56 @@
         </div>
         
         <!-- Bottom Floating Action Bar -->
-        <div class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-dark-bg border border-neutral-700 rounded-xl shadow-2xl px-5 py-3 flex gap-4 z-40">
+        <div class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-white border border-slate-200 rounded-xl shadow-xl px-5 py-3 flex gap-4 z-40">
             <div class="flex gap-2 items-center">
                 <button onclick="swwInstance.undo()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Undo (Ctrl+Z)">
                     <i class="fas fa-undo"></i>
                 </button>
                 <button onclick="swwInstance.redo()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Redo (Ctrl+Y)">
                     <i class="fas fa-redo"></i>
                 </button>
             </div>
             
-            <div class="flex gap-2 items-center border-r border-neutral-700 pr-4">
+            <div class="flex gap-2 items-center border-r border-slate-200 pr-4">
                 <button onclick="swwInstance.zoomIn()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Zoom In">
                     <i class="fas fa-search-plus"></i>
                 </button>
                 <button onclick="swwInstance.zoomOut()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Zoom Out">
                     <i class="fas fa-search-minus"></i>
                 </button>
                 <button onclick="swwInstance.resetZoom()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Reset Zoom">
                     <i class="fas fa-compress-arrows-alt"></i>
                 </button>
             </div>
             
-            <div class="flex gap-2 items-center border-r border-neutral-700 pr-4">
+            <div class="flex gap-2 items-center border-r border-slate-200 pr-4">
                 <button onclick="swwInstance.selectAll()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Select All">
                     <i class="fas fa-check-double"></i>
                 </button>
                 <button onclick="swwInstance.clearSelection()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Clear Selection">
                     <i class="fas fa-times"></i>
                 </button>
                 <button onclick="copyPaste()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Duplicate">
                     <i class="fas fa-copy"></i>
                 </button>
                 <button onclick="swwInstance.deleteSelectedElements()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-red-400"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-red-500"
                         title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -313,12 +318,12 @@
             
             <div class="flex gap-2 items-center">
                 <button onclick="swwInstance.toggleGrid()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-primary-500"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600"
                         title="Toggle Grid">
                     <i class="fas fa-border-all"></i>
                 </button>
                 <button onclick="swwInstance.clearAll()" 
-                        class="bg-transparent border-0 p-2 rounded-md text-neutral-400 transition-all duration-200 hover:bg-neutral-800 hover:text-red-400"
+                        class="bg-transparent border-0 p-2 rounded-md text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-red-500"
                         title="Clear All">
                     <i class="fas fa-eraser"></i>
                 </button>
@@ -332,7 +337,13 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             swwInstance = sww.init(document.getElementById("sww-drawing-canvas"), {
-                backgroundColor: "#ffffff", gridSize: 20, showGrid: true, readOnly: false
+                backgroundColor: "#ffffff", 
+                gridSize: 20, 
+                showGrid: true, 
+                readOnly: false,
+                panelBackgroundColor: '#1a1f3a',
+                accentColor: '#4c9aff',           
+                secondaryAccentColor: '#2563eb'
             });
             window.swwInstance = swwInstance;
             setupKeyboardShortcuts();
@@ -345,8 +356,8 @@
             currentTab = tabName;
             document.querySelectorAll('[data-tab]').forEach(btn => {
                 btn.className = btn.dataset.tab === tabName ? 
-                    "flex-1 bg-primary-500 text-dark-bg shadow-sm border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5" :
-                    "flex-1 bg-transparent text-neutral-400 border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5 hover:bg-neutral-800 hover:text-primary-500";
+                    "flex-1 bg-primary-500 text-white shadow-sm border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5" :
+                    "flex-1 bg-transparent text-slate-600 border-0 px-3 py-2 rounded-md text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5 hover:bg-slate-100 hover:text-primary-600";
             });
             
             if (tabName === 'tools') {
@@ -362,8 +373,8 @@
         function selectTool(toolName) {
             document.querySelectorAll('[data-tool]').forEach(btn => {
                 btn.className = btn.dataset.tool === toolName ?
-                    "bg-primary-500/20 border-2 border-primary-500 text-primary-500 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:-translate-y-0.5" :
-                    "bg-dark-panel border-2 border-neutral-600 text-neutral-300 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-500/10 hover:text-primary-500 hover:-translate-y-0.5";
+                    "bg-primary-50 border-2 border-primary-500 text-primary-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:-translate-y-0.5" :
+                    "bg-slate-50 border-2 border-slate-200 text-slate-700 p-3 rounded-lg transition-all duration-200 flex flex-col items-center gap-1.5 text-xs font-medium hover:border-primary-500 hover:bg-primary-50 hover:text-primary-700 hover:-translate-y-0.5";
             });
             swwInstance.setTool(toolName);
         }
@@ -388,13 +399,13 @@
         function updateLayersList() {
             const container = document.getElementById('layersContainer');
             if (!container || !swwInstance?.elements) {
-                container.innerHTML = '<div class="text-center py-5 text-neutral-400">No elements in the scene.<br><small>Add elements to see them here.</small></div>';
+                container.innerHTML = '<div class="text-center py-5 text-slate-500">No elements in the scene.<br><small>Add elements to see them here.</small></div>';
                 return;
             }
 
             const elements = swwInstance.elements;
             if (!Array.isArray(elements) || elements.length === 0) {
-                container.innerHTML = '<div class="text-center py-5 text-neutral-400">No elements in the scene.<br><small>Add elements to see them here.</small></div>';
+                container.innerHTML = '<div class="text-center py-5 text-slate-500">No elements in the scene.<br><small>Add elements to see them here.</small></div>';
                 return;
             }
 
@@ -402,21 +413,21 @@
             container.innerHTML = elements.map((element, index) => {
                 if (!element?.id || !element?.type) return '';
                 const isSelected = selectedElements.has?.(element.id);
-                const selectedClass = isSelected ? 'border-primary-500 bg-primary-500/10' : 'border-neutral-600 bg-dark-panel';
+                const selectedClass = isSelected ? 'border-primary-500 bg-primary-50' : 'border-slate-200 bg-slate-50';
                 
                 return `
-                    <div class="transition-all duration-200 flex justify-between items-center p-3 mb-2 rounded-md border cursor-pointer ${selectedClass} hover:border-primary-500 hover:bg-primary-500/10" 
+                    <div class="transition-all duration-200 flex justify-between items-center p-3 mb-2 rounded-md border cursor-pointer ${selectedClass} hover:border-primary-500 hover:bg-primary-50" 
                          onclick="selectElement('${element.id}')">
                         <div class="flex items-center gap-2">
-                            <i class="fas fa-${getElementIcon(element.type)} text-sm ${isSelected ? 'text-primary-500' : 'text-neutral-300'}"></i>
-                            <span class="text-sm font-medium ${isSelected ? 'text-primary-500' : 'text-neutral-300'}">${element.type} ${index + 1}</span>
+                            <i class="fas fa-${getElementIcon(element.type)} text-sm ${isSelected ? 'text-primary-600' : 'text-slate-600'}"></i>
+                            <span class="text-sm font-medium ${isSelected ? 'text-primary-700' : 'text-slate-700'}">${element.type} ${index + 1}</span>
                         </div>
                         <div class="flex gap-1">
-                            <button class="bg-transparent border-0 p-1 rounded text-neutral-400 text-xs hover:bg-neutral-800 hover:text-primary-500" 
+                            <button class="bg-transparent border-0 p-1 rounded text-slate-500 text-xs hover:bg-slate-100 hover:text-primary-600" 
                                     onclick="event.stopPropagation(); toggleElementVisibility('${element.id}')" title="Toggle Visibility">
                                 <i class="fas fa-${element.hidden ? 'eye-slash' : 'eye'}"></i>
                             </button>
-                            <button class="bg-transparent border-0 p-1 rounded text-neutral-400 text-xs hover:bg-neutral-800 hover:text-red-400" 
+                            <button class="bg-transparent border-0 p-1 rounded text-slate-500 text-xs hover:bg-slate-100 hover:text-red-500" 
                                     onclick="event.stopPropagation(); deleteElement('${element.id}')" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
