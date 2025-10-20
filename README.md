@@ -235,6 +235,13 @@ const options = {
     gridSize: 20,                 // Grid cell size in pixels (default: 20)
     showGrid: true,               // Show/hide grid on initialization (default: true)
     
+    // Theme Settings
+    panelMode: "dark",            // Panel UI theme mode: "dark" or "light" (default: "dark")
+    panelBackgroundColor: null,   // Custom panel background (overrides panelMode defaults)
+    panelTextColor: null,         // Custom panel text color (overrides panelMode defaults)
+    accentColor: null,            // Custom accent color (overrides panelMode defaults)
+    secondaryAccentColor: null,   // Custom secondary accent (overrides panelMode defaults)
+    
     // Interaction Settings
     readOnly: false,              // Enable read-only mode (locks editing, auto-enters preview, disables ESC)
     
@@ -249,6 +256,49 @@ const swwInstance = sww.init(container, options);
 ```
 
 ### Configuration Details
+
+#### Panel Mode & Theme Customization
+The `panelMode` option provides consistent UI/UX with automatic color schemes:
+
+**Dark Mode (default)**
+```javascript
+{
+    panelMode: "dark",
+    // Automatic defaults:
+    // panelBackgroundColor: "#18181b"
+    // panelTextColor: "#ffffff"
+    // accentColor: "#00FF99"
+    // secondaryAccentColor: "#007370"
+}
+```
+
+**Light Mode**
+```javascript
+{
+    panelMode: "light",
+    // Automatic defaults:
+    // panelBackgroundColor: "#ffffff"
+    // panelTextColor: "#1f2937"
+    // accentColor: "#3b82f6"
+    // secondaryAccentColor: "#2563eb"
+}
+```
+
+**Custom Colors (overrides mode defaults)**
+```javascript
+{
+    panelMode: "light",
+    accentColor: "#ff6b6b",          // Custom accent color
+    secondaryAccentColor: "#ee5a6f"  // Custom secondary accent
+    // panelBackgroundColor and panelTextColor still use light mode defaults
+}
+```
+
+You can also dynamically change the panel mode:
+```javascript
+swwInstance.setPanelMode("light");  // Switch to light mode
+swwInstance.setPanelMode("dark");   // Switch to dark mode
+```
 
 #### Read-Only Mode
 When `readOnly: true` is set:
@@ -578,6 +628,23 @@ Toggle grid visibility and snap-to-grid functionality together.
 ```javascript
 const isGridVisible = instance.toggleGrid();
 console.log('Grid is now:', isGridVisible ? 'visible' : 'hidden');
+```
+
+#### `setPanelMode(mode)`
+
+Set the panel UI theme mode to light or dark with automatic color adjustments.
+
+**Parameters:**
+- `mode` (string) - Theme mode: `"light"` or `"dark"`
+
+**Returns:** string - Current panel mode after update
+
+```javascript
+// Switch to light mode
+instance.setPanelMode("light");
+
+// Switch to dark mode
+instance.setPanelMode("dark");
 ```
 
 ### Layer Management Methods

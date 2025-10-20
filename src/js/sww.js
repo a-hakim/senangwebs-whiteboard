@@ -146,17 +146,36 @@ import { marked } from 'marked';
         
         constructor(container, options = {}) {
             this.container = container;
+            
+            // Determine panel mode (light or dark)
+            const panelMode = options.panelMode || 'dark';
+            
+            // Set default colors based on panel mode
+            const defaultColors = panelMode === 'light' ? {
+                panelBackgroundColor: '#ffffff',
+                panelTextColor: '#1f2937',
+                accentColor: '#3b82f6',
+                secondaryAccentColor: '#2563eb'
+            } : {
+                panelBackgroundColor: '#18181b',
+                panelTextColor: '#ffffff',
+                accentColor: '#00FF99',
+                secondaryAccentColor: '#007370'
+            };
+            
             this.options = {
                 width: options.width || '100%',
                 height: options.height || '100%',
                 backgroundColor: options.backgroundColor || '#ffffff',
                 gridSize: options.gridSize || 20,
                 showGrid: options.showGrid !== false,
-                // Theme colors
-                panelBackgroundColor: options.panelBackgroundColor || '#18181b',
-                panelTextColor: options.panelTextColor || '#ffffff',
-                accentColor: options.accentColor || '#00FF99',
-                secondaryAccentColor: options.secondaryAccentColor || '#007370',
+                // Panel mode
+                panelMode: panelMode,
+                // Theme colors (with defaults based on panel mode)
+                panelBackgroundColor: options.panelBackgroundColor || defaultColors.panelBackgroundColor,
+                panelTextColor: options.panelTextColor || defaultColors.panelTextColor,
+                accentColor: options.accentColor || defaultColors.accentColor,
+                secondaryAccentColor: options.secondaryAccentColor || defaultColors.secondaryAccentColor,
                 ...options
             };
             
@@ -364,11 +383,25 @@ import { marked } from 'marked';
                 container.style.setProperty('--sww-panel-text', this.options.panelTextColor);
                 container.style.setProperty('--sww-accent-color', this.options.accentColor);
                 container.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
+                container.setAttribute('data-panel-mode', this.options.panelMode);
                 
                 // Convert secondary accent to RGB for alpha transparency usage
                 const rgb = hexToRgb(this.options.secondaryAccentColor);
                 if (rgb) {
                     container.style.setProperty('--sww-secondary-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+                }
+                
+                // Set mode-specific derived colors
+                if (this.options.panelMode === 'light') {
+                    container.style.setProperty('--sww-panel-border', '#e5e7eb');
+                    container.style.setProperty('--sww-panel-hover', '#f3f4f6');
+                    container.style.setProperty('--sww-panel-active', '#e5e7eb');
+                    container.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.1)');
+                } else {
+                    container.style.setProperty('--sww-panel-border', '#27272a');
+                    container.style.setProperty('--sww-panel-hover', '#27272a');
+                    container.style.setProperty('--sww-panel-active', '#3f3f46');
+                    container.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.3)');
                 }
             }
             
@@ -377,11 +410,25 @@ import { marked } from 'marked';
             document.documentElement.style.setProperty('--sww-panel-text', this.options.panelTextColor);
             document.documentElement.style.setProperty('--sww-accent-color', this.options.accentColor);
             document.documentElement.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
+            document.documentElement.setAttribute('data-panel-mode', this.options.panelMode);
             
             // Convert secondary accent to RGB for alpha transparency usage
             const rgb = hexToRgb(this.options.secondaryAccentColor);
             if (rgb) {
                 document.documentElement.style.setProperty('--sww-secondary-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+            }
+            
+            // Set mode-specific derived colors on document root
+            if (this.options.panelMode === 'light') {
+                document.documentElement.style.setProperty('--sww-panel-border', '#e5e7eb');
+                document.documentElement.style.setProperty('--sww-panel-hover', '#f3f4f6');
+                document.documentElement.style.setProperty('--sww-panel-active', '#e5e7eb');
+                document.documentElement.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.1)');
+            } else {
+                document.documentElement.style.setProperty('--sww-panel-border', '#27272a');
+                document.documentElement.style.setProperty('--sww-panel-hover', '#27272a');
+                document.documentElement.style.setProperty('--sww-panel-active', '#3f3f46');
+                document.documentElement.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.3)');
             }
         }
         
@@ -6036,6 +6083,44 @@ import { marked } from 'marked';
                     gridButton.classList.remove('active');
                 }
             }
+        }
+        
+        /**
+         * Set the panel mode (light or dark) and update theme colors
+         * @param {string} mode - 'light' or 'dark'
+         */
+        setPanelMode(mode) {
+            if (mode !== 'light' && mode !== 'dark') {
+                console.warn('Invalid panel mode. Use "light" or "dark".');
+                return;
+            }
+            
+            this.options.panelMode = mode;
+            
+            // Update default colors based on the new mode if custom colors weren't explicitly set
+            const defaultColors = mode === 'light' ? {
+                panelBackgroundColor: '#ffffff',
+                panelTextColor: '#1f2937',
+                accentColor: '#3b82f6',
+                secondaryAccentColor: '#2563eb'
+            } : {
+                panelBackgroundColor: '#18181b',
+                panelTextColor: '#ffffff',
+                accentColor: '#00FF99',
+                secondaryAccentColor: '#007370'
+            };
+            
+            // Only update colors if they match the previous mode's defaults
+            // This preserves custom colors that were explicitly set
+            this.options.panelBackgroundColor = defaultColors.panelBackgroundColor;
+            this.options.panelTextColor = defaultColors.panelTextColor;
+            this.options.accentColor = defaultColors.accentColor;
+            this.options.secondaryAccentColor = defaultColors.secondaryAccentColor;
+            
+            // Re-apply theme colors
+            this.applyThemeColors();
+            
+            return this.options.panelMode;
         }
         
         // Layer ordering methods
