@@ -107,8 +107,9 @@ const SWW = {
     version: '1.0.1'
 };
 
-// Import legacy implementation (still needed for SVG rendering and remaining features)
-import './sww-legacy.js';
+// REMOVED: Legacy import no longer needed!
+// All functionality now provided by modular mixins
+// import './sww-legacy.js';
 
 // Expose to global scope for browser usage
 if (typeof window !== 'undefined') {
