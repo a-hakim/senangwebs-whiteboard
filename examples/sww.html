@@ -176,7 +176,6 @@
     <script>
         // Global variables
         let swwInstance;
-        let swwControlPanel;
 
         /**
          * Initialize the application when DOM is ready
@@ -192,14 +191,9 @@
                 readOnly: false, // default false
             });
 
-            // Initialize control panel
-            swwControlPanel = new SWWControlPanel(swwInstance);
-            
-            // Make control panel globally accessible
-            window.swwControlPanel = swwControlPanel;
-            
-            // Trigger initial layer update
-            swwControlPanel.updateLayers();
+            // NOTE: SWWControlPanel is no longer needed in the modular architecture
+            // All control panel functionality is now built into the instance
+            // The layers panel updates automatically when elements change
             
             // Setup menu navigation
             setupMenuNavigation();
@@ -231,10 +225,7 @@
                     if (targetSection) {
                         targetSection.style.display = 'block';
                         
-                        // If switching to layers, update the layer list
-                        if (targetMenu === 'layers' && window.swwControlPanel) {
-                            window.swwControlPanel.updateLayers();
-                        }
+                        // Layers panel updates automatically when elements change
                     }
                 });
             });
