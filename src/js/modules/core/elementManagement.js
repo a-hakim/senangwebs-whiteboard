@@ -15,6 +15,11 @@ export const ElementManagementMixin = {
         const bounds = this.getElementBounds(element);
         this.spatialIndex.insert(element, bounds);
         
+        // Add SVG element to DOM (critical for visibility!)
+        if (element.svgElement) {
+            this.addSVGElementToDOM(element);
+        }
+        
         // Update viewport if needed
         if (this.elements.length > 100) {
             this.debouncedViewportUpdate();
