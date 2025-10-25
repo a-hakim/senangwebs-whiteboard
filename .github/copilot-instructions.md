@@ -4,7 +4,14 @@
 
 **SenangWebs Whiteboard** is a client-side JavaScript drawing library for creating interactive digital whiteboards. The library is distributed as a single UMD bundle (`dist/sww.js` + `dist/sww.css`) with all dependencies pre-bundled (FontAwesome, Marked.js).
 
-**Core Architecture**: Single-file, monolithic design with ~7,100 lines in `src/js/sww.js` containing all functionality. No module splitting or separate component files.
+**Core Architecture**: 
+- **Distribution**: Single UMD bundle (~150KB) for easy integration
+- **Development**: Hybrid modular + legacy architecture during migration
+- **Legacy**: Original monolithic implementation preserved as `sww-legacy.js`
+- **Build**: Webpack bundles all modules into single distributable file
+
+**✅ Phase 1 Complete**: Modular infrastructure established and building successfully.
+**⏳ Migration Status**: Currently using hybrid approach - new entry point imports legacy implementation while features are gradually extracted into modules. See `MODULARIZATION_PLAN.md` for complete roadmap.
 
 ## Critical Developer Workflows
 
@@ -37,8 +44,31 @@ npm run dev      # Development mode with file watching
 
 ## Architecture Deep-Dive
 
-### Monolithic Class Structure
-The entire library is contained in `src/js/sww.js` with this hierarchy:
+### Modular Structure (New)
+
+The library is now organized into logical modules under `src/js/modules/`:
+
+```
+modules/
+├── utils/          # Utilities and helpers
+│   ├── PerformanceUtils.js
+│   ├── SpatialIndex.js
+│   ├── helpers.js
+│   └── constants.js
+├── core/           # Core instance and initialization
+├── tools/          # Drawing tools
+├── elements/       # Element management
+├── selection/      # Selection system
+├── ui/             # UI components
+├── canvas/         # Canvas and viewport
+│   └── Background.js
+├── history/        # Undo/redo
+└── api/            # Public API
+```
+
+### Class Hierarchy (Target)
+
+After full modularization, the library will have this structure:
 
 ```javascript
 // Global SWW object (factory pattern)
@@ -83,11 +113,29 @@ class SpatialIndex {
 }
 ```
 
-### No Module System
-**Critical**: All code is in a single IIFE that wraps everything. No ES6 imports/exports within the source file itself (only imports FontAwesome/Marked at top). When adding features:
-- Add functions/classes inside the IIFE in `src/js/sww.js`
-- Expose via `global.sww` or `global.SWWControlPanel` at bottom of file
-- Do NOT attempt to create separate module files
+### Module System
+
+**Development**: Uses ES6 modules with imports/exports for better organization:
+```javascript
+// Example module structure
+import { PerformanceUtils } from './modules/utils/PerformanceUtils.js';
+import { SpatialIndex } from './modules/utils/SpatialIndex.js';
+
+export class SWWInstance {
+    // Class implementation
+}
+```
+
+**Distribution**: Webpack bundles all modules into a single UMD file that exposes:
+- `window.sww` - Main factory object
+- `window.SWW` - Alternative reference
+- `window.SWWControlPanel` - Control panel class
+
+When adding features:
+- Create new module file in appropriate `modules/` subdirectory
+- Import into main entry point or parent module
+- Use mixins pattern for extending SWWInstance functionality
+- Webpack automatically bundles everything
 
 ### State Management Pattern
 Elements are plain JavaScript objects with SVG references:
@@ -256,12 +304,61 @@ Check `this.isPreviewMode` or `this.options.readOnly` before allowing modificati
 
 ## Common Patterns When Extending
 
-### Adding a New Drawing Tool
-1. Add tool name to `setTool()` switch statement (~line 5801)
-2. Add mouse event handlers in `setupEventListeners()` (~line 3200)
-3. Create element in `handleMouseDown()` based on `this.currentTool`
-4. Add SVG creation logic (use existing tools as templates)
-5. Add tool button to `examples/sww.html` with `onclick="swwInstance.setTool('newtool')"`
+### Adding a New Drawing Tool (Modular Approach)
+
+1. Create tool module in `src/js/modules/tools/NewTool.js`:
+   ```javascript
+   export const NewToolMixin = {
+       handleNewToolStart(point) {
+           // Tool initialization logic
+       },
+       
+       handleNewToolMove(point) {
+           // Drawing logic
+       },
+       
+       handleNewToolEnd(point) {
+           // Finalization logic
+       }
+   };
+   ```
+
+2. Import and apply to SWWInstance:
+   ```javascript
+   import { NewToolMixin } from './modules/tools/NewTool.js';
+   Object.assign(SWWInstance.prototype, NewToolMixin);
+   ```
+
+3. Register in tool switch (in core or tool manager):
+   ```javascript
+   setTool(toolName) {
+       if (toolName === 'newtool') {
+           this.currentTool = 'newtool';
+       }
+   }
+   ```
+
+4. Add UI button to `examples/sww.html`
+
+### Adding a New Feature Module
+
+1. Create module file with mixin pattern:
+   ```javascript
+   // src/js/modules/features/MyFeature.js
+   export const MyFeatureMixin = {
+       myFeatureMethod() {
+           // Implementation
+       }
+   };
+   ```
+
+2. Import in main entry or parent module:
+   ```javascript
+   import { MyFeatureMixin } from './modules/features/MyFeature.js';
+   Object.assign(SWWInstance.prototype, MyFeatureMixin);
+   ```
+
+3. Feature is automatically bundled by webpack
 
 ### Adding Element Properties
 1. Add property to `toolSettings` object initialization
@@ -283,12 +380,25 @@ SVG references are **not serializable** - they're recreated on `loadScene()`.
 
 ## Key Files Reference
 
-- **src/js/sww.js** (7,109 lines) - Entire library logic
+**Development Files**:
+- **src/js/sww.js** or **src/js/sww-legacy.js** - Main source (7,109 lines, being modularized)
+- **src/js/modules/** - Modular components directory
+  - **utils/** - Utility classes and helpers
+  - **core/** - Core instance logic
+  - **tools/** - Drawing tools
+  - **ui/** - UI components
+  - **canvas/** - Canvas and viewport
 - **src/css/sww.css** (1,715 lines) - All styles with FontAwesome import
+
+**Build & Config**:
 - **webpack.config.js** - Build configuration (UMD export, asset handling)
+- **package.json** - Dependencies and build scripts
+
+**Examples & Docs**:
 - **examples/sww.html** - Main demo with full control panel
 - **examples/sww-tailwind.html** - Alternative styling demo
-- **package.json** - Dependencies and build scripts
+- **MODULARIZATION_PLAN.md** - Refactoring roadmap and strategy
+- **GETTING_STARTED_MODULAR.md** - Quick start guide for modular development
 
 ## Testing Strategy
 

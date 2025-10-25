@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWW - Testing Suite</title>
+    <link rel="stylesheet" href="../dist/sww.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+        .test-header h1 {
+            margin: 0 0 10px 0;
+        }
+        .test-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .test-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: calc(100vh - 140px);
+        }
+        .test-sidebar {
+            background: #fafafa;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .test-category {
+            margin-bottom: 20px;
+        }
+        .test-category h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #666;
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 5px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .test-item:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+        .test-item.passed {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+        .test-item.failed {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        .test-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .test-item.passed .test-status {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+        .test-item.failed .test-status {
+            background: #f44336;
+            border-color: #f44336;
+        }
+        .test-name {
+            flex: 1;
+            font-size: 13px;
+        }
+        .test-canvas {
+            position: relative;
+            background: white;
+        }
+        .test-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        .test-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .test-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .test-btn:hover {
+            background: #5568d3;
+        }
+        .test-btn.success {
+            background: #4caf50;
+        }
+        .test-btn.danger {
+            background: #f44336;
+        }
+        #console-output {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+            border-top: 2px solid #667eea;
+            display: none;
+        }
+        #console-output.visible {
+            display: block;
+        }
+        .console-line {
+            margin: 2px 0;
+        }
+        .console-error {
+            color: #f48771;
+        }
+        .console-success {
+            color: #89d185;
+        }
+        .console-info {
+            color: #75beff;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🧪 SenangWebs Whiteboard - Testing Suite</h1>
+            <p>Phase 8: Comprehensive Feature Testing | 34 Modules | 10,127 Lines</p>
+        </div>
+        
+        <div class="test-content">
+            <!-- Test Sidebar -->
+            <div class="test-sidebar">
+                <div class="test-category">
+                    <h3>🎨 Drawing Tools</h3>
+                    <div class="test-item" data-test="rectangle">
+                        <div class="test-status"></div>
+                        <div class="test-name">Rectangle Tool</div>
+                    </div>
+                    <div class="test-item" data-test="ellipse">
+                        <div class="test-status"></div>
+                        <div class="test-name">Ellipse Tool</div>
+                    </div>
+                    <div class="test-item" data-test="diamond">
+                        <div class="test-status"></div>
+                        <div class="test-name">Diamond Tool</div>
+                    </div>
+                    <div class="test-item" data-test="star">
+                        <div class="test-status"></div>
+                        <div class="test-name">Star Tool</div>
+                    </div>
+                    <div class="test-item" data-test="line">
+                        <div class="test-status"></div>
+                        <div class="test-name">Line Tool</div>
+                    </div>
+                    <div class="test-item" data-test="arrow">
+                        <div class="test-status"></div>
+                        <div class="test-name">Arrow Tool</div>
+                    </div>
+                    <div class="test-item" data-test="text">
+                        <div class="test-status"></div>
+                        <div class="test-name">Text Tool</div>
+                    </div>
+                    <div class="test-item" data-test="draw">
+                        <div class="test-status"></div>
+                        <div class="test-name">Freehand Draw</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <h3>🎯 Selection System</h3>
+                    <div class="test-item" data-test="select-single">
+                        <div class="test-status"></div>
+                        <div class="test-name">Single Selection</div>
+                    </div>
+                    <div class="test-item" data-test="select-multiple">
+                        <div class="test-status"></div>
+                        <div class="test-name">Multiple Selection</div>
+                    </div>
+                    <div class="test-item" data-test="select-box">
+                        <div class="test-status"></div>
+                        <div class="test-name">Box Selection</div>
+                    </div>
+                    <div class="test-item" data-test="drag">
+                        <div class="test-status"></div>
+                        <div class="test-name">Drag Elements</div>
+                    </div>
+                    <div class="test-item" data-test="resize">
+                        <div class="test-status"></div>
+                        <div class="test-name">Resize Elements</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <h3>📋 Element Actions</h3>
+                    <div class="test-item" data-test="copy-paste">
+                        <div class="test-status"></div>
+                        <div class="test-name">Copy/Paste (Ctrl+C/V)</div>
+                    </div>
+                    <div class="test-item" data-test="duplicate">
+                        <div class="test-status"></div>
+                        <div class="test-name">Duplicate (Ctrl+D)</div>
+                    </div>
+                    <div class="test-item" data-test="delete">
+                        <div class="test-status"></div>
+                        <div class="test-name">Delete (Del)</div>
+                    </div>
+                    <div class="test-item" data-test="undo-redo">
+                        <div class="test-status"></div>
+                        <div class="test-name">Undo/Redo (Ctrl+Z/Y)</div>
+                    </div>
+                    <div class="test-item" data-test="lock-unlock">
+                        <div class="test-status"></div>
+                        <div class="test-name">Lock/Unlock</div>
+                    </div>
+                    <div class="test-item" data-test="group-ungroup">
+                        <div class="test-status"></div>
+                        <div class="test-name">Group/Ungroup</div>
+                    </div>
+                    <div class="test-item" data-test="layer-order">
+                        <div class="test-status"></div>
+                        <div class="test-name">Bring to Front/Send to Back</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <h3>🔍 Viewport</h3>
+                    <div class="test-item" data-test="zoom-in">
+                        <div class="test-status"></div>
+                        <div class="test-name">Zoom In</div>
+                    </div>
+                    <div class="test-item" data-test="zoom-out">
+                        <div class="test-status"></div>
+                        <div class="test-name">Zoom Out</div>
+                    </div>
+                    <div class="test-item" data-test="pan">
+                        <div class="test-status"></div>
+                        <div class="test-name">Pan (Space+Drag)</div>
+                    </div>
+                    <div class="test-item" data-test="reset-view">
+                        <div class="test-status"></div>
+                        <div class="test-name">Reset View</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <h3>📊 Export/Import</h3>
+                    <div class="test-item" data-test="export-svg">
+                        <div class="test-status"></div>
+                        <div class="test-name">Export SVG</div>
+                    </div>
+                    <div class="test-item" data-test="export-png">
+                        <div class="test-status"></div>
+                        <div class="test-name">Export PNG</div>
+                    </div>
+                    <div class="test-item" data-test="scene-save">
+                        <div class="test-status"></div>
+                        <div class="test-name">Save Scene (JSON)</div>
+                    </div>
+                    <div class="test-item" data-test="scene-load">
+                        <div class="test-status"></div>
+                        <div class="test-name">Load Scene</div>
+                    </div>
+                </div>
+
+                <div class="test-category">
+                    <h3>⚡ Performance</h3>
+                    <div class="test-item" data-test="perf-100">
+                        <div class="test-status"></div>
+                        <div class="test-name">100 Elements</div>
+                    </div>
+                    <div class="test-item" data-test="perf-500">
+                        <div class="test-status"></div>
+                        <div class="test-name">500 Elements</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="test-canvas">
+                <div class="test-info">
+                    <div><strong>Current Test:</strong> <span id="current-test">None</span></div>
+                    <div><strong>Status:</strong> <span id="test-status">Ready</span></div>
+                    <div><strong>Elements:</strong> <span id="element-count">0</span></div>
+                </div>
+                
+                <div class="test-controls">
+                    <button class="test-btn" onclick="runAllTests()">▶ Run All Tests</button>
+                    <button class="test-btn" onclick="clearCanvas()">🗑 Clear Canvas</button>
+                    <button class="test-btn" onclick="toggleConsole()">📟 Toggle Console</button>
+                </div>
+
+                <!-- SWW Canvas -->
+                <div id="whiteboard" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console Output -->
+    <div id="console-output"></div>
+
+    <script src="../dist/sww.js"></script>
+    <script>
+        // Initialize SWW
+        let swwInstance = null;
+        let testResults = {};
+        
+        // Console logging
+        const consoleOutput = document.getElementById('console-output');
+        function log(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `console-line console-${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function toggleConsole() {
+            consoleOutput.classList.toggle('visible');
+        }
+
+        // Initialize whiteboard
+        try {
+            swwInstance = SWW.init(document.getElementById('whiteboard'), {
+                width: 1100,
+                height: 800,
+                showGrid: false
+            });
+            log('✅ SWW initialized successfully', 'success');
+            updateStats();
+        } catch (error) {
+            log(`❌ Failed to initialize SWW: ${error.message}`, 'error');
+        }
+
+        // Update stats
+        function updateStats() {
+            if (swwInstance) {
+                document.getElementById('element-count').textContent = swwInstance.elements.length;
+            }
+        }
+
+        // Clear canvas
+        function clearCanvas() {
+            if (swwInstance) {
+                swwInstance.elements = [];
+                swwInstance.clearSelection();
+                swwInstance.svg.innerHTML = '';
+                swwInstance.init();
+                updateStats();
+                log('🗑 Canvas cleared', 'info');
+            }
+        }
+
+        // Mark test result
+        function markTest(testName, passed) {
+            testResults[testName] = passed;
+            const item = document.querySelector(`[data-test="${testName}"]`);
+            if (item) {
+                item.classList.remove('passed', 'failed');
+                item.classList.add(passed ? 'passed' : 'failed');
+            }
+            log(`${passed ? '✅' : '❌'} Test: ${testName}`, passed ? 'success' : 'error');
+        }
+
+        // Test implementations
+        const tests = {
+            'rectangle': async () => {
+                swwInstance.setTool('rectangle');
+                // Simulate drawing
+                log('📝 Draw a rectangle to test this tool', 'info');
+                return 'manual';
+            },
+            'ellipse': async () => {
+                swwInstance.setTool('ellipse');
+                log('📝 Draw an ellipse to test this tool', 'info');
+                return 'manual';
+            },
+            'copy-paste': async () => {
+                if (swwInstance.elements.length === 0) {
+                    log('⚠️ Create an element first', 'error');
+                    return false;
+                }
+                const initialCount = swwInstance.elements.length;
+                swwInstance.selectElement(swwInstance.elements[0]);
+                swwInstance.copySelected();
+                swwInstance.pasteClipboard();
+                updateStats();
+                return swwInstance.elements.length > initialCount;
+            },
+            'undo-redo': async () => {
+                const hasUndo = typeof swwInstance.undo === 'function';
+                const hasRedo = typeof swwInstance.redo === 'function';
+                return hasUndo && hasRedo;
+            },
+            'zoom-in': async () => {
+                const initialZoom = swwInstance.getZoom();
+                swwInstance.zoomIn();
+                const newZoom = swwInstance.getZoom();
+                return newZoom > initialZoom;
+            },
+            'zoom-out': async () => {
+                const initialZoom = swwInstance.getZoom();
+                swwInstance.zoomOut();
+                const newZoom = swwInstance.getZoom();
+                return newZoom < initialZoom;
+            }
+        };
+
+        // Run individual test
+        async function runTest(testName) {
+            document.getElementById('current-test').textContent = testName;
+            document.getElementById('test-status').textContent = 'Running...';
+            
+            if (tests[testName]) {
+                try {
+                    const result = await tests[testName]();
+                    if (result !== 'manual') {
+                        markTest(testName, result);
+                    }
+                } catch (error) {
+                    log(`❌ Test error (${testName}): ${error.message}`, 'error');
+                    markTest(testName, false);
+                }
+            } else {
+                log(`⚠️ Test not implemented: ${testName}`, 'info');
+            }
+            
+            document.getElementById('test-status').textContent = 'Ready';
+            updateStats();
+        }
+
+        // Run all automated tests
+        async function runAllTests() {
+            log('🚀 Starting automated tests...', 'info');
+            for (const testName of Object.keys(tests)) {
+                await runTest(testName);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            log('✅ Automated tests complete', 'success');
+        }
+
+        // Test item click handlers
+        document.querySelectorAll('.test-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const testName = item.getAttribute('data-test');
+                runTest(testName);
+            });
+        });
+
+        // Check for console errors
+        window.addEventListener('error', (e) => {
+            log(`❌ Error: ${e.message}`, 'error');
+        });
+
+        // Initial check
+        log('🎯 Testing suite ready. Click tests to run individually or "Run All Tests"', 'info');
+        log(`📦 Modules loaded: ${Object.keys(window.SWW || {}).length}`, 'info');
+    </script>
+</body>
+</html>

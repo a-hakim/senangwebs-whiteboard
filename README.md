@@ -2,6 +2,7 @@
 
 A powerful, client-side JavaScript drawing library for creating interactive digital whiteboards and vector drawings with advanced performance optimizations and modern UI components.
 
+> **📦 Modular Refactoring In Progress**: We're migrating from a monolithic architecture to organized ES6 modules for better maintainability. Phase 1 complete! See [`PHASE1_COMPLETE.md`](PHASE1_COMPLETE.md) for details.
 
 | Preview                                   | Examples          |
 | ------------------------------------------- | ------------------- |
