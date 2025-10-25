@@ -162,27 +162,120 @@ export const EventHandlersMixin = {
     },
 
     /**
-     * Handle pointer down event stub
-     * (Full implementation in legacy)
+     * Handle pointer down event
+     * Routes to appropriate tool handler based on currentTool
      */
     handlePointerDown(e) {
-        // Stub - actual implementation still in legacy
+        e.preventDefault();
+        
+        // Hide context menu on any click
+        this.hideContextMenu();
+        
+        const point = this.getPointerPosition(e);
+        this.lastPointerPosition = point;
+        
+        if (e.button === 1 || (e.button === 0 && e.altKey) || this.isPreviewMode) {
+            // Middle mouse, Alt+click, or preview mode - enable panning for better viewing
+            this.isPanning = true;
+            this.setCursor('grabbing');
+            return;
+        }
+        
+        // Disable tool interactions in preview mode
+        if (this.isPreviewMode) {
+            return;
+        }
+        
+        switch (this.currentTool) {
+            case 'select':
+                this.handleSelectStart(point, e);
+                break;
+            case 'rectangle':
+            case 'ellipse':
+            case 'diamond':
+            case 'parallelogram':
+            case 'star':
+                this.handleShapeStart(point);
+                break;
+            case 'line':
+            case 'arrow':
+                this.handleLineStart(point);
+                break;
+            case 'draw':
+                this.handleDrawStart(point);
+                break;
+            case 'text':
+                this.handleTextStart(point);
+                break;
+            case 'website':
+                this.handleWebsiteStart(point);
+                break;
+            case 'image':
+                this.handleImageStart(point);
+                break;
+            case 'markdown':
+                this.handleMarkdownStart(point);
+                break;
+        }
     },
 
     /**
-     * Handle pointer move event stub
-     * (Full implementation in legacy)
+     * Handle pointer move event
+     * Manages panning, selection box, resizing, rotating, dragging
      */
     handlePointerMove(e) {
-        // Stub - actual implementation still in legacy
+        e.preventDefault();
+        const point = this.getPointerPosition(e);
+        
+        if (this.isPanning) {
+            const dx = point.x - this.lastPointerPosition.x;
+            const dy = point.y - this.lastPointerPosition.y;
+            this.viewBox.x -= dx;
+            this.viewBox.y -= dy;
+            this.updateViewBox();
+        } else if (this.isCreatingSelectionBox) {
+            this.updateSelectionBox(point);
+        } else if (this.isResizing) {
+            this.updateResize(point);
+        } else if (this.isRotating) {
+            this.updateRotation(point);
+        } else if (this.isDraggingElement) {
+            this.updateElementDrag(point);
+        } else if (this.isDrawing && this.currentElement) {
+            this.updateCurrentElement(point);
+        } else {
+            // Update cursor based on what's under the pointer for better UI/UX
+            this.updateHoverCursor(point);
+        }
+        
+        this.lastPointerPosition = point;
     },
 
     /**
-     * Handle pointer up event stub
-     * (Full implementation in legacy)
+     * Handle pointer up event
+     * Completes current operation (selection, resize, drag, drawing)
      */
     handlePointerUp(e) {
-        // Stub - actual implementation still in legacy
+        e.preventDefault();
+        const point = this.getPointerPosition(e);
+        
+        if (this.isPanning) {
+            this.isPanning = false;
+            this.svg.style.cursor = 'crosshair';
+            return;
+        }
+        
+        if (this.isCreatingSelectionBox) {
+            this.finishSelectionBox(point);
+        } else if (this.isResizing) {
+            this.finishResize();
+        } else if (this.isRotating) {
+            this.finishRotation();
+        } else if (this.isDraggingElement) {
+            this.finishElementDrag();
+        } else if (this.isDrawing && this.currentElement) {
+            this.finishCurrentElement();
+        }
     },
 
     /**
