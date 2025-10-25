@@ -147,5 +147,74 @@ export const ElementManagementMixin = {
             element.svgElement.setAttribute('fill', element.fillColor);
             element.svgElement.setAttribute('opacity', element.opacity);
         }
+    },
+
+    /**
+     * Create a new element object with default properties
+     * @param {String} type - Element type (rectangle, ellipse, etc.)
+     * @param {Object} point - Starting point {x, y}
+     * @returns {Object} New element object
+     */
+    createElement(type, point) {
+        // Set default stroke width based on element type
+        let defaultStrokeWidth;
+        let defaultFillColor;
+        let defaultFillStyle;
+        
+        if (type === 'text') {
+            defaultStrokeWidth = 0;  // Text elements have 0px stroke width
+            defaultFillColor = this.toolSettings.fillColor;
+            defaultFillStyle = this.toolSettings.fillStyle;
+        } else if (['rectangle', 'ellipse', 'diamond', 'parallelogram', 'star', 'arrow'].includes(type)) {
+            defaultStrokeWidth = 2;  // Shape elements have 2px stroke width
+            defaultFillColor = '#ffffff';  // White fill for shapes
+            defaultFillStyle = 'solid';  // Solid fill for shapes
+        } else if (['website', 'image', 'markdown'].includes(type)) {
+            defaultStrokeWidth = 2;  // Website, image, and markdown elements have 2px default stroke width
+            defaultFillColor = this.toolSettings.fillColor;
+            defaultFillStyle = this.toolSettings.fillStyle;
+        } else {
+            defaultStrokeWidth = this.toolSettings.strokeWidth;  // Use tool settings for other elements
+            defaultFillColor = this.toolSettings.fillColor;
+            defaultFillStyle = this.toolSettings.fillStyle;
+        }
+        
+        const element = {
+            id: this.generateId(),
+            type: type,
+            x: point.x,
+            y: point.y,
+            width: type === 'website' || type === 'image' || type === 'markdown' ? 300 : 0,
+            height: type === 'website' || type === 'image' || type === 'markdown' ? 200 : 0,
+            strokeColor: this.toolSettings.strokeColor,
+            strokeWidth: defaultStrokeWidth,
+            fillColor: defaultFillColor,
+            fillStyle: defaultFillStyle,
+            gradientType: this.toolSettings.gradientType,
+            gradientStops: [...this.toolSettings.gradientStops],
+            opacity: this.toolSettings.opacity,
+            fontSize: this.toolSettings.fontSize,
+            fontFamily: this.toolSettings.fontFamily,
+            textAlign: this.toolSettings.textAlign,
+            textColor: this.toolSettings.textColor,
+            rotation: 0,
+            locked: false,
+            groupId: null
+        };
+        
+        // Add specific properties for new element types
+        if (type === 'website') {
+            element.url = '';
+            element.text = 'Click to set URL';
+        } else if (type === 'image') {
+            element.imageUrl = '';
+            element.text = 'Click to set image';
+        } else if (type === 'markdown') {
+            element.markdown = '# Markdown Document\n\nClick to edit...';
+            element.text = 'Markdown Document';
+        }
+        
+        element.svgElement = this.createSVGElement(element);
+        return element;
     }
 };
