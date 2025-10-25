@@ -2,6 +2,11 @@
 
 SenangWebs Whiteboard (SWW) is a powerful, client-side JavaScript drawing library for creating interactive digital whiteboards and vector drawings. With advanced performance optimizations and modern UI components, you can transform any container into a fully-featured drawing application with minimal setup.
 
+| Preview                                   | Examples          |
+| ------------------------------------------- | ------------------- |
+| ![SenangWebs Preview 1](https://raw.githubusercontent.com/a-hakim/senangwebs-whiteboard/master/sww_preview1.png) | sww.html          |
+| ![SenangWebs Preview 2](https://raw.githubusercontent.com/a-hakim/senangwebs-whiteboard/master/sww_preview2.png) | sww-tailwind.html |
+
 ## Features
 
 - Easy to integrate with existing projects
