@@ -5,155 +5,155 @@
 **SenangWebs Whiteboard** is a client-side JavaScript drawing library for creating interactive digital whiteboards. The library is distributed as a single UMD bundle (`dist/sww.js` + `dist/sww.css`) with all dependencies pre-bundled (FontAwesome, Marked.js).
 
 **Core Architecture**: 
-- **Distribution**: Single UMD bundle (~150KB) for easy integration
-- **Development**: Hybrid modular + legacy architecture during migration
-- **Legacy**: Original monolithic implementation preserved as `sww-legacy.js`
-- **Build**: Webpack bundles all modules into single distributable file
+- **Distribution**: Single UMD bundle (~150KB) for easy integration via CDN or npm
+- **Development**: Fully modular ES6 architecture using mixin pattern
+- **Build**: Webpack 5 bundles all modules into single UMD distributable
+- **State**: Plain JavaScript objects with direct SVG DOM manipulation (no reactive framework)
 
-**✅ Phase 1 Complete**: Modular infrastructure established and building successfully.
-**⏳ Migration Status**: Currently using hybrid approach - new entry point imports legacy implementation while features are gradually extracted into modules. See `MODULARIZATION_PLAN.md` for complete roadmap.
+**✅ Modular Refactoring**: Complete! All functionality extracted into organized modules under `src/js/modules/`
+**Architecture Pattern**: SWWInstance base class + 24 mixins applied via `Object.assign()` in `src/js/sww.js`
 
 ## Critical Developer Workflows
 
 ### Build System (Webpack 5)
-```bash
-npm run build    # Production build (minified bundle)
-npm run dev      # Development mode with file watching
+```powershell
+npm run build    # Production build (minified UMD bundle)
+npm run dev      # Development mode with live file watching
 ```
 
 **Build outputs** (`dist/` folder):
-- `sww.js` (150 KB) - Main library bundle with FontAwesome + Marked.js
+- `sww.js` (150 KB) - Main UMD bundle with all dependencies
 - `sww.css` (135 KB) - Stylesheet with embedded FontAwesome CSS
-- `fonts/` - FontAwesome font files (auto-bundled)
-- `styles.js` - Additional style utilities
+- `fonts/*.woff2` - FontAwesome font files (auto-bundled, 232 KB total)
+- `styles.js` - CSS loader artifacts (can be ignored)
 
-**Key webpack config details** (`webpack.config.js`):
-- UMD library format exports as `SWW` global
-- Entry points: `src/js/sww.js` and `src/css/sww.css`
-- Babel transpilation for ES6+ support
-- Asset handling for fonts and images with custom paths
+**Key webpack config** (`webpack.config.js`):
+- **Entry**: `src/js/sww.js` (ES6 modules) + `src/css/sww.css`
+- **Output**: UMD format exposing `window.SWW` global
+- **Babel**: ES6+ transpilation for browser compatibility
+- **Assets**: Font and image handling with custom output paths
 
 ### No Testing Framework
-**Important**: This project has no test suite. `npm test` will error. All testing must be done manually via the HTML examples in `examples/`.
-
-### Development Workflow
-1. Edit source files in `src/js/sww.js` or `src/css/sww.css`
-2. Run `npm run dev` for auto-rebuild on file changes
-3. Open `examples/sww.html` or `examples/sww-tailwind.html` in browser to test
-4. Check browser console for errors (no server-side logging)
+**Critical**: This project has NO automated tests. `npm test` will error.
+All testing must be manual via browser:
+1. Run `npm run build` or `npm run dev`
+2. Open `examples/sww.html` in browser
+3. Test drawing tools, undo/redo, export/import
+4. Check browser console for errors
 
 ## Architecture Deep-Dive
 
-### Modular Structure (New)
+### Modular Structure (✅ Complete)
 
-The library is now organized into logical modules under `src/js/modules/`:
+All functionality is organized into 24 mixin modules under `src/js/modules/`:
 
 ```
 modules/
-├── utils/          # Utilities and helpers
-│   ├── PerformanceUtils.js
-│   ├── SpatialIndex.js
-│   ├── helpers.js
-│   └── constants.js
-├── core/           # Core instance and initialization
-├── tools/          # Drawing tools
-├── elements/       # Element management
-├── selection/      # Selection system
-├── ui/             # UI components
-├── canvas/         # Canvas and viewport
-│   └── Background.js
-├── history/        # Undo/redo
-└── api/            # Public API
+├── core/               # Core instance and initialization
+│   ├── SWWInstance.js       # Base class with constructor
+│   ├── initialization.js    # init(), UI setup, performance
+│   ├── elementManagement.js # CRUD operations for elements
+│   └── eventHandlers.js     # Mouse/keyboard event routing
+├── tools/              # Drawing tools (7 modules)
+│   ├── ToolManager.js       # Tool switching logic
+│   ├── ShapeToolsMixin.js   # Rectangle, ellipse, diamond, star
+│   ├── LineToolsMixin.js    # Arrow, line drawing
+│   ├── TextTool.js          # Text with font/size controls
+│   ├── DrawTool.js          # Freehand pen with path optimization
+│   ├── EmbedToolsMixin.js   # Website, image, markdown embeds
+│   └── SelectionTool.js     # Selection/manipulation mode
+├── selection/          # Selection system (4 modules)
+│   ├── SelectionManager.js       # Multi-select, select-all logic
+│   ├── SelectionBox.js           # Drag-to-select box
+│   ├── SelectionHandles.js       # Resize/rotate handles
+│   └── ElementManipulation.js    # Drag, resize, rotate operations
+├── ui/                 # UI components (7 modules)
+│   ├── ControlPanel.js      # Theme, preview mode, notifications
+│   ├── PropertiesPanel.js   # Real-time element property editor
+│   ├── LayersPanel.js       # Layer list with visibility/lock
+│   ├── ToolbarMixin.js      # Tool buttons UI
+│   ├── ExportDialog.js      # SVG/PNG export UI
+│   ├── Notifications.js     # Toast notifications
+│   └── ThemeManager.js      # Dark/light theme switching
+├── canvas/             # Canvas and viewport
+│   ├── CanvasMixin.js       # SVG canvas setup
+│   └── Background.js        # (Placeholder, not yet used)
+├── viewport/           # Zoom, pan, fit controls
+│   └── Viewport.js
+├── history/            # Undo/redo system
+│   └── History.js
+├── clipboard/          # Copy/paste operations
+│   └── Clipboard.js
+├── contextmenu/        # Right-click menus
+│   └── ContextMenu.js
+├── actions/            # Element operations
+│   └── ElementActions.js
+├── grid/               # Snap-to-grid system
+│   └── Grid.js
+├── dialogs/            # Modal dialogs
+│   └── Dialogs.js
+├── rendering/          # SVG rendering
+│   └── SVGRenderer.js
+├── utilities/          # Helper methods
+│   └── Utilities.js
+└── utils/              # Performance and constants
+    ├── PerformanceUtils.js  # Throttle, debounce, RAF
+    ├── SpatialIndex.js      # Grid-based hit testing
+    ├── constants.js         # Font families, defaults, theme colors
+    └── helpers.js           # General utility functions
 ```
 
-### Class Hierarchy (Target)
+### Mixin Pattern Architecture
 
-After full modularization, the library will have this structure:
+**Entry point** (`src/js/sww.js`):
+1. Imports `SWWInstance` base class + 24 mixins
+2. Applies mixins via `Object.assign(SWWInstance.prototype, Mixin)`
+3. Exports factory object: `SWW.init(container, options)`
 
+**Example mixin** (`modules/tools/ShapeToolsMixin.js`):
 ```javascript
-// Global SWW object (factory pattern)
-const SWW = {
-    init(container, options) // Returns new SWWInstance
-    getInstance(container)   // Retrieves existing instance
-}
-
-// Main instance class (~6,900 lines)
-class SWWInstance {
-    // State management
-    elements = []                    // All drawn elements
-    selectedElements = Set()         // Currently selected elements
-    historyStack = []                // Undo/redo stack (max 50 entries)
-    spatialIndex = SpatialIndex()   // Performance optimization for hit testing
-    
-    // Critical methods for element management
-    getElementById(id)               // Find element by ID
-    selectElementById(id)           // Select specific element
-    deleteElementById(id)           // Delete specific element
-    toggleElementVisibility(id)     // Show/hide element
-    
-    // Scene management
-    getScene()                      // Export all elements as JSON
-    loadScene(data)                 // Import scene from JSON
-    
-    // Tool system
-    setTool(toolName)               // Switch drawing tools
-}
-
-// Performance utilities
-class PerformanceUtils {
-    static throttle(func, limit)    // Throttle function calls
-    static debounce(func, delay)    // Debounce function calls
-}
-
-// Spatial indexing for efficient element lookup
-class SpatialIndex {
-    constructor(cellSize = 100)     // Grid-based spatial hash
-    insert(element, bounds)         // Add element to grid
-    query(point)                    // Find elements at point
-}
+export const ShapeToolsMixin = {
+    handleShapeStart(point) { /* ... */ },
+    handleShapeMove(point) { /* ... */ },
+    handleShapeEnd() { /* ... */ }
+};
 ```
 
-### Module System
-
-**Development**: Uses ES6 modules with imports/exports for better organization:
+**Applied in main file**:
 ```javascript
-// Example module structure
-import { PerformanceUtils } from './modules/utils/PerformanceUtils.js';
-import { SpatialIndex } from './modules/utils/SpatialIndex.js';
-
-export class SWWInstance {
-    // Class implementation
-}
+import { ShapeToolsMixin } from './modules/tools/ShapeToolsMixin.js';
+Object.assign(SWWInstance.prototype, ShapeToolsMixin);
 ```
 
-**Distribution**: Webpack bundles all modules into a single UMD file that exposes:
-- `window.sww` - Main factory object
-- `window.SWW` - Alternative reference
-- `window.SWWControlPanel` - Control panel class
-
-When adding features:
-- Create new module file in appropriate `modules/` subdirectory
-- Import into main entry point or parent module
-- Use mixins pattern for extending SWWInstance functionality
-- Webpack automatically bundles everything
+**Webpack bundles everything** into single UMD file exposing:
+- `window.SWW` - Factory with `init()` and `getInstance()` methods
+- `window.sww` - Lowercase alias for convenience
 
 ### State Management Pattern
+
 Elements are plain JavaScript objects with SVG references:
 
 ```javascript
 {
-    id: 'element-123',
+    id: 'rectangle-1635789123456-0.12345',  // ${tool}-${timestamp}-${random}
     type: 'rectangle',  // rectangle, ellipse, text, arrow, etc.
     x: 100, y: 100,
     width: 200, height: 150,
     svgElement: <SVG Node>,  // Direct DOM reference
     visible: true,
     locked: false,
+    strokeColor: '#000000',
+    strokeWidth: 2,
+    fillColor: 'transparent'
     // ... tool-specific properties
 }
 ```
 
-**No reactive framework** - updates happen via direct DOM manipulation and array mutations.
+**No reactive framework** - updates via direct DOM manipulation:
+- Modify element object properties
+- Call `this.updateSVGElement(element)` to sync DOM
+- Arrays are mutated directly (`this.elements.push()`, `splice()`, etc.)
+- Sets track selections (`this.selectedElements = new Set()`)
 
 ## Tool System Architecture
 
@@ -167,6 +167,7 @@ Tools are switched via `setTool(toolName)` where toolName is one of:
 - `website`, `image`, `markdown` - Embedded content (uses Marked.js)
 
 ### Tool State Management
+
 Current tool settings stored in `this.toolSettings` object:
 ```javascript
 {
@@ -175,12 +176,17 @@ Current tool settings stored in `this.toolSettings` object:
     fillColor: 'transparent',
     fillStyle: 'solid',  // or 'gradient', 'hatch'
     gradientType: 'linear',  // or 'radial'
-    gradientStops: [{offset: 0, color: '#000'}, ...],
+    gradientStops: [{offset: 0, color: '#000'}, {offset: 1, color: '#fff'}],
     fontSize: 16,
     fontFamily: 'Arial',
     textColor: '#000000'
 }
 ```
+
+**Updating tool settings**:
+- Modify `this.toolSettings` properties directly
+- Properties panel UI automatically syncs via `this.updatePropertiesPanel()`
+- New elements inherit current `toolSettings` values
 
 ## Performance Optimizations
 
@@ -214,36 +220,46 @@ this.throttledPropertiesPanelUpdate = PerformanceUtils.throttle(() => {
 ## UI Component System
 
 ### Control Panel Pattern
-Control panel managed by separate `SWWControlPanel` class (lines 6300-7000 in sww.js):
+
+Control panel functionality is managed through the `ControlPanelMixin` in `src/js/modules/ui/ControlPanel.js`:
 
 ```javascript
-class SWWControlPanel {
-    constructor(instance) {
-        this.instance = instance;  // Reference to SWWInstance
-    }
-    
-    updateLayers()           // Refresh layer list UI
-    toggleLayerVisibility()  // Show/hide layers
-    toggleLayerLock()        // Lock/unlock editing
-}
+// Theme switching
+this.setPanelMode('dark' | 'light')  // Switch between themes
+this.applyThemeColors()              // Apply CSS custom properties
+
+// Preview mode (presentation mode)
+this.enterPreviewMode()              // Lock editing, hide UI
+this.exitPreviewMode()               // Restore editing mode
+
+// Notifications
+this.showNotification(message, type) // Show toast notification
 ```
 
 ### CSS Theming with CSS Variables
+
 All theme colors use CSS custom properties in `src/css/sww.css`:
 
 ```css
 :root {
-    --sww-panel-bg: #18181b;
-    --sww-accent-color: #00FF99;
-    --sww-secondary-accent: #007370;
+    --sww-panel-bg: #18181b;           /* Panel background */
+    --sww-accent-color: #00FF99;        /* Primary accent */
+    --sww-secondary-accent: #007370;    /* Secondary accent */
+    --sww-panel-text: #ffffff;          /* Text color */
     /* ... 10+ more variables */
 }
 ```
 
 **Dynamic theme switching**: `setPanelMode('dark' | 'light')` updates CSS variables via JS:
 ```javascript
-document.documentElement.style.setProperty('--sww-panel-bg', color);
+this.container.style.setProperty('--sww-panel-bg', color);
+this.container.setAttribute('data-panel-mode', mode);
 ```
+
+**Adding new theme colors**:
+1. Define CSS variable in `src/css/sww.css` under `:root`
+2. Add mode-specific values in `applyThemeColors()` method
+3. Use variable in CSS: `background: var(--sww-new-color)`
 
 ## Integration Points & Dependencies
 
@@ -381,13 +397,23 @@ SVG references are **not serializable** - they're recreated on `loadScene()`.
 ## Key Files Reference
 
 **Development Files**:
-- **src/js/sww.js** or **src/js/sww-legacy.js** - Main source (7,109 lines, being modularized)
-- **src/js/modules/** - Modular components directory
-  - **utils/** - Utility classes and helpers
-  - **core/** - Core instance logic
-  - **tools/** - Drawing tools
-  - **ui/** - UI components
-  - **canvas/** - Canvas and viewport
+- **src/js/sww.js** (123 lines) - Main entry point, applies 24 mixins
+- **src/js/modules/** - Modular components directory (24 modules total)
+  - **utils/** - Utility classes (PerformanceUtils, SpatialIndex, constants, helpers)
+  - **core/** - Core instance logic (SWWInstance, initialization, elementManagement, eventHandlers)
+  - **tools/** - Drawing tools (7 modules)
+  - **selection/** - Selection system (4 modules)
+  - **ui/** - UI components (7 modules)
+  - **canvas/** - Canvas setup (CanvasMixin, Background)
+  - **viewport/** - Viewport controls
+  - **history/** - Undo/redo
+  - **clipboard/** - Copy/paste
+  - **contextmenu/** - Right-click menus
+  - **actions/** - Element operations
+  - **grid/** - Grid system
+  - **dialogs/** - Modal dialogs
+  - **rendering/** - SVG rendering
+  - **utilities/** - Helper methods
 - **src/css/sww.css** (1,715 lines) - All styles with FontAwesome import
 
 **Build & Config**:
@@ -397,8 +423,6 @@ SVG references are **not serializable** - they're recreated on `loadScene()`.
 **Examples & Docs**:
 - **examples/sww.html** - Main demo with full control panel
 - **examples/sww-tailwind.html** - Alternative styling demo
-- **MODULARIZATION_PLAN.md** - Refactoring roadmap and strategy
-- **GETTING_STARTED_MODULAR.md** - Quick start guide for modular development
 
 ## Testing Strategy
 
