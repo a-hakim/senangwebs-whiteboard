@@ -434,5 +434,310 @@ export const TextToolMixin = {
         }
         // For now, just use the text as-is
         element.text = element.originalText || element.text;
+    },
+
+    /**
+     * Start inline text editing for a text element
+     * Creates a contentEditable overlay positioned over the SVG element
+     * @param {Object} element - Text element to edit
+     */
+    startTextEditing(element) {
+        // Prevent editing in preview mode
+        if (this.isPreviewMode) {
+            return;
+        }
+        
+        // Hide the original SVG text element completely during editing for clean WYSIWYG
+        if (element.svgElement) {
+            element.svgElement.style.visibility = 'hidden';
+        }
+        
+        // Create an inline contentEditable div for seamless editing
+        const textEditor = document.createElement('div');
+        textEditor.className = 'sww-text-editor-inline';
+        textEditor.contentEditable = true;
+        textEditor.textContent = element.originalText || element.text || '';
+        
+        // Get accurate screen coordinates using SVG transformation
+        let svgPoint, screenPoint;
+        
+        if (element.width && element.height) {
+            // Text has a boundary - position editor to match the boundary
+            svgPoint = { x: element.x, y: element.y };
+        } else {
+            // Text without boundary - use text position with some adjustments for baseline
+            const bounds = this.getElementBounds(element);
+            svgPoint = { x: bounds.x, y: bounds.y };
+        }
+        
+        // Convert SVG coordinates to screen coordinates
+        if (this.svg.getScreenCTM) {
+            const matrix = this.svg.getScreenCTM();
+            screenPoint = {
+                x: matrix.a * svgPoint.x + matrix.c * svgPoint.y + matrix.e,
+                y: matrix.b * svgPoint.x + matrix.d * svgPoint.y + matrix.f
+            };
+        } else {
+            // Fallback method
+            const rect = this.svg.getBoundingClientRect();
+            screenPoint = {
+                x: (svgPoint.x - this.viewBox.x) / this.viewBox.width * rect.width + rect.left,
+                y: (svgPoint.y - this.viewBox.y) / this.viewBox.height * rect.height + rect.top
+            };
+        }
+        
+        // Calculate editor dimensions
+        let editorWidth, editorHeight;
+        
+        if (element.width && element.height) {
+            // Use boundary dimensions
+            if (this.svg.getScreenCTM) {
+                const matrix = this.svg.getScreenCTM();
+                editorWidth = Math.abs(element.width * matrix.a);
+                editorHeight = Math.abs(element.height * matrix.d);
+            } else {
+                const rect = this.svg.getBoundingClientRect();
+                editorWidth = Math.abs(element.width) / this.viewBox.width * rect.width;
+                editorHeight = Math.abs(element.height) / this.viewBox.height * rect.height;
+            }
+        } else {
+            // Default dimensions for unbounded text
+            editorWidth = Math.max(200, element.fontSize * 10);
+            editorHeight = element.fontSize * 1.5;
+        }
+        
+        // Apply inline styling to match the SVG element exactly
+        textEditor.style.position = 'fixed';
+        textEditor.style.left = `${screenPoint.x}px`;
+        textEditor.style.top = `${screenPoint.y}px`;
+        textEditor.style.width = `${editorWidth}px`;
+        textEditor.style.height = element.width && element.height ? `${editorHeight}px` : 'auto';
+        textEditor.style.minHeight = `${element.fontSize * 1.3}px`;
+        textEditor.style.fontSize = `${element.fontSize}px`;
+        textEditor.style.fontFamily = element.fontFamily || 'Arial';
+        
+        // Inline styling - appears directly on the element
+        textEditor.style.background = 'transparent';
+        textEditor.style.padding = '8px';
+        textEditor.style.boxSizing = 'border-box';
+        textEditor.style.zIndex = '10000';
+        textEditor.style.outline = 'none';
+        textEditor.style.color = element.textColor || element.strokeColor || '#000';
+        textEditor.style.lineHeight = '1.3';
+        textEditor.style.whiteSpace = 'pre-wrap';
+        textEditor.style.wordWrap = 'break-word';
+        textEditor.style.overflow = element.width && element.height ? 'auto' : 'visible';
+        
+        // Set text alignment to match element alignment
+        if (element.textAlign) {
+            textEditor.style.textAlign = element.textAlign;
+        }
+        
+        // Add empty placeholder attribute
+        if (!textEditor.textContent) {
+            textEditor.setAttribute('data-placeholder', 'Type text here...');
+        }
+        
+        document.body.appendChild(textEditor);
+        
+        // Create keyboard shortcuts hint overlay
+        const hintOverlay = document.createElement('div');
+        hintOverlay.className = 'sww-text-editor-hint';
+        hintOverlay.innerHTML = `
+            <div class="sww-text-editor-hint-item">
+                <kbd>Ctrl</kbd>+<kbd>Enter</kbd> <span>Save</span>
+            </div>
+            <div class="sww-text-editor-hint-separator"></div>
+            <div class="sww-text-editor-hint-item">
+                <kbd>Esc</kbd> <span>Cancel</span>
+            </div>
+            <div class="sww-text-editor-hint-separator"></div>
+            <div class="sww-text-editor-hint-item">
+                <kbd>Tab</kbd> <span>Indent</span>
+            </div>
+        `;
+        document.body.appendChild(hintOverlay);
+        
+        // Add focus styling with animation
+        setTimeout(() => {
+            textEditor.style.borderColor = 'rgba(0, 255, 153, 1)';
+            textEditor.focus();
+            
+            // Select all text in contentEditable
+            const range = document.createRange();
+            range.selectNodeContents(textEditor);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }, 50);
+        
+        let isEditing = true; // Flag to prevent double cleanup
+        
+        // Declare click-outside handler first
+        let handleClickOutside;
+        
+        const finishEditing = () => {
+            if (!isEditing) return; // Prevent double execution
+            isEditing = false;
+            
+            // Smooth exit animation
+            textEditor.style.opacity = '0.5';
+            textEditor.style.borderColor = 'rgba(0, 255, 153, 0.3)';
+            hintOverlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                const newText = textEditor.textContent || 'Text';
+                element.originalText = newText; // Store original text for future wrapping
+                
+                // If element has boundary, adjust text to fit and wrap
+                if (element.width && element.height) {
+                    element.text = newText; // Store original first
+                    if (this.adjustTextToFitBounds) {
+                        this.adjustTextToFitBounds(element); // Then wrap it if available
+                    }
+                } else {
+                    element.text = newText;
+                }
+                
+                // Show the original SVG element again
+                if (element.svgElement) {
+                    element.svgElement.style.visibility = 'visible';
+                }
+                
+                this.updateSVGElement(element);
+                
+                // Safely remove the elements
+                if (textEditor.parentNode) textEditor.remove();
+                if (hintOverlay.parentNode) hintOverlay.remove();
+                
+                // Clean up click-outside listener
+                if (handleClickOutside) {
+                    document.removeEventListener('click', handleClickOutside);
+                }
+                
+                // Update selection handles if element is selected
+                if (this.selectedElements.has(element)) {
+                    this.updateSelectionHandles();
+                }
+                
+                // Auto-switch to select tool after text editing for better UX
+                if (this.currentTool === 'text') {
+                    this.setTool('select');
+                }
+            }, 150); // Small delay for animation
+        };
+        
+        const cancelEditing = () => {
+            if (!isEditing) return; // Prevent double execution
+            isEditing = false;
+            
+            // Smooth exit animation for cancel
+            textEditor.style.opacity = '0.3';
+            textEditor.style.borderColor = 'rgba(255, 0, 0, 0.3)';
+            hintOverlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                // Show the original SVG element again
+                if (element.svgElement) {
+                    element.svgElement.style.visibility = 'visible';
+                }
+                
+                // Safely remove the elements without saving changes
+                if (textEditor.parentNode) textEditor.remove();
+                if (hintOverlay.parentNode) hintOverlay.remove();
+                
+                // Clean up click-outside listener
+                if (handleClickOutside) {
+                    document.removeEventListener('click', handleClickOutside);
+                }
+                
+                // Auto-switch to select tool even when canceling for better UX
+                if (this.currentTool === 'text') {
+                    this.setTool('select');
+                }
+            }, 150);
+        };
+        
+        // Enhanced auto-resize function for contentEditable
+        const autoResize = () => {
+            if (!textEditor.parentNode) return;
+            
+            // Only auto-resize for unbounded text elements
+            if (!(element.width && element.height)) {
+                // ContentEditable automatically sizes to content
+                // Just ensure minimum dimensions
+                const minWidth = Math.max(element.fontSize * 3, 50);
+                const minHeight = element.fontSize * 1.3;
+                
+                if (textEditor.offsetWidth < minWidth) {
+                    textEditor.style.minWidth = minWidth + 'px';
+                }
+                if (textEditor.offsetHeight < minHeight) {
+                    textEditor.style.minHeight = minHeight + 'px';
+                }
+            }
+        };
+        
+        // Enhanced keyboard interactions for contentEditable
+        textEditor.addEventListener('keydown', (e) => {
+            // Enhanced keyboard shortcuts
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                finishEditing();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEditing();
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                // Insert tab character (4 spaces) in contentEditable
+                document.execCommand('insertText', false, '    ');
+            }
+        });
+        
+        // Add input event listener for real-time resizing with debouncing
+        let resizeTimeout;
+        textEditor.addEventListener('input', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(autoResize, 50); // Debounced resize
+        });
+        
+        textEditor.addEventListener('blur', (e) => {
+            finishEditing();
+        });
+        
+        // Add click-outside listener for intuitive editing
+        handleClickOutside = (e) => {
+            // Check if click is outside the text editor
+            if (!textEditor.contains(e.target) && textEditor.parentNode) {
+                // Don't finish editing if clicking on toolbar buttons or other UI elements
+                const isToolbarClick = e.target.closest('.sww-toolbar') || 
+                                     e.target.closest('button') || 
+                                     e.target.classList.contains('sww-toolbar-button');
+                
+                if (!isToolbarClick) {
+                    finishEditing();
+                    // Remove this listener after use
+                    document.removeEventListener('click', handleClickOutside);
+                }
+            }
+        };
+        
+        // Add the listener with a slight delay to prevent immediate triggering
+        setTimeout(() => {
+            document.addEventListener('click', handleClickOutside);
+        }, 100);
+        
+        // Fade out hint after a few seconds
+        setTimeout(() => {
+            if (hintOverlay.parentNode) {
+                hintOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    if (hintOverlay.parentNode) hintOverlay.remove();
+                }, 300);
+            }
+        }, 5000);
+        
+        // Initial resize to fit existing content
+        autoResize();
     }
 };
