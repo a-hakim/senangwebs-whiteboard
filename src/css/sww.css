@@ -1033,7 +1033,7 @@ marker {
 .sww-text-properties h4 {
   margin: 0 0 6px 0;
   font-size: 12px;
-  color: white;
+  color: var(--sww-panel-text);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;

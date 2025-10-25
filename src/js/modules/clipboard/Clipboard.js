@@ -96,20 +96,20 @@ export const ClipboardMixin = {
         // Clear current selection
         this.clearSelection();
         
-        // Calculate paste position - center of current viewport
-        const centerX = this.viewBox.x + this.viewBox.width / 2;
-        const centerY = this.viewBox.y + this.viewBox.height / 2;
+        // Calculate paste position - use last mouse position if available, otherwise viewport center
+        const pasteX = this.lastPointerPosition?.x ?? (this.viewBox.x + this.viewBox.width / 2);
+        const pasteY = this.lastPointerPosition?.y ?? (this.viewBox.y + this.viewBox.height / 2);
         
-        // Find the center of the clipboard elements to maintain relative positioning
+        // Find the top-left corner of the clipboard elements to maintain relative positioning
         let minX = Infinity, minY = Infinity;
         this.clipboard.forEach(element => {
             minX = Math.min(minX, element.x);
             minY = Math.min(minY, element.y);
         });
         
-        // Calculate offset to center the pasted elements on viewport
-        const offsetX = centerX - minX;
-        const offsetY = centerY - minY;
+        // Calculate offset to position the pasted elements at cursor/viewport center
+        const offsetX = pasteX - minX;
+        const offsetY = pasteY - minY;
         
         // Create new elements from clipboard
         const pastedElements = [];

@@ -23,12 +23,18 @@ export const ThemeManagerMixin = {
             panelBackgroundColor: '#ffffff',
             panelTextColor: '#1f2937',
             accentColor: '#3b82f6',
-            secondaryAccentColor: '#2563eb'
+            secondaryAccentColor: '#2563eb',
+            panelBorder: '#e5e7eb',
+            panelHover: '#f3f4f6',
+            panelActive: '#e5e7eb'
         } : {
             panelBackgroundColor: '#18181b',
             panelTextColor: '#ffffff',
             accentColor: '#00FF99',
-            secondaryAccentColor: '#007370'
+            secondaryAccentColor: '#007370',
+            panelBorder: '#27272a',
+            panelHover: '#27272a',
+            panelActive: '#3f3f46'
         };
         
         // Only update colors if they match the previous mode's defaults
@@ -37,6 +43,9 @@ export const ThemeManagerMixin = {
         this.options.panelTextColor = defaultColors.panelTextColor;
         this.options.accentColor = defaultColors.accentColor;
         this.options.secondaryAccentColor = defaultColors.secondaryAccentColor;
+        this.options.panelBorder = defaultColors.panelBorder;
+        this.options.panelHover = defaultColors.panelHover;
+        this.options.panelActive = defaultColors.panelActive;
         
         // Re-apply theme colors
         this.applyThemeColors();
@@ -58,6 +67,9 @@ export const ThemeManagerMixin = {
         root.style.setProperty('--sww-panel-text', this.options.panelTextColor);
         root.style.setProperty('--sww-accent-color', this.options.accentColor);
         root.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
+        root.style.setProperty('--sww-panel-border', this.options.panelBorder || (this.options.panelMode === 'light' ? '#e5e7eb' : '#27272a'));
+        root.style.setProperty('--sww-panel-hover', this.options.panelHover || (this.options.panelMode === 'light' ? '#f3f4f6' : '#27272a'));
+        root.style.setProperty('--sww-panel-active', this.options.panelActive || (this.options.panelMode === 'light' ? '#e5e7eb' : '#3f3f46'));
         
         // Update panel backgrounds if they exist
         const panels = [

@@ -240,6 +240,17 @@ export const ControlPanelMixin = {
     },
 
     /**
+     * Toggle preview mode on/off
+     */
+    togglePreviewMode() {
+        if (this.isPreviewMode) {
+            this.exitPreviewMode();
+        } else {
+            this.enterPreviewMode();
+        }
+    },
+
+    /**
      * Fit canvas view to show all elements optimally
      */
     fitCanvasToElements() {

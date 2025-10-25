@@ -13,14 +13,32 @@ export const EventHandlersMixin = {
         // Throttled pointer move for performance
         const throttledPointerMove = PerformanceUtils.throttle((e) => this.handlePointerMove(e), 16);
         
+        // Unthrottled cursor position tracking for accurate paste positioning
+        const trackCursorPosition = (e) => {
+            const point = this.getPointerPosition(e);
+            this.lastPointerPosition = point;
+        };
+        
         // Debounced viewport update for scroll/zoom
         const debouncedViewportUpdate = PerformanceUtils.debounce(() => this.updateVisibleElements(), 100);
         
         // Mouse events
         this.svg.addEventListener('mousedown', (e) => this.handlePointerDown(e));
-        this.svg.addEventListener('mousemove', throttledPointerMove);
+        this.svg.addEventListener('mousemove', (e) => {
+            trackCursorPosition(e);
+            throttledPointerMove(e);
+        });
         this.svg.addEventListener('mouseup', (e) => this.handlePointerUp(e));
         this.svg.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
+        
+        // Handle middle mouse button specifically with auxclick event
+        this.svg.addEventListener('auxclick', (e) => {
+            if (e.button === 1) {  // Middle mouse button
+                e.preventDefault();
+                // Already handled in mousedown, but prevent default behavior
+            }
+        });
+        
         this.svg.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             this.showContextMenu(e);
@@ -166,6 +184,12 @@ export const EventHandlersMixin = {
      * Routes to appropriate tool handler based on currentTool
      */
     handlePointerDown(e) {
+        // Prevent default for middle mouse button to avoid auto-scroll
+        if (e.button === 1) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
         e.preventDefault();
         
         // Hide context menu on any click
@@ -228,10 +252,28 @@ export const EventHandlersMixin = {
         const point = this.getPointerPosition(e);
         
         if (this.isPanning) {
-            const dx = point.x - this.lastPointerPosition.x;
-            const dy = point.y - this.lastPointerPosition.y;
-            this.viewBox.x -= dx;
-            this.viewBox.y -= dy;
+            // For panning, we need to work in screen space, not SVG space
+            // because the SVG coordinates change as we update the viewBox
+            const rect = this.svg.getBoundingClientRect();
+            const screenX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX);
+            const screenY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY);
+            
+            if (!this.panStartScreenPos) {
+                this.panStartScreenPos = { x: screenX, y: screenY };
+                this.panStartViewBox = { ...this.viewBox };
+            }
+            
+            // Calculate screen-space delta
+            const screenDx = screenX - this.panStartScreenPos.x;
+            const screenDy = screenY - this.panStartScreenPos.y;
+            
+            // Convert screen delta to SVG coordinate delta
+            const svgDx = (screenDx / rect.width) * this.viewBox.width;
+            const svgDy = (screenDy / rect.height) * this.viewBox.height;
+            
+            // Update viewBox from the original starting position
+            this.viewBox.x = this.panStartViewBox.x - svgDx;
+            this.viewBox.y = this.panStartViewBox.y - svgDy;
             this.updateViewBox();
         } else if (this.isCreatingSelectionBox) {
             this.updateSelectionBox(point);
@@ -261,6 +303,8 @@ export const EventHandlersMixin = {
         
         if (this.isPanning) {
             this.isPanning = false;
+            this.panStartScreenPos = null;
+            this.panStartViewBox = null;
             this.svg.style.cursor = 'crosshair';
             return;
         }
