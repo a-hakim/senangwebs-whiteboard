@@ -282,6 +282,126 @@ export const EventHandlersMixin = {
      * Handle double click event stub
      * (Full implementation in legacy)
      */
+    /**
+     * Update the current element being drawn
+     * Routes to appropriate update logic based on element type
+     * @param {Object} point - Current pointer position {x, y}
+     */
+    updateCurrentElement(point) {
+        if (!this.currentElement) return;
+        
+        switch (this.currentElement.type) {
+            case 'rectangle':
+            case 'ellipse':
+            case 'diamond':
+            case 'parallelogram':
+            case 'star':
+                this.currentElement.width = point.x - this.currentElement.x;
+                this.currentElement.height = point.y - this.currentElement.y;
+                break;
+                
+            case 'line':
+            case 'arrow':
+                this.currentElement.width = point.x - this.currentElement.x;
+                this.currentElement.height = point.y - this.currentElement.y;
+                break;
+                
+            case 'path':
+                this.currentElement.points.push(point);
+                break;
+        }
+        
+        this.updateSVGElement(this.currentElement);
+    },
+
+    /**
+     * Finalize the current element being drawn
+     * Normalizes dimensions, adds to scene, saves history, and switches to select tool
+     */
+    finishCurrentElement() {
+        if (!this.currentElement) return;
+        
+        // For path elements (freehand drawings), update width/height based on actual bounds
+        // and make points relative to the element's origin
+        if (this.currentElement.type === 'path' && this.currentElement.points && this.currentElement.points.length > 0) {
+            let minX = this.currentElement.points[0].x;
+            let minY = this.currentElement.points[0].y;
+            let maxX = this.currentElement.points[0].x;
+            let maxY = this.currentElement.points[0].y;
+            
+            // Find the actual bounding box from all points
+            for (let i = 1; i < this.currentElement.points.length; i++) {
+                const point = this.currentElement.points[i];
+                minX = Math.min(minX, point.x);
+                minY = Math.min(minY, point.y);
+                maxX = Math.max(maxX, point.x);
+                maxY = Math.max(maxY, point.y);
+            }
+            
+            // Update element properties to reflect actual bounds
+            this.currentElement.x = minX;
+            this.currentElement.y = minY;
+            this.currentElement.width = maxX - minX;
+            this.currentElement.height = maxY - minY;
+            
+            // Make all points relative to the element's new origin (minX, minY)
+            this.currentElement.points = this.currentElement.points.map(point => ({
+                x: point.x - minX,
+                y: point.y - minY
+            }));
+        }
+        
+        // Normalize elements to always have positive dimensions for consistent resize behavior
+        // Convert negative dimensions to positive while adjusting position accordingly
+        if (this.currentElement.type !== 'line' && this.currentElement.type !== 'arrow' && this.currentElement.type !== 'path') {
+            if (this.currentElement.width < 0) {
+                // Negative width: move x position and make width positive
+                this.currentElement.x += this.currentElement.width;
+                this.currentElement.width = -this.currentElement.width;
+            }
+            
+            if (this.currentElement.height < 0) {
+                // Negative height: move y position and make height positive
+                this.currentElement.y += this.currentElement.height;
+                this.currentElement.height = -this.currentElement.height;
+            }
+            
+            // Update the SVG element with normalized dimensions
+            this.updateSVGElement(this.currentElement);
+        }
+        
+        // Add to elements array with spatial index update
+        this.addElement(this.currentElement);
+        
+        // Save state to history AFTER adding the element
+        this.saveStateToHistory('createElement');
+        
+        // Select the newly created element and switch to select tool
+        this.clearSelection();
+        const finishedElement = this.currentElement;
+        
+        // Clean up BEFORE selecting to ensure the element is treated as finished
+        this.currentElement = null;
+        this.isDrawing = false;
+        
+        // Now select the finished element
+        this.selectElement(finishedElement);
+        
+        // If it's a text element, start editing automatically
+        const isTextElement = finishedElement.type === 'text';
+        
+        // Auto-switch to select tool for better UX
+        this.setTool('select');
+        
+        // Start text editing for text elements
+        if (isTextElement) {
+            // Use setTimeout to ensure the tool change is complete
+            setTimeout(() => {
+                this.startTextEditing(finishedElement);
+            }, 10);
+        }
+    },
+
     handleDoubleClick(e) {
         // Stub - actual implementation still in legacy
     },
