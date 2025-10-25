@@ -46,6 +46,8 @@ import { GridMixin } from './modules/grid/Grid.js';
 import { DialogsMixin } from './modules/dialogs/Dialogs.js';
 import { UtilitiesMixin } from './modules/utilities/Utilities.js';
 import { SVGRendererMixin } from './modules/rendering/SVGRenderer.js';
+import { NotificationsMixin } from './modules/ui/Notifications.js';
+import { ThemeManagerMixin } from './modules/ui/ThemeManager.js';
 
 // Apply mixins to SWWInstance prototype
 Object.assign(SWWInstance.prototype, InitializationMixin);
@@ -76,6 +78,8 @@ Object.assign(SWWInstance.prototype, GridMixin);
 Object.assign(SWWInstance.prototype, DialogsMixin);
 Object.assign(SWWInstance.prototype, UtilitiesMixin);
 Object.assign(SWWInstance.prototype, SVGRendererMixin);
+Object.assign(SWWInstance.prototype, NotificationsMixin);
+Object.assign(SWWInstance.prototype, ThemeManagerMixin);
 
 // Create the SWW factory object
 const SWW = {
