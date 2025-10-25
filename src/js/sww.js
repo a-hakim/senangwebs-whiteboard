@@ -45,6 +45,7 @@ import { ElementActionsMixin } from './modules/actions/ElementActions.js';
 import { GridMixin } from './modules/grid/Grid.js';
 import { DialogsMixin } from './modules/dialogs/Dialogs.js';
 import { UtilitiesMixin } from './modules/utilities/Utilities.js';
+import { SVGRendererMixin } from './modules/rendering/SVGRenderer.js';
 
 // Apply mixins to SWWInstance prototype
 Object.assign(SWWInstance.prototype, InitializationMixin);
@@ -74,11 +75,41 @@ Object.assign(SWWInstance.prototype, ElementActionsMixin);
 Object.assign(SWWInstance.prototype, GridMixin);
 Object.assign(SWWInstance.prototype, DialogsMixin);
 Object.assign(SWWInstance.prototype, UtilitiesMixin);
+Object.assign(SWWInstance.prototype, SVGRendererMixin);
 
-// Import legacy implementation (still needed for UI, tools, etc.)
+// Create the SWW factory object
+const SWW = {
+    /**
+     * Initialize a new whiteboard instance
+     * @param {HTMLElement} container - Container element
+     * @param {Object} options - Configuration options
+     * @returns {SWWInstance} Whiteboard instance
+     */
+    init(container, options = {}) {
+        const instance = new SWWInstance();
+        instance.init(container, options);
+        return instance;
+    },
+
+    /**
+     * Get instance from container element
+     * @param {HTMLElement} container - Container element
+     * @returns {SWWInstance|null} Instance or null
+     */
+    getInstance(container) {
+        return container._swwInstance || null;
+    },
+
+    version: '1.0.1'
+};
+
+// Import legacy implementation (still needed for SVG rendering and remaining features)
 import './sww-legacy.js';
 
-// Use legacy implementation until full migration is complete
-const SWW = (typeof window !== 'undefined') ? window.sww : {};
+// Expose to global scope for browser usage
+if (typeof window !== 'undefined') {
+    window.SWW = SWW;
+    window.sww = SWW;
+}
 
 export default SWW;
