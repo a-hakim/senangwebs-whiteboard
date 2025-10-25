@@ -36,8 +36,8 @@ export class SWWInstance {
         // Initialize state
         this.initializeState();
         
-        // Initialize UI and event listeners
-        this.init();
+        // NOTE: init() is called by the factory after all mixins are applied
+        // Do NOT call this.init() here or mixins won't be available
     }
     
     initializeState() {

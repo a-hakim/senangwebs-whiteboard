@@ -90,8 +90,8 @@ const SWW = {
      * @returns {SWWInstance} Whiteboard instance
      */
     init(container, options = {}) {
-        const instance = new SWWInstance();
-        instance.init(container, options);
+        const instance = new SWWInstance(container, options);
+        instance.init();  // Call init() after instance is created with all mixins applied
         return instance;
     },
 
