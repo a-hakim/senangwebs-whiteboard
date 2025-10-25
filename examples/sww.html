@@ -262,6 +262,137 @@
                 toggleDockBtn.classList.add('active');
             }
         }
+
+        /**
+         * Update layers panel to show all elements
+         * Called by LayersPanel.js via window.swwControlPanel.updateLayers()
+         */
+        function updateLayers() {
+            if (!swwInstance || !swwInstance.elements) {
+                return;
+            }
+
+            const layersList = document.getElementById('sww-layers-list');
+            const layerCount = document.getElementById('layer-count');
+            const elements = swwInstance.elements;
+
+            // Update count
+            if (layerCount) {
+                layerCount.textContent = elements.length;
+            }
+
+            // Update layers list
+            if (!layersList) {
+                return;
+            }
+
+            if (!Array.isArray(elements) || elements.length === 0) {
+                layersList.innerHTML = '<div style="text-align: center; padding: 20px 10px; color: var(--sww-panel-text); opacity: 0.6;">No elements in the scene. Add elements using the tools to see them here.</div>';
+                return;
+            }
+
+            const selectedElements = swwInstance.selectedElements || new Set();
+            
+            layersList.innerHTML = elements.map((element, index) => {
+                if (!element || !element.id || !element.type) return '';
+                
+                const isSelected = selectedElements.has(element.id);
+                const isHidden = element.hidden || false;
+                const isLocked = element.locked || false;
+                
+                return `
+                    <div class="sww-layer-item ${isSelected ? 'selected' : ''}" data-element-id="${element.id}">
+                        <div class="sww-layer-info" onclick="selectLayerElement('${element.id}')">
+                            <i class="fas fa-${getLayerIcon(element.type)}"></i>
+                            <span>${element.type} ${index + 1}</span>
+                        </div>
+                        <div class="sww-layer-actions">
+                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); toggleLayerVisibility('${element.id}')" title="${isHidden ? 'Show' : 'Hide'}">
+                                <i class="fas fa-${isHidden ? 'eye-slash' : 'eye'}"></i>
+                            </button>
+                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); toggleLayerLock('${element.id}')" title="${isLocked ? 'Unlock' : 'Lock'}">
+                                <i class="fas fa-${isLocked ? 'lock' : 'unlock'}"></i>
+                            </button>
+                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); deleteLayerElement('${element.id}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).filter(html => html).join('');
+        }
+
+        /**
+         * Get FontAwesome icon for element type
+         */
+        function getLayerIcon(type) {
+            const icons = {
+                rectangle: 'square',
+                ellipse: 'circle',
+                diamond: 'gem',
+                star: 'star',
+                parallelogram: 'shapes',
+                arrow: 'arrow-right',
+                line: 'minus',
+                text: 'font',
+                draw: 'pencil-alt',
+                image: 'image',
+                website: 'globe',
+                markdown: 'file-alt'
+            };
+            return icons[type] || 'shapes';
+        }
+
+        /**
+         * Select element from layers panel
+         */
+        function selectLayerElement(elementId) {
+            if (swwInstance && swwInstance.selectElementById) {
+                swwInstance.selectElementById(elementId);
+                updateLayers();
+            }
+        }
+
+        /**
+         * Toggle element visibility from layers panel
+         */
+        function toggleLayerVisibility(elementId) {
+            if (swwInstance && swwInstance.toggleElementVisibility) {
+                swwInstance.toggleElementVisibility(elementId);
+                updateLayers();
+            }
+        }
+
+        /**
+         * Toggle element lock from layers panel
+         */
+        function toggleLayerLock(elementId) {
+            if (swwInstance && swwInstance.toggleElementLock) {
+                swwInstance.toggleElementLock(elementId);
+                updateLayers();
+            }
+        }
+
+        /**
+         * Delete element from layers panel
+         */
+        function deleteLayerElement(elementId) {
+            if (swwInstance && swwInstance.deleteElementById) {
+                swwInstance.deleteElementById(elementId);
+                updateLayers();
+            }
+        }
+
+        /**
+         * Make updateLayers available globally for LayersPanel.js
+         * This replaces the old SWWControlPanel.updateLayers() pattern
+         */
+        window.swwControlPanel = {
+            updateLayers: updateLayers
+        };
+
+        // Auto-update layers panel periodically
+        setInterval(updateLayers, 1000);
     </script>
 </body>
 </html>

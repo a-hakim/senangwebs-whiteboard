@@ -24,10 +24,23 @@ export const SelectionToolMixin = {
                 return; // Don't start dragging
             }
             
-            if (!e.shiftKey && !this.selectedElements.has(element)) {
-                this.clearSelection();
+            // Handle multi-selection logic
+            if (e.shiftKey) {
+                // Shift+click: toggle element in/out of selection
+                if (this.selectedElements.has(element)) {
+                    this.deselectElement(element);
+                } else {
+                    this.selectElement(element);
+                }
+            } else {
+                // Regular click
+                if (!this.selectedElements.has(element)) {
+                    // Element not selected: clear others and select this one
+                    this.clearSelection();
+                    this.selectElement(element);
+                }
+                // If element is already selected: keep all selections for group drag
             }
-            this.selectElement(element);
             
             // Check if any selected elements are locked
             const hasLockedElements = Array.from(this.selectedElements).some(el => el.locked);
@@ -36,6 +49,7 @@ export const SelectionToolMixin = {
             }
             
             // Start dragging the selected element(s)
+            // This will drag ALL selected elements together
             this.isDraggingElement = true;
             this.manipulationMode = 'move';
             this.dragStartPoint = point;
