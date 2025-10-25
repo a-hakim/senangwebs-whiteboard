@@ -132,6 +132,27 @@ export const SVGRendererMixin = {
                 this._updateMarkdown(element, svg);
                 break;
         }
+        
+        // Apply rotation transform
+        if (element.rotation !== 0) {
+            // Calculate center point correctly for negative dimensions
+            let centerX, centerY;
+            if (element.type === 'line' || element.type === 'arrow') {
+                // For lines and arrows, center is midpoint between start and end
+                centerX = element.x + element.width / 2;
+                centerY = element.y + element.height / 2;
+            } else {
+                // For shapes, handle negative dimensions
+                const elementX = element.width < 0 ? element.x + element.width : element.x;
+                const elementY = element.height < 0 ? element.y + element.height : element.y;
+                centerX = elementX + Math.abs(element.width) / 2;
+                centerY = elementY + Math.abs(element.height) / 2;
+            }
+            svg.setAttribute('transform', `rotate(${element.rotation} ${centerX} ${centerY})`);
+        } else {
+            // Remove transform attribute when rotation is 0
+            svg.removeAttribute('transform');
+        }
     },
 
     /**
