@@ -348,13 +348,6 @@
             });
             window.swwInstance = swwInstance;
             
-            // Set initial theme button state
-            const themeModeText = document.getElementById('themeModeText');
-            const themeModeBtn = document.getElementById('themeModeBtn');
-            const icon = themeModeBtn.querySelector('i');
-            themeModeText.textContent = 'Light';
-            icon.className = 'fas fa-sun';
-            
             setupKeyboardShortcuts();
             setupEventListeners();
             updateLayersList();
