@@ -402,8 +402,60 @@ export const EventHandlersMixin = {
         }
     },
 
+    /**
+     * Handle double-click event
+     * Opens editing interface for text, image, website, and markdown elements
+     * @param {Event} e - Double-click event
+     */
     handleDoubleClick(e) {
-        // Stub - actual implementation still in legacy
+        e.preventDefault();
+        
+        // Prevent editing in preview mode
+        if (this.isPreviewMode) {
+            return;
+        }
+        
+        const point = this.getPointerPosition(e);
+        const element = this.getElementAtPoint(point);
+        
+        // Handle double-click for editable elements when in select mode
+        if (element && this.currentTool === 'select') {
+            if (element.type === 'text') {
+                this.startTextEditing(element);
+            } else if (element.type === 'image') {
+                this.editImageElement(element);
+            } else if (element.type === 'website') {
+                this.editWebsiteElement(element);
+            } else if (element.type === 'markdown') {
+                // Switch to editing mode for markdown elements
+                const textarea = element.svgElement.querySelector('.sww-markdown-editor');
+                const renderedView = element.svgElement.querySelector('.sww-markdown-rendered');
+                const hint = element.svgElement.querySelector('.sww-markdown-hint');
+                
+                if (textarea && renderedView) {
+                    // Toggle to editing mode using CSS classes
+                    element.svgElement.classList.add('sww-markdown-editing');
+                    element.svgElement.classList.remove('sww-markdown-readonly');
+                    
+                    textarea.readOnly = false;
+                    textarea.style.cursor = 'text';
+                    textarea.focus();
+                    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                    
+                    // Add blur handler to switch back to rendered view
+                    const handleBlur = () => {
+                        // Switch back to rendered view using CSS classes
+                        element.svgElement.classList.remove('sww-markdown-editing');
+                        element.svgElement.classList.add('sww-markdown-readonly');
+                        
+                        textarea.readOnly = true;
+                        textarea.style.cursor = 'default';
+                        textarea.removeEventListener('blur', handleBlur);
+                    };
+                    textarea.addEventListener('blur', handleBlur);
+                }
+            }
+        }
     },
 
     /**
