@@ -518,7 +518,7 @@ export const TextToolMixin = {
         
         // Inline styling - appears directly on the element
         textEditor.style.background = 'transparent';
-        textEditor.style.padding = '8px';
+        textEditor.style.padding = '10px'; // Match SVG padding exactly (was 8px)
         textEditor.style.boxSizing = 'border-box';
         textEditor.style.zIndex = '10000';
         textEditor.style.outline = 'none';
