@@ -372,5 +372,146 @@ export const UtilitiesMixin = {
         element.svgElement = null;
         element._mouseDownHandler = null;
         element._touchStartHandler = null;
+    },
+
+    /**
+     * Get element at a specific point (hit testing)
+     * Uses spatial index for performance with many elements
+     * @param {Object} point - {x, y} coordinates
+     * @returns {Object|null} Element at point or null
+     */
+    getElementAtPoint(point) {
+        // Use spatial index for efficient hit testing with large numbers of elements
+        const candidates = this.spatialIndex.query(point);
+        
+        // Convert Set to Array and reverse for proper z-order (top elements first)
+        const candidateArray = Array.from(candidates);
+        
+        // Sort by z-index (array index represents z-order)
+        candidateArray.sort((a, b) => {
+            const indexA = this.elements.indexOf(a);
+            const indexB = this.elements.indexOf(b);
+            return indexB - indexA; // Reverse order for top-to-bottom checking
+        });
+        
+        // Check candidates for actual hit
+        for (const element of candidateArray) {
+            if (this.isPointInElement(point, element)) {
+                return element;
+            }
+        }
+        
+        // Fallback to original method if spatial index doesn't find anything
+        // This handles edge cases where elements might not be properly indexed
+        for (let i = this.elements.length - 1; i >= 0; i--) {
+            const element = this.elements[i];
+            if (this.isPointInElement(point, element)) {
+                return element;
+            }
+        }
+        
+        return null;
+    },
+
+    /**
+     * Check if a point is within an element's bounds
+     * Different logic for different element types
+     * @param {Object} point - {x, y} coordinates
+     * @param {Object} element - Element to test
+     * @returns {boolean} True if point is in element
+     */
+    isPointInElement(point, element) {
+        const bounds = this.getElementBounds(element);
+        const tolerance = 12; // Minimum 12px tolerance for better UI/UX across all elements
+        
+        switch (element.type) {
+            case 'text':
+                // For text, use the calculated bounds with tolerance
+                return point.x >= bounds.x - tolerance && 
+                       point.x <= bounds.x + bounds.width + tolerance &&
+                       point.y >= bounds.y - tolerance && 
+                       point.y <= bounds.y + bounds.height + tolerance;
+                       
+            case 'line':
+            case 'arrow':
+                // For lines, use increased tolerance for easier selection
+                const lineSelectionTolerance = Math.max(element.strokeWidth / 2 + 8, tolerance); // Minimum 12px for easy clicking
+                return this.distanceToLine(point, 
+                    { x: element.x, y: element.y }, 
+                    { x: element.x + element.width, y: element.y + element.height }
+                ) <= lineSelectionTolerance;
+                
+            case 'path':
+                // For paths, check if near any point in the path
+                if (element.points) {
+                    for (let i = 0; i < element.points.length; i++) {
+                        const pathPoint = element.points[i];
+                        let absoluteX, absoluteY;
+                        
+                        // Check if this is the current element being drawn
+                        if (this.currentElement && this.currentElement.id === element.id) {
+                            // During drawing: points are absolute coordinates
+                            absoluteX = pathPoint.x;
+                            absoluteY = pathPoint.y;
+                        } else {
+                            // Finished element: convert relative point to absolute coordinates
+                            absoluteX = pathPoint.x + element.x;
+                            absoluteY = pathPoint.y + element.y;
+                        }
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(point.x - absoluteX, 2) + 
+                            Math.pow(point.y - absoluteY, 2)
+                        );
+                        if (distance <= Math.max(element.strokeWidth || 2, tolerance)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+                
+            default:
+                // For rectangles, ellipses, diamonds, parallelograms, stars - use bounds with minimum 12px tolerance
+                return point.x >= bounds.x - tolerance && 
+                       point.x <= bounds.x + bounds.width + tolerance &&
+                       point.y >= bounds.y - tolerance && 
+                       point.y <= bounds.y + bounds.height + tolerance;
+        }
+    },
+
+    /**
+     * Calculate distance from a point to a line segment
+     * Used for line/arrow hit testing
+     * @param {Object} point - {x, y} point to test
+     * @param {Object} lineStart - {x, y} line start point
+     * @param {Object} lineEnd - {x, y} line end point
+     * @returns {number} Distance in pixels
+     */
+    distanceToLine(point, lineStart, lineEnd) {
+        const A = point.x - lineStart.x;
+        const B = point.y - lineStart.y;
+        const C = lineEnd.x - lineStart.x;
+        const D = lineEnd.y - lineStart.y;
+        
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        
+        if (lenSq === 0) return Math.sqrt(A * A + B * B);
+        
+        let param = dot / lenSq;
+        
+        if (param < 0) {
+            return Math.sqrt(A * A + B * B);
+        } else if (param > 1) {
+            const E = point.x - lineEnd.x;
+            const F = point.y - lineEnd.y;
+            return Math.sqrt(E * E + F * F);
+        } else {
+            const xx = lineStart.x + param * C;
+            const yy = lineStart.y + param * D;
+            const dx = point.x - xx;
+            const dy = point.y - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
     }
 };
