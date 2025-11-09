@@ -135,7 +135,7 @@ export const SelectionHandlesMixin = {
      * @param {Object} element - Element being handled (optional, for type checking)
      */
     createResizeHandles(bounds, element = null) {
-        const handleSize = 8;
+        const handleSize = 10;
 
         // For path elements (freehand drawings), only show 4 corner handles
         // since they only support proportional scaling from corners
@@ -220,6 +220,16 @@ export const SelectionHandlesMixin = {
         }, { passive: false });
 
         this.selectionGroup.appendChild(rotateHandle);
+
+        // create a line connecting the rotate handle to the top-center of the selection box
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        line.setAttribute('class', 'sww-handle rotate-line');
+        line.setAttribute('x', bounds.x + bounds.width / 2 - 1);
+        line.setAttribute('y', bounds.y - 14);
+        line.setAttribute('width', 2);
+        line.setAttribute('height', 10);
+        
+        this.selectionGroup.appendChild(line);
     },
 
     /**

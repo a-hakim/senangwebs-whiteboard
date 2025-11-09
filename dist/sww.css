@@ -11660,6 +11660,12 @@ marker {
   cursor: crosshair;
 }
 
+.sww-handle.rotate-line {
+  fill: var(--sww-secondary-accent, #007370);
+  stroke: none;
+  pointer-events: none;
+}
+
 .sww-text-editor {
   position: absolute;
   border: 1px solid rgba(var(--sww-secondary-accent-rgb, 0, 115, 112), 0.3);
