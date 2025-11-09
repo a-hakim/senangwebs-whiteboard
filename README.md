@@ -45,17 +45,6 @@ You can include SenangWebs Whiteboard directly in your HTML file using unpkg:
 <script src="https://unpkg.com/senangwebs-whiteboard@latest/dist/sww.js"></script>
 ```
 
-### Development Setup
-
-For development or customization, build from source:
-
-```bash
-git clone https://github.com/a-hakim/senangwebs-whiteboard.git
-cd senangwebs-whiteboard
-npm install
-npm run build
-```
-
 ## Usage
 
 1. Include the SWW CSS and JavaScript files in your HTML:
