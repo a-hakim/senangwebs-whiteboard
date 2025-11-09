@@ -22,8 +22,6 @@ SenangWebs Whiteboard (SWW) is a powerful, client-side JavaScript drawing librar
 - Preview/presentation mode
 - Read-only mode for presentations
 - Markdown support with live preview
-- No external dependencies (FontAwesome and Marked pre-bundled)
-- Works on all modern browsers
 
 ## Installation
 
