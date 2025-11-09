@@ -2,10 +2,9 @@
 
 SenangWebs Whiteboard (SWW) is a powerful, client-side JavaScript drawing library for creating interactive digital whiteboards and vector drawings. With advanced performance optimizations and modern UI components, you can transform any container into a fully-featured drawing application with minimal setup.
 
-| Preview                                   | Examples          |
-| ------------------------------------------- | ------------------- |
-| ![SenangWebs Preview 1](https://raw.githubusercontent.com/a-hakim/senangwebs-whiteboard/master/sww_preview1.png) | sww.html          |
-| ![SenangWebs Preview 2](https://raw.githubusercontent.com/a-hakim/senangwebs-whiteboard/master/sww_preview2.png) | sww-tailwind.html |
+| Default Styling (sww.html) | Customize (sww-tailwind.html) |
+| ---------------------------| ----------------------------- |
+| ![SenangWebs Preview 1](https://raw.githubusercontent.com/a-hakim/senangwebs-whiteboard/master/sww_preview1.png) | ![SenangWebs Preview 2](https://raw.githubusercontent.com/a-hakim/senangwebs-whiteboard/master/sww_preview2.png) |
 
 ## Features
 
@@ -39,7 +38,10 @@ npm install senangwebs-whiteboard
 You can include SenangWebs Whiteboard directly in your HTML file using unpkg:
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/senangwebs-whiteboard@latest/dist/sww.css">
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/senangwebs-whiteboard@latest/dist/sww.css"
+/>
 <script src="https://unpkg.com/senangwebs-whiteboard@latest/dist/sww.js"></script>
 ```
 
@@ -61,22 +63,25 @@ npm run build
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-    <link rel="stylesheet" href="https://unpkg.com/senangwebs-whiteboard@latest/dist/sww.css">
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/senangwebs-whiteboard@latest/dist/sww.css"
+    />
     <script src="https://unpkg.com/senangwebs-whiteboard@latest/dist/sww.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="drawing-container"></div>
-    
+
     <script>
-        const container = document.getElementById('drawing-container');
-        const whiteboard = sww.init(container, {
-            backgroundColor: "#ffffff",
-            gridSize: 20,
-            showGrid: true
-        });
+      const container = document.getElementById("drawing-container");
+      const whiteboard = sww.init(container, {
+        backgroundColor: "#ffffff",
+        gridSize: 20,
+        showGrid: true,
+      });
     </script>
-</body>
+  </body>
 </html>
 ```
 
@@ -84,13 +89,13 @@ npm run build
 
 ```javascript
 const whiteboard = sww.init(container, {
-    backgroundColor: "#ffffff",
-    gridSize: 20,
-    showGrid: true,
-    panelMode: "dark",              // "dark" or "light"
-    accentColor: "#00FF99",         // Custom accent color
-    readOnly: false,                // Set to true for presentations
-    performanceMode: true           // Enable optimizations
+  backgroundColor: "#ffffff",
+  gridSize: 20,
+  showGrid: true,
+  panelMode: "dark", // "dark" or "light"
+  accentColor: "#00FF99", // Custom accent color
+  readOnly: false, // Set to true for presentations
+  performanceMode: true, // Enable optimizations
 });
 ```
 
@@ -122,11 +127,11 @@ Configure your whiteboard using these options:
 ### Setting Tools
 
 ```javascript
-whiteboard.setTool('rectangle');  // Draw rectangles
-whiteboard.setTool('ellipse');    // Draw circles/ellipses
-whiteboard.setTool('text');       // Add text
-whiteboard.setTool('arrow');      // Draw arrows
-whiteboard.setTool('select');     // Selection mode
+whiteboard.setTool("rectangle"); // Draw rectangles
+whiteboard.setTool("ellipse"); // Draw circles/ellipses
+whiteboard.setTool("text"); // Add text
+whiteboard.setTool("arrow"); // Draw arrows
+whiteboard.setTool("select"); // Selection mode
 ```
 
 ## API Reference
@@ -135,44 +140,44 @@ whiteboard.setTool('select');     // Selection mode
 
 ```javascript
 // Scene Management
-whiteboard.getScene()              // Get current scene data
-whiteboard.loadScene(data)         // Load scene from JSON
-whiteboard.clearAll()              // Clear all elements
+whiteboard.getScene(); // Get current scene data
+whiteboard.loadScene(data); // Load scene from JSON
+whiteboard.clearAll(); // Clear all elements
 
 // Element Management
-whiteboard.getElementById(id)                    // Find element by ID
-whiteboard.selectElementById(id)                 // Select specific element
-whiteboard.deleteElementById(id)                 // Delete specific element
-whiteboard.toggleElementVisibility(id)           // Toggle element visibility
+whiteboard.getElementById(id); // Find element by ID
+whiteboard.selectElementById(id); // Select specific element
+whiteboard.deleteElementById(id); // Delete specific element
+whiteboard.toggleElementVisibility(id); // Toggle element visibility
 
 // Selection
-whiteboard.selectAll()                           // Select all elements
-whiteboard.clearSelection()                      // Clear selection
-whiteboard.deleteSelectedElements()              // Delete selected
+whiteboard.selectAll(); // Select all elements
+whiteboard.clearSelection(); // Clear selection
+whiteboard.deleteSelectedElements(); // Delete selected
 
 // Clipboard
-whiteboard.copySelected()                        // Copy to clipboard
-whiteboard.pasteClipboard()                      // Paste from clipboard
+whiteboard.copySelected(); // Copy to clipboard
+whiteboard.pasteClipboard(); // Paste from clipboard
 
 // Zoom & View
-whiteboard.zoomIn()                              // Zoom in 10%
-whiteboard.zoomOut()                             // Zoom out 10%
-whiteboard.resetZoom()                           // Reset to 100%
-whiteboard.fitCanvasToElements()                 // Fit all elements
-whiteboard.toggleGrid()                          // Toggle grid
+whiteboard.zoomIn(); // Zoom in 10%
+whiteboard.zoomOut(); // Zoom out 10%
+whiteboard.resetZoom(); // Reset to 100%
+whiteboard.fitCanvasToElements(); // Fit all elements
+whiteboard.toggleGrid(); // Toggle grid
 
 // History
-whiteboard.undo()                                // Undo last action
-whiteboard.redo()                                // Redo action
+whiteboard.undo(); // Undo last action
+whiteboard.redo(); // Redo action
 
 // Export
-whiteboard.exportToSVG()                         // Export as SVG
-whiteboard.exportToPNG()                         // Export as PNG
+whiteboard.exportToSVG(); // Export as SVG
+whiteboard.exportToPNG(); // Export as PNG
 
 // Preview Mode
-whiteboard.togglePreviewMode()                   // Toggle preview
-whiteboard.enterPreviewMode()                    // Enter preview
-whiteboard.exitPreviewMode()                     // Exit preview
+whiteboard.togglePreviewMode(); // Toggle preview
+whiteboard.enterPreviewMode(); // Enter preview
+whiteboard.exitPreviewMode(); // Exit preview
 ```
 
 For detailed API documentation, see [docs/api-reference.md](docs/api-reference.md).
@@ -203,14 +208,14 @@ For detailed API documentation, see [docs/api-reference.md](docs/api-reference.m
 
 ```javascript
 // Switch theme dynamically
-whiteboard.setPanelMode("light");  // Switch to light mode
-whiteboard.setPanelMode("dark");   // Switch to dark mode
+whiteboard.setPanelMode("light"); // Switch to light mode
+whiteboard.setPanelMode("dark"); // Switch to dark mode
 
 // Custom colors
 const whiteboard = sww.init(container, {
-    panelBackgroundColor: '#1a1f3a',
-    accentColor: '#4c9aff',
-    secondaryAccentColor: '#2563eb'
+  panelBackgroundColor: "#1a1f3a",
+  accentColor: "#4c9aff",
+  secondaryAccentColor: "#2563eb",
 });
 ```
 
@@ -225,6 +230,7 @@ SenangWebs Whiteboard works on all modern browsers:
 - ⚠️ Internet Explorer (Not Supported)
 
 **Requirements:**
+
 - ES6+ JavaScript support
 - SVG rendering support
 - CSS Grid and Flexbox
@@ -254,13 +260,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
-
-## Acknowledgments
-
-- Thanks to Font Awesome for the icons used in the UI
-- Thanks to Marked.js for the markdown parsing support
-- Thanks to all contributors who have helped improve this library
-
-## Support
-
-If you encounter any issues or have questions, please file an issue on the [GitHub repository](https://github.com/a-hakim/senangwebs-whiteboard/issues).
