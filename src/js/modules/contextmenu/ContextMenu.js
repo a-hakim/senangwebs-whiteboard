@@ -285,7 +285,7 @@ export const ContextMenuMixin = {
    * Add custom menu item to context menu
    * @param {Object} item - Menu item configuration
    * @param {string} item.id - Unique identifier
-   * @param {string} item.icon - FontAwesome icon class
+   * @param {string} item.icon - SenangStart icon class
    * @param {string} item.text - Display text
    * @param {Function} item.action - Action to perform when clicked
    * @param {string} [item.position] - Position: 'top', 'bottom', or after specific item ID

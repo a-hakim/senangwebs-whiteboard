@@ -118,7 +118,7 @@ export const LayersPanelMixin = {
   /**
    * Get layer icon class based on element type
    * @param {string} type - The element type
-   * @returns {string} FontAwesome icon class
+   * @returns {string} SenangStart icon class
    */
   getLayerIcon(type) {
     const icons = {

@@ -1,11 +1,9 @@
 /**
  * SenangWebs Whiteboard (SWW) - CSS Styles
  * Version: 1.1.1
- * 
- * Complete stylesheet for SWW drawing library with built-in FontAwesome support
  */
 
-/* Import FontAwesome */
+/* Import SenangStart Icons */
 @import "~@bookklik/senangstart-icons/dist/senangstart.min.css";
 
 /* CSS Variables for Theme Colors */
