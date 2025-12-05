@@ -1,18 +1,18 @@
 /**
  * SenangWebs Whiteboard (SWW) - CSS Styles
- * Version: 1.0.0
+ * Version: 1.1.1
  * 
  * Complete stylesheet for SWW drawing library with built-in FontAwesome support
  */
 
 /* Import FontAwesome */
-@import '~@fortawesome/fontawesome-free/css/all.css';
+@import "~@bookklik/senangstart-icons/dist/senangstart.min.css";
 
 /* CSS Variables for Theme Colors */
 :root {
   --sww-panel-bg: #18181b;
   --sww-panel-text: #ffffff;
-  --sww-accent-color: #00FF99;
+  --sww-accent-color: #00ff99;
   --sww-secondary-accent: #007370;
   --sww-panel-border: #27272a;
   --sww-panel-hover: #27272a;
@@ -206,7 +206,7 @@ html {
 .sww-panel-button.active,
 .sww-panel-button:hover {
   color: var(--sww-accent-color);
-  background: #09090B;
+  background: #09090b;
 }
 
 /* Elements Section */
@@ -230,7 +230,7 @@ html {
   flex-direction: column;
   width: 100%;
   padding: 12px;
-  border: 1px solid #09090B80;
+  border: 1px solid #09090b80;
   color: #ffffff80;
   background: transparent;
   border-radius: 8px;
@@ -607,7 +607,8 @@ body.sww-pseudo-fullscreen {
 
 /* Markdown Element Styles */
 .sww-markdown-element {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", sans-serif;
   line-height: 1.6;
 }
 
@@ -641,7 +642,7 @@ body.sww-pseudo-fullscreen {
   background-color: #f4f4f4;
   padding: 2px 4px;
   border-radius: 3px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 }
 
 .sww-markdown-element pre {
@@ -675,12 +676,24 @@ body.sww-pseudo-fullscreen {
   font-weight: bold;
 }
 
-.sww-markdown-element h1 { font-size: 2em; }
-.sww-markdown-element h2 { font-size: 1.5em; }
-.sww-markdown-element h3 { font-size: 1.25em; }
-.sww-markdown-element h4 { font-size: 1.1em; }
-.sww-markdown-element h5 { font-size: 1em; }
-.sww-markdown-element h6 { font-size: 0.9em; }
+.sww-markdown-element h1 {
+  font-size: 2em;
+}
+.sww-markdown-element h2 {
+  font-size: 1.5em;
+}
+.sww-markdown-element h3 {
+  font-size: 1.25em;
+}
+.sww-markdown-element h4 {
+  font-size: 1.1em;
+}
+.sww-markdown-element h5 {
+  font-size: 1em;
+}
+.sww-markdown-element h6 {
+  font-size: 0.9em;
+}
 
 .sww-markdown-element ul,
 .sww-markdown-element ol {
@@ -745,7 +758,7 @@ body.sww-pseudo-fullscreen {
   flex-direction: column;
   background: var(--sww-panel-bg);
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   overflow: hidden;
 }
@@ -775,7 +788,7 @@ body.sww-pseudo-fullscreen {
 }
 
 .sww-tool-button:hover {
-  background: var(--sww-panel-bg, #09090B);
+  background: var(--sww-panel-bg, #09090b);
   color: var(--sww-accent-color);
 }
 
@@ -785,7 +798,7 @@ body.sww-pseudo-fullscreen {
 }
 
 .sww-tool-button.active {
-  background: var(--sww-panel-bg, #09090B);
+  background: var(--sww-panel-bg, #09090b);
   color: var(--sww-accent-color);
 }
 
@@ -852,7 +865,7 @@ body.sww-pseudo-fullscreen {
   height: 32px;
   border-radius: 8px;
   cursor: pointer;
-  background: var(--sww-panel-bg, #09090B);
+  background: var(--sww-panel-bg, #09090b);
   padding: 0;
 }
 
@@ -862,7 +875,7 @@ body.sww-pseudo-fullscreen {
   border-radius: 8px;
   font-size: 12px;
   height: 32px;
-  background: var(--sww-panel-bg, #09090B);
+  background: var(--sww-panel-bg, #09090b);
   color: var(--sww-panel-text, white);
   border: 1px solid var(--sww-panel-border);
   box-sizing: border-box;
@@ -887,7 +900,7 @@ body.sww-pseudo-fullscreen {
   border-radius: 8px;
   font-size: 12px;
   height: 32px;
-  background: var(--sww-panel-bg, #09090B);
+  background: var(--sww-panel-bg, #09090b);
   color: var(--sww-panel-text, white);
   border: 1px solid var(--sww-panel-border);
   box-sizing: border-box;
@@ -930,7 +943,7 @@ body.sww-pseudo-fullscreen {
   border-radius: 8px;
   font-size: 12px;
   height: 32px;
-  background: var(--sww-panel-bg, #09090B);
+  background: var(--sww-panel-bg, #09090b);
   color: var(--sww-panel-text, white);
   border: 1px solid var(--sww-panel-border);
   outline: none;
@@ -983,7 +996,7 @@ marker {
   fill: none;
   stroke: var(--sww-secondary-accent, #007370);
   stroke-width: 1;
-  stroke-dasharray: 5,5;
+  stroke-dasharray: 5, 5;
   pointer-events: none;
 }
 
@@ -1056,7 +1069,7 @@ marker {
 
 .sww-align-button {
   padding: 4px 8px;
-  background: #09090B;
+  background: #09090b;
   cursor: pointer;
   font-size: 12px;
   border-radius: 8px;
@@ -1073,12 +1086,12 @@ marker {
 
 .sww-align-button:hover {
   background: var(--sww-accent-color);
-  color: #09090B;
+  color: #09090b;
 }
 
 .sww-align-button.active {
   background: var(--sww-accent-color);
-  color: #09090B;
+  color: #09090b;
 }
 
 .sww-align-button i {
@@ -1097,7 +1110,7 @@ marker {
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 2000;
   min-width: 150px;
   padding: 4px 0;
@@ -1348,7 +1361,7 @@ marker {
   border: none;
   resize: none;
   padding: 10px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 12px;
   line-height: 1.4;
   outline: none;
@@ -1429,7 +1442,7 @@ marker {
   background-color: #f4f4f4;
   padding: 2px 4px;
   border-radius: 3px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 0.9em;
 }
 
@@ -1483,7 +1496,7 @@ marker {
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   z-index: 3000;
   padding: 20px;
   min-width: 300px;
@@ -1518,7 +1531,7 @@ marker {
 .sww-config-dialog textarea {
   height: 100px;
   resize: vertical;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 }
 
 .sww-config-dialog-buttons {
@@ -1556,7 +1569,7 @@ marker {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 2999;
 }
 
@@ -1596,7 +1609,7 @@ marker {
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 12px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   pointer-events: none;
   z-index: 10001;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);

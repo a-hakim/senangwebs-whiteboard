@@ -1,398 +1,529 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SenangWebs Whiteboard</title>
-    
+
     <!-- SWW Library Files (with built-in FontAwesome and Marked) -->
     <link rel="stylesheet" href="../dist/sww.css" />
     <script src="../dist/sww.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Main Application Container -->
     <div class="sww-editor-container">
-        
-        <!-- Left Control Panel -->
-        <div class="sww-control-panel" id="sww-control-panel">
-            
-            <!-- Panel Header -->
-            <div class="sww-control-header">
-                <div><h4>SW Whiteboard</h4></div>
-                <div class="sww-control-header-actions">
-                    <button class="sww-panel-button" onclick="togglePanelWidth()" title="Expand Panel Width" id="toggle-width-btn">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                    <button class="sww-panel-button active" onclick="togglePanelDock()" title="Dock Panel" id="toggle-dock-btn">
-                        <i class="fas fa-bookmark"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Menu Navigation -->
-            <div class="sww-control-menu">
-                <button class="sww-control-menu-button active" data-menu="elements">
-                    <i class="fas fa-shapes"></i>
-                    <span>Elements</span>
-                </button>
-                <button class="sww-control-menu-button" data-menu="layers">
-                    <i class="fas fa-layer-group"></i>
-                    <span>Layers</span>
-                </button>
-            </div>
-
-            <!-- Elements Section -->
-            <div id="sww-elements-section" class="sww-control-section">
-                <div class="sww-elements-grid">
-                    <button class="sww-action-button" onclick="swwInstance.setTool('rectangle')">
-                        <i class="far fa-square"></i> Rectangle
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('ellipse')">
-                        <i class="far fa-circle"></i> Ellipse
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('diamond')">
-                        <i class="far fa-square" style="rotate: 45deg;"></i> Diamond
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('parallelogram')">
-                        <i class="far fa-square" style="transform: skew(-15deg, 0deg);"></i> Parallelogram
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('star')">
-                        <i class="far fa-star"></i> Star
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('draw')">
-                        <i class="fas fa-pencil"></i> Draw
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('line')">
-                        <i class="fas fa-minus"></i> Line
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('arrow')">
-                        <i class="fas fa-arrow-right"></i> Arrow
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('text')">
-                        <i class="fas fa-font"></i> Text
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('image')">
-                        <i class="fas fa-image"></i> Image
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('website')">
-                        <i class="fas fa-globe"></i> Website
-                    </button>
-                    <button class="sww-action-button" onclick="swwInstance.setTool('markdown')">
-                        <i class="fas fa-file-alt"></i> Document
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Layers Section -->
-            <div id="sww-layers-section" class="sww-control-section" style="display: none;">
-                <div class="sww-layer-header">
-                    <span>Layers (<span id="layer-count">0</span>)</span>
-                    <div class="sww-layer-actions">
-                        <button class="sww-layer-action-btn" onclick="swwInstance.selectAll()" title="Select All">
-                            <i class="fas fa-check-square"></i>
-                        </button>
-                        <button class="sww-layer-action-btn" onclick="swwInstance.clearSelection()" title="Clear Selection">
-                            <i class="far fa-square"></i>
-                        </button>
-                        <button class="sww-layer-action-btn" onclick="swwInstance.copySelected(); swwInstance.pasteClipboard();" title="Duplicate">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="sww-layer-action-btn" onclick="swwInstance.deleteSelectedElements()" title="Delete Selected">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="sww-layers-container" id="sww-layers-list">
-                    <div id="no-layers-message" class="sww-info-text" style="text-align: center; padding: 20px;">
-                        No elements in the scene.<br>
-                        Add elements using the tools to see them here.
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Customize Section -->
-            <div id="sww-customize-section" class="sww-control-section" style="display: none;">
-                <div style="padding: 20px; text-align: center; color: #ffffff80;">
-                    No elements selected. Select an element to customize its properties.
-                </div>
-            </div>
-
+      <!-- Left Control Panel -->
+      <div class="sww-control-panel" id="sww-control-panel">
+        <!-- Panel Header -->
+        <div class="sww-control-header">
+          <div><h4>SW Whiteboard</h4></div>
+          <div class="sww-control-header-actions">
+            <button
+              class="sww-panel-button"
+              onclick="togglePanelWidth()"
+              title="Expand Panel Width"
+              id="toggle-width-btn"
+            >
+              <i class="ss ss-maximize"></i>
+            </button>
+            <button
+              class="sww-panel-button active"
+              onclick="togglePanelDock()"
+              title="Dock Panel"
+              id="toggle-dock-btn"
+            >
+              <i class="ss ss-bookmark"></i>
+            </button>
+          </div>
         </div>
 
-        <!-- Main Canvas Area -->
-        <div class="sww-canvas-area" id="sww-drawing-canvas"></div>
-        
+        <!-- Menu Navigation -->
+        <div class="sww-control-menu">
+          <button class="sww-control-menu-button active" data-menu="elements">
+            <i class="ss ss-layout"></i>
+            <span>Elements</span>
+          </button>
+          <button class="sww-control-menu-button" data-menu="layers">
+            <i class="ss ss-layer-stacks"></i>
+            <span>Layers</span>
+          </button>
+        </div>
+
+        <!-- Elements Section -->
+        <div id="sww-elements-section" class="sww-control-section">
+          <div class="sww-elements-grid">
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('rectangle')"
+            >
+              <i class="ss ss-square"></i> Rectangle
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('ellipse')"
+            >
+              <i class="ss ss-circle"></i> Ellipse
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('diamond')"
+            >
+              <i class="ss ss-diamond"></i> Diamond
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('parallelogram')"
+            >
+              <i class="ss ss-square" style="transform: skew(-15deg, 0deg)"></i>
+              Parallelogram
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('star')"
+            >
+              <i class="ss ss-star"></i> Star
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('draw')"
+            >
+              <i class="ss ss-draw-curve"></i> Draw
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('line')"
+            >
+              <i class="ss ss-draw-line"></i> Line
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('arrow')"
+            >
+              <i class="ss ss-arrow-right"></i> Arrow
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('text')"
+            >
+              <i class="ss ss-text"></i> Text
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('image')"
+            >
+              <i class="ss ss-photo"></i> Image
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('website')"
+            >
+              <i class="ss ss-globe-alt"></i> Website
+            </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('markdown')"
+            >
+              <i class="ss ss-document-text"></i> Document
+            </button>
+          </div>
+        </div>
+
+        <!-- Layers Section -->
+        <div
+          id="sww-layers-section"
+          class="sww-control-section"
+          style="display: none"
+        >
+          <div class="sww-layer-header">
+            <span>Layers (<span id="layer-count">0</span>)</span>
+            <div class="sww-layer-actions">
+              <button
+                class="sww-layer-action-btn"
+                onclick="swwInstance.selectAll()"
+                title="Select All"
+              >
+                <i class="ss ss-check"></i>
+              </button>
+              <button
+                class="sww-layer-action-btn"
+                onclick="swwInstance.clearSelection()"
+                title="Clear Selection"
+              >
+                <i class="ss ss-square"></i>
+              </button>
+              <button
+                class="sww-layer-action-btn"
+                onclick="swwInstance.copySelected(); swwInstance.pasteClipboard();"
+                title="Duplicate"
+              >
+                <i class="ss ss-document-duplicate"></i>
+              </button>
+              <button
+                class="sww-layer-action-btn"
+                onclick="swwInstance.deleteSelectedElements()"
+                title="Delete Selected"
+              >
+                <i class="ss ss-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="sww-layers-container" id="sww-layers-list">
+            <div
+              id="no-layers-message"
+              class="sww-info-text"
+              style="text-align: center; padding: 20px"
+            >
+              No elements in the scene.<br />
+              Add elements using the tools to see them here.
+            </div>
+          </div>
+        </div>
+
+        <!-- Customize Section -->
+        <div
+          id="sww-customize-section"
+          class="sww-control-section"
+          style="display: none"
+        >
+          <div style="padding: 20px; text-align: center; color: #ffffff80">
+            No elements selected. Select an element to customize its properties.
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Canvas Area -->
+      <div class="sww-canvas-area" id="sww-drawing-canvas"></div>
     </div>
 
     <!-- Bottom Toolbar -->
     <div class="sww-toolbar-container">
-        
-        <!-- Zoom Controls -->
-        <div id="sww-zoom" class="sww-toolbar-action">
-            <button class="sww-toolbar-button" onclick="swwInstance.zoomIn()" title="Zoom In" id="zoom-in-btn">
-                <i class="fas fa-search-plus"></i>
-            </button>
-            <button class="sww-toolbar-button" onclick="swwInstance.zoomOut()" title="Zoom Out" id="zoom-out-btn">
-                <i class="fas fa-search-minus"></i>
-            </button>
-        </div>
-        
-        <!-- Action Controls -->
-        <div id="sww-action" class="sww-toolbar-action">
-            <button class="sww-toolbar-button" onclick="swwInstance.undo()" title="Undo" id="undo-btn">
-                <i class="fas fa-undo"></i>
-            </button>
-            <button class="sww-toolbar-button" onclick="swwInstance.redo()" title="Redo" id="redo-btn">
-                <i class="fas fa-redo"></i>
-            </button>
-            <!-- <button class="sww-toolbar-button" title="Save">
-                <i class="fas fa-save"></i>
+      <!-- Zoom Controls -->
+      <div id="sww-zoom" class="sww-toolbar-action">
+        <button
+          class="sww-toolbar-button"
+          onclick="swwInstance.zoomIn()"
+          title="Zoom In"
+          id="zoom-in-btn"
+        >
+          <i class="ss ss-magnifying-glass-plus"></i>
+        </button>
+        <button
+          class="sww-toolbar-button"
+          onclick="swwInstance.zoomOut()"
+          title="Zoom Out"
+          id="zoom-out-btn"
+        >
+          <i class="ss ss-magnifying-glass-minus"></i>
+        </button>
+      </div>
+
+      <!-- Action Controls -->
+      <div id="sww-action" class="sww-toolbar-action">
+        <button
+          class="sww-toolbar-button"
+          onclick="swwInstance.undo()"
+          title="Undo"
+          id="undo-btn"
+        >
+          <i class="ss ss-arrow-rotate-ccw"></i>
+        </button>
+        <button
+          class="sww-toolbar-button"
+          onclick="swwInstance.redo()"
+          title="Redo"
+          id="redo-btn"
+        >
+          <i class="ss ss-arrow-rotate-cw"></i>
+        </button>
+        <!-- <button class="sww-toolbar-button" title="Save">
+                <i class="ss ss-save"></i>
             </button> -->
-            <button class="sww-toolbar-button" onclick="swwInstance.togglePreviewMode()" title="Preview" id="toggle-preview-btn">
-                <i class="far fa-window-maximize"></i>
-            </button>
-            <button class="sww-toolbar-button" onclick="swwInstance.selectAll()" title="Select All" id="select-all-btn">
-                <i class="fas fa-check-double"></i>
-            </button>
-            <button class="sww-toolbar-button" onclick="swwInstance.clearAll()" title="Clear Canvas" id="clear-canvas-btn">
-                <i class="fas fa-eraser"></i>
-            </button>
-        </div>
-        
-        <!-- Menu Controls -->
-        <div id="sww-menu" class="sww-toolbar-action">
-            <!-- <button class="sww-toolbar-button" onclick="exportSVG()" title="Export SVG">
-                <i class="fas fa-download"></i>
+        <button
+          class="sww-toolbar-button"
+          onclick="swwInstance.togglePreviewMode()"
+          title="Preview"
+          id="toggle-preview-btn"
+        >
+          <i class="ss ss-window"></i>
+        </button>
+        <button
+          class="sww-toolbar-button"
+          onclick="swwInstance.selectAll()"
+          title="Select All"
+          id="select-all-btn"
+        >
+          <i class="ss ss-double-tick"></i>
+        </button>
+        <button
+          class="sww-toolbar-button"
+          onclick="swwInstance.clearAll()"
+          title="Clear Canvas"
+          id="clear-canvas-btn"
+        >
+          <i class="ss ss-eraser"></i>
+        </button>
+      </div>
+
+      <!-- Menu Controls -->
+      <div id="sww-menu" class="sww-toolbar-action">
+        <!-- <button class="sww-toolbar-button" onclick="exportSVG()" title="Export SVG">
+                <i class="ss ss-save"></i>
             </button> -->
-            <button class="sww-toolbar-button" onclick="swwInstance.toggleGrid()" title="Toggle Grid" id="toggle-grid-btn">
-                <i class="fas fa-border-none"></i>
-            </button>
-        </div>
-        
+        <button
+          class="sww-toolbar-button"
+          onclick="swwInstance.toggleGrid()"
+          title="Toggle Grid"
+          id="toggle-grid-btn"
+        >
+          <i class="ss ss-grid"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Application Logic -->
     <script>
-        // Global variables
-        let swwInstance;
+      // Global variables
+      let swwInstance;
 
-        /**
-         * Initialize the application when DOM is ready
-         */
-        document.addEventListener("DOMContentLoaded", () => {
-            const container = document.getElementById("sww-drawing-canvas");
+      /**
+       * Initialize the application when DOM is ready
+       */
+      document.addEventListener("DOMContentLoaded", () => {
+        const container = document.getElementById("sww-drawing-canvas");
 
-            // Initialize SWW drawing library
-            swwInstance = sww.init(container, {
-                backgroundColor: "#ffffff",
-                gridSize: 20,
-                showGrid: true,
-                readOnly: false, // default false
-            });
-
-            // NOTE: SWWControlPanel is no longer needed in the modular architecture
-            // All control panel functionality is now built into the instance
-            // The layers panel updates automatically when elements change
-            
-            // Setup menu navigation
-            setupMenuNavigation();
-
-            console.log("SenangWebs Whiteboard initialized successfully!");
+        // Initialize SWW drawing library
+        swwInstance = sww.init(container, {
+          backgroundColor: "#ffffff",
+          gridSize: 20,
+          showGrid: true,
+          readOnly: false, // default false
         });
-        
-        /**
-         * Setup menu navigation for control panel
-         */
-        function setupMenuNavigation() {
-            const menuButtons = document.querySelectorAll('.sww-control-menu-button');
-            const sections = document.querySelectorAll('.sww-control-section');
-            
-            menuButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetMenu = button.getAttribute('data-menu');
-                    
-                    // Update active button
-                    menuButtons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                    
-                    // Show/hide sections
-                    sections.forEach(section => {
-                        section.style.display = 'none';
-                    });
-                    
-                    const targetSection = document.getElementById(`sww-${targetMenu}-section`);
-                    if (targetSection) {
-                        targetSection.style.display = 'block';
-                        
-                        // Layers panel updates automatically when elements change
-                    }
-                });
+
+        // NOTE: SWWControlPanel is no longer needed in the modular architecture
+        // All control panel functionality is now built into the instance
+        // The layers panel updates automatically when elements change
+
+        // Setup menu navigation
+        setupMenuNavigation();
+
+        console.log("SenangWebs Whiteboard initialized successfully!");
+      });
+
+      /**
+       * Setup menu navigation for control panel
+       */
+      function setupMenuNavigation() {
+        const menuButtons = document.querySelectorAll(
+          ".sww-control-menu-button"
+        );
+        const sections = document.querySelectorAll(".sww-control-section");
+
+        menuButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const targetMenu = button.getAttribute("data-menu");
+
+            // Update active button
+            menuButtons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+
+            // Show/hide sections
+            sections.forEach((section) => {
+              section.style.display = "none";
             });
+
+            const targetSection = document.getElementById(
+              `sww-${targetMenu}-section`
+            );
+            if (targetSection) {
+              targetSection.style.display = "block";
+
+              // Layers panel updates automatically when elements change
+            }
+          });
+        });
+      }
+
+      /**
+       * Toggle panel width between normal and expanded
+       */
+      function togglePanelWidth() {
+        const controlPanel = document.getElementById("sww-control-panel");
+        controlPanel.classList.toggle("expanded");
+        const toggleWidthBtn = document.getElementById("toggle-width-btn");
+        if (controlPanel.classList.contains("expanded")) {
+          toggleWidthBtn.title = "Collapse Panel Width";
+          toggleWidthBtn.classList.add("active");
+        } else {
+          toggleWidthBtn.title = "Expand Panel Width";
+          toggleWidthBtn.classList.remove("active");
+        }
+      }
+
+      /**
+       * Toggle panel docking between docked and undocked
+       */
+      function togglePanelDock() {
+        const controlPanel = document.getElementById("sww-control-panel");
+        controlPanel.classList.toggle("undocked");
+        const toggleDockBtn = document.getElementById("toggle-dock-btn");
+        if (controlPanel.classList.contains("undocked")) {
+          toggleDockBtn.title = "Dock Panel";
+          toggleDockBtn.classList.remove("active");
+        } else {
+          toggleDockBtn.title = "Undock Panel";
+          toggleDockBtn.classList.add("active");
+        }
+      }
+
+      /**
+       * Update layers panel to show all elements
+       * Called by LayersPanel.js via window.swwControlPanel.updateLayers()
+       */
+      function updateLayers() {
+        if (!swwInstance || !swwInstance.elements) {
+          return;
         }
 
-        /**
-         * Toggle panel width between normal and expanded
-         */
-        function togglePanelWidth() {
-            const controlPanel = document.getElementById('sww-control-panel');
-            controlPanel.classList.toggle('expanded');
-            const toggleWidthBtn = document.getElementById('toggle-width-btn');
-            if (controlPanel.classList.contains('expanded')) {
-                toggleWidthBtn.title = "Collapse Panel Width";
-                toggleWidthBtn.classList.add('active');
-            } else {
-                toggleWidthBtn.title = "Expand Panel Width";
-                toggleWidthBtn.classList.remove('active');
-            }
+        const layersList = document.getElementById("sww-layers-list");
+        const layerCount = document.getElementById("layer-count");
+        const elements = swwInstance.elements;
+
+        // Update count
+        if (layerCount) {
+          layerCount.textContent = elements.length;
         }
 
-        /**
-         * Toggle panel docking between docked and undocked
-         */
-        function togglePanelDock() {
-            const controlPanel = document.getElementById('sww-control-panel');
-            controlPanel.classList.toggle('undocked');
-            const toggleDockBtn = document.getElementById('toggle-dock-btn');
-            if (controlPanel.classList.contains('undocked')) {
-                toggleDockBtn.title = "Dock Panel";
-                toggleDockBtn.classList.remove('active');
-            } else {
-                toggleDockBtn.title = "Undock Panel";
-                toggleDockBtn.classList.add('active');
-            }
+        // Update layers list
+        if (!layersList) {
+          return;
         }
 
-        /**
-         * Update layers panel to show all elements
-         * Called by LayersPanel.js via window.swwControlPanel.updateLayers()
-         */
-        function updateLayers() {
-            if (!swwInstance || !swwInstance.elements) {
-                return;
-            }
+        if (!Array.isArray(elements) || elements.length === 0) {
+          layersList.innerHTML =
+            '<div style="text-align: center; padding: 20px 10px; color: var(--sww-panel-text); opacity: 0.6;">No elements in the scene. Add elements using the tools to see them here.</div>';
+          return;
+        }
 
-            const layersList = document.getElementById('sww-layers-list');
-            const layerCount = document.getElementById('layer-count');
-            const elements = swwInstance.elements;
+        const selectedElements = swwInstance.selectedElements || new Set();
 
-            // Update count
-            if (layerCount) {
-                layerCount.textContent = elements.length;
-            }
+        layersList.innerHTML = elements
+          .map((element, index) => {
+            if (!element || !element.id || !element.type) return "";
 
-            // Update layers list
-            if (!layersList) {
-                return;
-            }
+            const isSelected = selectedElements.has(element.id);
+            const isHidden = element.hidden || false;
+            const isLocked = element.locked || false;
 
-            if (!Array.isArray(elements) || elements.length === 0) {
-                layersList.innerHTML = '<div style="text-align: center; padding: 20px 10px; color: var(--sww-panel-text); opacity: 0.6;">No elements in the scene. Add elements using the tools to see them here.</div>';
-                return;
-            }
-
-            const selectedElements = swwInstance.selectedElements || new Set();
-            
-            layersList.innerHTML = elements.map((element, index) => {
-                if (!element || !element.id || !element.type) return '';
-                
-                const isSelected = selectedElements.has(element.id);
-                const isHidden = element.hidden || false;
-                const isLocked = element.locked || false;
-                
-                return `
-                    <div class="sww-layer-item ${isSelected ? 'selected' : ''}" data-element-id="${element.id}">
-                        <div class="sww-layer-info" onclick="selectLayerElement('${element.id}')">
-                            <i class="fas fa-${getLayerIcon(element.type)}"></i>
+            return `
+                    <div class="sww-layer-item ${
+                      isSelected ? "selected" : ""
+                    }" data-element-id="${element.id}">
+                        <div class="sww-layer-info" onclick="selectLayerElement('${
+                          element.id
+                        }')">
+                            <i class="ss ss-${getLayerIcon(element.type)}"></i>
                             <span>${element.type} ${index + 1}</span>
                         </div>
                         <div class="sww-layer-actions">
-                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); toggleLayerVisibility('${element.id}')" title="${isHidden ? 'Show' : 'Hide'}">
-                                <i class="fas fa-${isHidden ? 'eye-slash' : 'eye'}"></i>
+                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); toggleLayerVisibility('${
+                              element.id
+                            }')" title="${isHidden ? "Show" : "Hide"}">
+                                <i class="ss ss-${
+                                  isHidden ? "eye-slash" : "eye"
+                                }"></i>
                             </button>
-                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); toggleLayerLock('${element.id}')" title="${isLocked ? 'Unlock' : 'Lock'}">
-                                <i class="fas fa-${isLocked ? 'lock' : 'unlock'}"></i>
+                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); toggleLayerLock('${
+                              element.id
+                            }')" title="${isLocked ? "Unlock" : "Lock"}">
+                                <i class="ss ss-${
+                                  isLocked ? "lock-closed" : "lock-open"
+                                }"></i>
                             </button>
-                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); deleteLayerElement('${element.id}')" title="Delete">
-                                <i class="fas fa-trash"></i>
+                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); deleteLayerElement('${
+                              element.id
+                            }')" title="Delete">
+                                <i class="ss ss-trash"></i>
                             </button>
                         </div>
                     </div>
                 `;
-            }).filter(html => html).join('');
-        }
+          })
+          .filter((html) => html)
+          .join("");
+      }
 
-        /**
-         * Get FontAwesome icon for element type
-         */
-        function getLayerIcon(type) {
-            const icons = {
-                rectangle: 'square',
-                ellipse: 'circle',
-                diamond: 'square',
-                star: 'star',
-                parallelogram: 'shapes',
-                arrow: 'arrow-right',
-                line: 'minus',
-                text: 'font',
-                draw: 'pencil-alt',
-                image: 'image',
-                website: 'globe',
-                markdown: 'file-alt'
-            };
-            return icons[type] || 'shapes';
-        }
-
-        /**
-         * Select element from layers panel
-         */
-        function selectLayerElement(elementId) {
-            if (swwInstance && swwInstance.selectElementById) {
-                swwInstance.selectElementById(elementId);
-                updateLayers();
-            }
-        }
-
-        /**
-         * Toggle element visibility from layers panel
-         */
-        function toggleLayerVisibility(elementId) {
-            if (swwInstance && swwInstance.toggleElementVisibility) {
-                swwInstance.toggleElementVisibility(elementId);
-                updateLayers();
-            }
-        }
-
-        /**
-         * Toggle element lock from layers panel
-         */
-        function toggleLayerLock(elementId) {
-            if (swwInstance && swwInstance.toggleElementLock) {
-                swwInstance.toggleElementLock(elementId);
-                updateLayers();
-            }
-        }
-
-        /**
-         * Delete element from layers panel
-         */
-        function deleteLayerElement(elementId) {
-            if (swwInstance && swwInstance.deleteElementById) {
-                swwInstance.deleteElementById(elementId);
-                updateLayers();
-            }
-        }
-
-        /**
-         * Make updateLayers available globally for LayersPanel.js
-         * This replaces the old SWWControlPanel.updateLayers() pattern
-         */
-        window.swwControlPanel = {
-            updateLayers: updateLayers
+      /**
+       * Get FontAwesome icon for element type
+       */
+      function getLayerIcon(type) {
+        const icons = {
+          rectangle: "square",
+          ellipse: "circle",
+          diamond: "diamond",
+          star: "star",
+          parallelogram: "square",
+          arrow: "arrow-right",
+          line: "draw-line",
+          text: "text",
+          path: "draw-curve",
+          image: "photo",
+          website: "globe-alt",
+          markdown: "document-text",
         };
+        return icons[type] || "shapes";
+      }
 
-        // Auto-update layers panel periodically
-        setInterval(updateLayers, 1000);
+      /**
+       * Select element from layers panel
+       */
+      function selectLayerElement(elementId) {
+        if (swwInstance && swwInstance.selectElementById) {
+          swwInstance.selectElementById(elementId);
+          updateLayers();
+        }
+      }
+
+      /**
+       * Toggle element visibility from layers panel
+       */
+      function toggleLayerVisibility(elementId) {
+        if (swwInstance && swwInstance.toggleElementVisibility) {
+          swwInstance.toggleElementVisibility(elementId);
+          updateLayers();
+        }
+      }
+
+      /**
+       * Toggle element lock from layers panel
+       */
+      function toggleLayerLock(elementId) {
+        if (swwInstance && swwInstance.toggleElementLock) {
+          swwInstance.toggleElementLock(elementId);
+          updateLayers();
+        }
+      }
+
+      /**
+       * Delete element from layers panel
+       */
+      function deleteLayerElement(elementId) {
+        if (swwInstance && swwInstance.deleteElementById) {
+          swwInstance.deleteElementById(elementId);
+          updateLayers();
+        }
+      }
+
+      /**
+       * Make updateLayers available globally for LayersPanel.js
+       * This replaces the old SWWControlPanel.updateLayers() pattern
+       */
+      window.swwControlPanel = {
+        updateLayers: updateLayers,
+      };
+
+      // Auto-update layers panel periodically
+      setInterval(updateLayers, 1000);
     </script>
-</body>
+  </body>
 </html>
