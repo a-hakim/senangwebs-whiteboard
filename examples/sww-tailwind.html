@@ -177,7 +177,9 @@
               class="bg-transparent border-0 p-1 rounded text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-primary-600 flex items-center"
               title="Toggle Palette"
             >
-              <i id="paletteToggleIcon" class="ss ss-chevron-left"></i>
+              <div id="paletteToggleIcon" class="flex items-center">
+                <ss-icon icon="chevron-left" thickness="2.2"></ss-icon>
+              </div>
             </button>
           </div>
 
@@ -533,11 +535,13 @@
         if (paletteMinimized) {
           palette.classList.add("palette-minimized");
           canvas.classList.add("canvas-full-width");
-          icon.className = "ss ss-chevron-right";
+          icon.innerHTML =
+            "<ss-icon icon='chevron-right' thickness='2.2'></ss-icon>";
         } else {
           palette.classList.remove("palette-minimized");
           canvas.classList.remove("canvas-full-width");
-          icon.className = "ss ss-chevron-left";
+          icon.innerHTML =
+            "<ss-icon icon='chevron-left' thickness='2.2'></ss-icon>";
         }
       }
 
@@ -578,8 +582,8 @@
                               isSelected ? "text-primary-700" : "text-slate-700"
                             }">${element.type} ${index + 1}</span>
                         </div>
-                        <div class="flex gap-1">
-                            <button class="bg-transparent border-0 p-1 rounded text-slate-500 text-xs hover:bg-slate-100 hover:text-primary-600" 
+                        <div class="flex gap-2">
+                            <button class="bg-transparent border-0 rounded text-slate-500 text-sm hover:bg-slate-100 flex items-center justify-center hover:text-primary-600" 
                                     onclick="event.stopPropagation(); toggleElementVisibility('${
                                       element.id
                                     }')" title="Toggle Visibility">
@@ -587,7 +591,7 @@
                                   element.hidden ? "eye-slash" : "eye"
                                 }"></i>
                             </button>
-                            <button class="bg-transparent border-0 p-1 rounded text-slate-500 text-xs hover:bg-slate-100 hover:text-red-500" 
+                            <button class="bg-transparent border-0 rounded text-slate-500 text-sm hover:bg-slate-100 flex items-center justify-center hover:text-red-500" 
                                     onclick="event.stopPropagation(); deleteElement('${
                                       element.id
                                     }')" title="Delete">

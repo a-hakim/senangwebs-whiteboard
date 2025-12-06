@@ -1,10 +1,4 @@
-/*!*********************************************************************************************************************!*\
-  !*** css ./node_modules/css-loader/dist/cjs.js!./node_modules/@bookklik/senangstart-icons/dist/senangstart.min.css ***!
-  \*********************************************************************************************************************/
 .ss{display:inline-block;height:1em;vertical-align:middle;width:1em}.ss svg{display:block;height:100%;width:100%}
-/*!*******************************************************************!*\
-  !*** css ./node_modules/css-loader/dist/cjs.js!./src/css/sww.css ***!
-  \*******************************************************************/
 /**
  * SenangWebs Whiteboard (SWW) - CSS Styles
  * Version: 1.1.1
@@ -139,7 +133,7 @@ html {
 .sww-control-menu-button {
   flex: 1;
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
@@ -152,6 +146,10 @@ html {
   height: 48px;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
+}
+
+.sww-control-menu-button i {
+  font-size: 18px;
 }
 
 .sww-control-menu-button:hover,
@@ -184,7 +182,7 @@ html {
   border: none;
   color: #a3a3a3;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
   height: 48px;
   width: 48px;
   display: flex;
@@ -197,7 +195,7 @@ html {
   border: none;
   color: #a3a3a3;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
   height: 40px;
   width: 40px;
   display: flex;
@@ -287,14 +285,12 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 4px;
+  padding: 8px 4px 8px 4px;
   border-bottom: 1px solid #3a3a3a;
   cursor: pointer;
   font-size: 12px;
   background: transparent;
   transition: background-color 0.2s;
-  border-radius: 4px;
-  margin-bottom: 2px;
 }
 
 .sww-layer-item:hover {
@@ -362,8 +358,6 @@ html {
   align-items: center;
   padding: 8px 12px;
   background: #ffffff10;
-  border-radius: 4px;
-  margin-bottom: 8px;
   font-size: 12px;
   color: #ffffff80;
 }
@@ -378,7 +372,7 @@ html {
   border: 1px solid #3a3a3a;
   color: #a3a3a3;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 14px;
   padding: 4px 6px;
   border-radius: 2px;
   transition: all 0.2s;
