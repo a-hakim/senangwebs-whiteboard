@@ -156,6 +156,20 @@ export const SelectionManagerMixin = {
             if (element.svgElement) {
                 const currentClass = element.svgElement.getAttribute('class') || '';
                 element.svgElement.setAttribute('class', currentClass.replace('selected', '').trim());
+                
+                // Reset markdown elements to readonly mode when deselected
+                if (element.type === 'markdown') {
+                    const container = element.svgElement.querySelector('.sww-markdown-element-container');
+                    const textarea = element.svgElement.querySelector('.sww-markdown-editor');
+                    
+                    if (container && textarea) {
+                        container.classList.remove('sww-markdown-editing');
+                        container.classList.add('sww-markdown-readonly');
+                        textarea.readOnly = true;
+                        textarea.style.cursor = 'default';
+                        textarea.blur();
+                    }
+                }
             }
         });
 

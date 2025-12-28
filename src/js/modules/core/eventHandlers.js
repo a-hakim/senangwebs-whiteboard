@@ -472,14 +472,14 @@ export const EventHandlersMixin = {
                 this.editWebsiteElement(element);
             } else if (element.type === 'markdown') {
                 // Switch to editing mode for markdown elements
+                const container = element.svgElement.querySelector('.sww-markdown-element-container');
                 const textarea = element.svgElement.querySelector('.sww-markdown-editor');
                 const renderedView = element.svgElement.querySelector('.sww-markdown-rendered');
-                const hint = element.svgElement.querySelector('.sww-markdown-hint');
                 
-                if (textarea && renderedView) {
-                    // Toggle to editing mode using CSS classes
-                    element.svgElement.classList.add('sww-markdown-editing');
-                    element.svgElement.classList.remove('sww-markdown-readonly');
+                if (container && textarea && renderedView) {
+                    // Toggle to editing mode using CSS classes on the container
+                    container.classList.add('sww-markdown-editing');
+                    container.classList.remove('sww-markdown-readonly');
                     
                     textarea.readOnly = false;
                     textarea.style.cursor = 'text';
@@ -489,12 +489,15 @@ export const EventHandlersMixin = {
                     // Add blur handler to switch back to rendered view
                     const handleBlur = () => {
                         // Switch back to rendered view using CSS classes
-                        element.svgElement.classList.remove('sww-markdown-editing');
-                        element.svgElement.classList.add('sww-markdown-readonly');
+                        container.classList.remove('sww-markdown-editing');
+                        container.classList.add('sww-markdown-readonly');
                         
                         textarea.readOnly = true;
                         textarea.style.cursor = 'default';
                         textarea.removeEventListener('blur', handleBlur);
+                        
+                        // Save state for undo/redo
+                        this.saveStateToHistory('editMarkdown');
                     };
                     textarea.addEventListener('blur', handleBlur);
                 }
