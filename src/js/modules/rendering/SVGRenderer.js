@@ -398,7 +398,7 @@ export const SVGRendererMixin = {
       rect.setAttribute("width", Math.abs(element.width));
       rect.setAttribute("height", Math.abs(element.height));
       rect.setAttribute("fill", "rgba(240, 240, 240, 0.02)");
-      rect.setAttribute("stroke", "rgba(200, 200, 200, 0.15)");
+      // rect.setAttribute("stroke", "rgba(200, 200, 200, 0.15)");
       rect.setAttribute("stroke-width", "1");
       rect.setAttribute("stroke-dasharray", "3,3");
       rect.setAttribute("class", "sww-text-boundary");
