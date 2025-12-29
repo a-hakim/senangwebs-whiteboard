@@ -169,8 +169,8 @@ export const ElementManagementMixin = {
             defaultStrokeWidth = 2;  // Shape elements have 2px stroke width
             defaultFillColor = '#ffffff';  // White fill for shapes
             defaultFillStyle = 'solid';  // Solid fill for shapes
-        } else if (['website', 'image', 'markdown'].includes(type)) {
-            defaultStrokeWidth = 2;  // Website, image, and markdown elements have 2px default stroke width
+        } else if (['website', 'image', 'markdown', 'table'].includes(type)) {
+            defaultStrokeWidth = 2;  // Website, image, markdown, and table elements have 2px default stroke width
             defaultFillColor = this.toolSettings.fillColor;
             defaultFillStyle = this.toolSettings.fillStyle;
         } else {
@@ -184,8 +184,8 @@ export const ElementManagementMixin = {
             type: type,
             x: point.x,
             y: point.y,
-            width: type === 'website' || type === 'image' || type === 'markdown' ? 300 : 0,
-            height: type === 'website' || type === 'image' || type === 'markdown' ? 200 : 0,
+            width: ['website', 'image', 'markdown'].includes(type) ? 300 : (type === 'table' ? 400 : 0),
+            height: ['website', 'image', 'markdown'].includes(type) ? 200 : (type === 'table' ? 200 : 0),
             strokeColor: this.toolSettings.strokeColor,
             strokeWidth: defaultStrokeWidth,
             fillColor: defaultFillColor,
@@ -212,6 +212,14 @@ export const ElementManagementMixin = {
         } else if (type === 'markdown') {
             element.markdown = '# Markdown Document\n\nClick to edit...';
             element.text = 'Markdown Document';
+        } else if (type === 'table') {
+            element.tableData = {
+                headers: ['Header 1', 'Header 2', 'Header 3'],
+                rows: [['', '', ''], ['', '', '']],
+                columnWidths: [100, 100, 100],
+                rowHeights: [40, 40],
+            };
+            element.text = 'Table';
         }
         
         element.svgElement = this.createSVGElement(element);

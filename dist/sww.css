@@ -731,6 +731,314 @@ body.sww-pseudo-fullscreen {
   margin-right: 8px;
 }
 
+/* Table Element Styles */
+.sww-table-element {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.sww-table {
+  border-collapse: collapse;
+  width: 100%;
+  height: 100%;
+  table-layout: fixed;
+}
+
+.sww-table-header-row {
+  background: #f5f5f5;
+}
+
+.sww-table-cell {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sww-table-cell:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.sww-table-header {
+  font-weight: bold;
+  background-color: #f5f5f5;
+}
+
+.sww-table-cell-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  outline: 2px solid var(--sww-accent-color, #00ff99);
+  box-sizing: border-box;
+}
+
+/* Column resize handle */
+.sww-table-col-resize {
+  position: absolute;
+  right: -3px;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+}
+
+.sww-table-col-resize:hover {
+  background: var(--sww-accent-color, #00ff99);
+  opacity: 0.5;
+}
+
+/* Row resize handle */
+.sww-table-row-resize {
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 6px;
+  cursor: row-resize;
+  z-index: 10;
+  background: transparent;
+}
+
+.sww-table-row-resize:hover {
+  background: var(--sww-accent-color, #00ff99);
+  opacity: 0.5;
+}
+
+/* Table placeholder */
+.sww-table-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #999;
+  font-size: 14px;
+  text-align: center;
+  background: #f9f9f9;
+  border: 2px dashed #ddd;
+}
+
+.sww-table-placeholder i {
+  font-size: 24px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Table controls toolbar */
+.sww-table-controls {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background-color: #f0f0f0;
+  border-top: 1px solid #ccc;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sww-table-control-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.sww-table-control-btn:hover:not(:disabled) {
+  background: var(--sww-accent-color, #00ff99);
+  border-color: var(--sww-accent-color, #00ff99);
+  color: #000;
+}
+
+.sww-table-control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sww-table-control-btn i {
+  font-size: 12px;
+}
+
+/* Inline table buttons base styles */
+.sww-table-inline-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.98);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 10;
+}
+
+.sww-table-inline-btn:hover {
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== EDGE-BASED HOVER CONTROLS ===== */
+
+/* Delete column button - top of header, appears on header hover */
+.sww-table-col-delete-btn {
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sww-table-header:hover .sww-table-col-delete-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sww-table-col-delete-btn:hover {
+  background: #ff4757;
+  color: #fff;
+  transform: translateX(-50%) scale(1.2);
+}
+
+/* Delete row button - left edge of first cell */
+.sww-table-row-delete-btn {
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.sww-table-cell:first-child:hover .sww-table-row-delete-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sww-table-row-delete-btn:hover {
+  background: #ff4757;
+  color: #fff;
+  transform: translateY(-50%) scale(1.2);
+}
+
+/* Column border - right edge of cells with add button */
+.sww-table-col-border {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 12px;
+  height: 100%;
+  z-index: 5;
+  cursor: pointer;
+}
+
+.sww-table-col-border:hover {
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 153, 0.3));
+}
+
+.sww-table-col-border .sww-table-border-add-btn {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.sww-table-col-border:hover .sww-table-border-add-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Row border - bottom edge of cells with add button */
+.sww-table-row-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  z-index: 5;
+  cursor: pointer;
+}
+
+.sww-table-row-border:hover {
+  background: linear-gradient(180deg, transparent, rgba(0, 255, 153, 0.3));
+}
+
+.sww-table-row-border .sww-table-border-add-btn {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sww-table-row-border:hover .sww-table-border-add-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Border add buttons - green on hover */
+.sww-table-border-add-btn:hover {
+  background: var(--sww-accent-color, #00ff99);
+  color: #000;
+}
+
+/* Modern table wrapper */
+.sww-table-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+/* Modern table styling */
+.sww-table-modern .sww-table {
+  border-spacing: 0;
+  background: #fff;
+}
+
+.sww-table-modern .sww-table-header {
+  background: linear-gradient(180deg, #f8f9fa 0%, #f1f3f4 100%);
+  border-bottom: 2px solid #e0e0e0;
+  font-weight: 600;
+  color: #333;
+}
+
+.sww-table-modern .sww-table-cell {
+  border: 1px solid #e8e8e8;
+  transition: background-color 0.15s ease;
+  position: relative;
+}
+
+.sww-table-modern .sww-table-cell:hover {
+  background-color: rgba(0, 255, 153, 0.03);
+}
+
+.sww-table-modern .sww-table-row:hover {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
 /* SWW Library Styles - Moved from JavaScript */
 .sww-container {
   position: relative;

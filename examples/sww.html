@@ -125,6 +125,12 @@
             >
               <i class="ss ss-document-text"></i> Document
             </button>
+            <button
+              class="sww-action-button"
+              onclick="swwInstance.setTool('table')"
+            >
+              <i class="ss ss-grid"></i> Table
+            </button>
           </div>
         </div>
 
@@ -470,6 +476,7 @@
           image: "photo",
           website: "globe-alt",
           markdown: "document-text",
+          table: "table",
         };
         return icons[type] || "shapes";
       }

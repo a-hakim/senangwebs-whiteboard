@@ -83,7 +83,7 @@ export const ToolManagerMixin = {
         // Validate tool name
         const validTools = [
             'select', 'rectangle', 'ellipse', 'diamond', 'parallelogram', 'star',
-            'arrow', 'line', 'text', 'draw', 'website', 'image', 'markdown'
+            'arrow', 'line', 'text', 'draw', 'website', 'image', 'markdown', 'table'
         ];
         
         if (!validTools.includes(toolName)) {
@@ -382,7 +382,15 @@ export const ToolManagerMixin = {
      * @returns {boolean} True if current tool embeds content
      */
     isEmbedTool() {
-        const embedTools = ['website', 'image', 'markdown'];
+        const embedTools = ['website', 'image', 'markdown', 'table'];
         return embedTools.includes(this.currentTool);
+    },
+
+    /**
+     * Check if current tool is table tool
+     * @returns {boolean} True if current tool is table
+     */
+    isTableTool() {
+        return this.currentTool === 'table';
     }
 };
