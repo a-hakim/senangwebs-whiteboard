@@ -7,6 +7,10 @@
 - `diamond` - Draw diamond shapes with rotation capabilities
 - `parallelogram` - Draw parallelograms with skew transformations
 - `star` - Draw 5-pointed star shapes with inner/outer radius control
+
+### Line Tools
+
+- `line` - Draw straight lines with customizable stroke width and color
 - `arrow` - Draw directional arrows with customizable arrowheads
 
 ### Content Tools
@@ -16,6 +20,8 @@
 - `website` - Embed website previews with URL configuration
 - `image` - Add image elements with source URL and alt text support
 - `markdown` - Add markdown documents with comprehensive syntax support
+- `table` - Add editable tables with headers, rows, and columns
+  - **Features**: Double-click to edit cells, drag column/row borders to resize, customizable fonts and colors
 
 ### Utility Tools
 

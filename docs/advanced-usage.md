@@ -134,3 +134,52 @@ function loadSceneFromFile(file) {
     reader.readAsText(file);
 }
 ```
+
+### Working with Tables
+
+```javascript
+// Create a table using the tool
+swwInstance.setTool('table');
+// Click on canvas to place the table
+
+// Or create a table element programmatically
+const tableElement = {
+    id: swwInstance.generateId(),
+    type: "table",
+    x: 100,
+    y: 100,
+    width: 400,
+    height: 200,
+    strokeColor: "#333333",
+    strokeWidth: 1,
+    fillColor: "transparent",
+    textColor: "#333333",
+    fontSize: 14,
+    fontFamily: "Arial, sans-serif",
+    tableData: {
+        headers: ["Column 1", "Column 2", "Column 3"],
+        rows: [
+            ["Row 1 Cell 1", "Row 1 Cell 2", "Row 1 Cell 3"],
+            ["Row 2 Cell 1", "Row 2 Cell 2", "Row 2 Cell 3"]
+        ],
+        columnWidths: [100, 100, 100],
+        rowHeights: [40, 40]
+    }
+};
+
+// Add rows and columns
+swwInstance.addTableRow(tableElement);          // Add row at end
+swwInstance.addTableRowAt(tableElement, 0);     // Add row at position
+swwInstance.addTableColumn(tableElement);       // Add column at end
+swwInstance.addTableColumnAt(tableElement, 1);  // Add column at position
+
+// Remove rows and columns
+swwInstance.removeTableRow(tableElement, 0);    // Remove first row
+swwInstance.removeTableColumn(tableElement, 2); // Remove third column
+
+// Table interaction:
+// - Double-click a cell to edit its content
+// - Drag column borders to resize columns
+// - Drag row borders to resize rows
+// - Press Enter to save cell, Escape to cancel
+```

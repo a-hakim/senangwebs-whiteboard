@@ -106,9 +106,10 @@ Configure your whiteboard using these options:
 ### Available Tools
 
 - **Shapes**: Rectangle, Ellipse, Diamond, Parallelogram, Star
-- **Lines**: Arrow, Line
+- **Lines**: Line, Arrow
 - **Text**: Rich text with multiple font families
 - **Media**: Website embeds, Images, Markdown documents
+- **Tables**: Editable tables with resizable columns and rows
 - **Utility**: Selection tool, Freehand drawing
 
 ### Setting Tools
@@ -118,6 +119,7 @@ whiteboard.setTool("rectangle"); // Draw rectangles
 whiteboard.setTool("ellipse"); // Draw circles/ellipses
 whiteboard.setTool("text"); // Add text
 whiteboard.setTool("arrow"); // Draw arrows
+whiteboard.setTool("table"); // Add tables
 whiteboard.setTool("select"); // Selection mode
 ```
 

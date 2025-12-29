@@ -27,7 +27,7 @@ const instance = sww.init(document.getElementById('container'), {
 Sets the current drawing tool.
 
 **Parameters:**
-- `toolName` (string) - Tool name: 'select', 'rectangle', 'ellipse', 'diamond', 'parallelogram', 'star', 'arrow', 'text', 'draw', 'website', 'image', 'markdown'
+- `toolName` (string) - Tool name: 'select', 'rectangle', 'ellipse', 'diamond', 'parallelogram', 'star', 'line', 'arrow', 'text', 'draw', 'website', 'image', 'markdown', 'table'
 
 ```javascript
 instance.setTool('rectangle');
@@ -144,4 +144,77 @@ Generates a unique ID for new elements. IDs are in format: `sww-<random>`
 ```javascript
 const newId = instance.generateId();
 console.log('New ID:', newId); // e.g., 'sww-abc123def'
+```
+
+### Table Management Methods
+
+#### `addTableRow(element)`
+
+Adds a new row at the end of the table.
+
+**Parameters:**
+- `element` (Object) - The table element
+
+```javascript
+const tableElement = instance.getElementById('my-table-id');
+instance.addTableRow(tableElement);
+```
+
+#### `addTableRowAt(element, position)`
+
+Adds a new row at a specific position.
+
+**Parameters:**
+- `element` (Object) - The table element
+- `position` (number) - Position to insert at (0-indexed)
+
+```javascript
+instance.addTableRowAt(tableElement, 0); // Add at first position
+```
+
+#### `addTableColumn(element)`
+
+Adds a new column at the end of the table.
+
+**Parameters:**
+- `element` (Object) - The table element
+
+```javascript
+instance.addTableColumn(tableElement);
+```
+
+#### `addTableColumnAt(element, position)`
+
+Adds a new column at a specific position.
+
+**Parameters:**
+- `element` (Object) - The table element
+- `position` (number) - Position to insert at (0-indexed)
+
+```javascript
+instance.addTableColumnAt(tableElement, 1); // Insert at second column
+```
+
+#### `removeTableRow(element, rowIndex)`
+
+Removes a row from the table. Keeps at least one row.
+
+**Parameters:**
+- `element` (Object) - The table element
+- `rowIndex` (number) - Index of row to remove
+
+```javascript
+instance.removeTableRow(tableElement, 0); // Remove first row
+```
+
+#### `removeTableColumn(element, colIndex)`
+
+Removes a column from the table. Keeps at least one column.
+
+**Parameters:**
+- `element` (Object) - The table element
+- `colIndex` (number) - Index of column to remove
+
+```javascript
+instance.removeTableColumn(tableElement, 2); // Remove third column
 ```

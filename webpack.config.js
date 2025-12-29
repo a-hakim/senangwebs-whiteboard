@@ -50,5 +50,8 @@ module.exports = {
     new MiniCssExtractPlugin({
       filename: 'sww.css'
     })
-  ]
+  ],
+  performance: {
+    hints: false
+  }
 };
