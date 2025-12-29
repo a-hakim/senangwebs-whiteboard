@@ -376,7 +376,8 @@ export const SVGRendererMixin = {
         "dy",
         index === 0 ? "0" : `${element.fontSize * 1.3}px`
       );
-      tspan.textContent = line;
+      // Use non-breaking space (char code 160) for empty lines - regular spaces are collapsed by SVG
+      tspan.textContent = line || String.fromCharCode(160);
       svg.appendChild(tspan);
     });
 

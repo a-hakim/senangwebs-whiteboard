@@ -123,64 +123,11 @@ export const TextToolMixin = {
             
             tspan.setAttribute('x', lineX);
             tspan.setAttribute('dy', index === 0 ? 0 : element.fontSize * 1.3); // Line height
-            tspan.textContent = line || ' '; // Use space for empty lines
+            // Use non-breaking space (char code 160) for empty lines - regular spaces are collapsed by SVG
+            tspan.textContent = line || String.fromCharCode(160);
             
             svg.appendChild(tspan);
         });
-    },
-
-    /**
-     * Start inline text editing
-     * Creates a contentEditable div overlay for WYSIWYG editing
-     * @param {Object} element - Text element to edit
-     */
-    startTextEditing(element) {
-        // Prevent editing in preview mode
-        if (this.isPreviewMode) {
-            return;
-        }
-        
-        // Hide the original SVG text element during editing
-        if (element.svgElement) {
-            element.svgElement.style.visibility = 'hidden';
-        }
-        
-        // Create inline contentEditable div
-        const textEditor = document.createElement('div');
-        textEditor.className = 'sww-text-editor-inline';
-        textEditor.contentEditable = true;
-        textEditor.textContent = element.originalText || element.text || '';
-        
-        // Get screen coordinates
-        const svgPoint = { x: element.x, y: element.y };
-        const screenPoint = this.svgToScreenCoordinates(svgPoint);
-        
-        // Calculate editor dimensions
-        const editorDimensions = this.calculateEditorDimensions(element);
-        
-        // Apply styling to match SVG element
-        this.applyTextEditorStyles(textEditor, element, screenPoint, editorDimensions);
-        
-        document.body.appendChild(textEditor);
-        
-        // Create keyboard shortcuts hint
-        const hintOverlay = this.createTextEditorHint();
-        document.body.appendChild(hintOverlay);
-        
-        // Focus and select all text
-        setTimeout(() => {
-            textEditor.style.borderColor = 'rgba(0, 255, 153, 1)';
-            textEditor.focus();
-            
-            const range = document.createRange();
-            range.selectNodeContents(textEditor);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-        }, 50);
-        
-        // Setup editing handlers
-        this.setupTextEditingHandlers(textEditor, hintOverlay, element);
     },
 
     /**
@@ -249,8 +196,7 @@ export const TextToolMixin = {
         textEditor.style.minHeight = `${element.fontSize * 1.3}px`;
         textEditor.style.fontSize = `${element.fontSize}px`;
         textEditor.style.fontFamily = element.fontFamily || 'Arial';
-        textEditor.style.background = 'transparent';
-        textEditor.style.padding = '8px';
+        textEditor.style.padding = '10px';
         textEditor.style.boxSizing = 'border-box';
         textEditor.style.zIndex = '10000';
         textEditor.style.outline = 'none';
@@ -290,111 +236,6 @@ export const TextToolMixin = {
             </div>
         `;
         return hintOverlay;
-    },
-
-    /**
-     * Setup event handlers for text editing
-     * @param {HTMLElement} textEditor - Editor div
-     * @param {HTMLElement} hintOverlay - Hint overlay
-     * @param {Object} element - Text element being edited
-     */
-    setupTextEditingHandlers(textEditor, hintOverlay, element) {
-        let isEditing = true;
-        let handleClickOutside;
-        
-        const finishEditing = () => {
-            if (!isEditing) return;
-            isEditing = false;
-            
-            // Animation
-            textEditor.style.opacity = '0.5';
-            textEditor.style.borderColor = 'rgba(0, 255, 153, 0.3)';
-            hintOverlay.style.opacity = '0';
-            
-            setTimeout(() => {
-                const newText = textEditor.textContent || 'Text';
-                element.originalText = newText;
-                
-                if (element.width && element.height) {
-                    element.text = newText;
-                    this.adjustTextToFitBounds(element);
-                } else {
-                    element.text = newText;
-                }
-                
-                if (element.svgElement) {
-                    element.svgElement.style.visibility = 'visible';
-                }
-                
-                this.updateSVGElement(element);
-                
-                if (textEditor.parentNode) textEditor.remove();
-                if (hintOverlay.parentNode) hintOverlay.remove();
-                
-                if (handleClickOutside) {
-                    document.removeEventListener('click', handleClickOutside);
-                }
-                
-                if (this.selectedElements.has(element)) {
-                    this.updateSelectionHandles();
-                }
-                
-                if (this.currentTool === 'text') {
-                    this.setTool('select');
-                }
-            }, 150);
-        };
-        
-        const cancelEditing = () => {
-            if (!isEditing) return;
-            isEditing = false;
-            
-            textEditor.style.opacity = '0.3';
-            textEditor.style.borderColor = 'rgba(255, 0, 0, 0.3)';
-            hintOverlay.style.opacity = '0';
-            
-            setTimeout(() => {
-                if (element.svgElement) {
-                    element.svgElement.style.visibility = 'visible';
-                }
-                
-                if (textEditor.parentNode) textEditor.remove();
-                if (hintOverlay.parentNode) hintOverlay.remove();
-                
-                if (handleClickOutside) {
-                    document.removeEventListener('click', handleClickOutside);
-                }
-                
-                if (this.currentTool === 'text') {
-                    this.setTool('select');
-                }
-            }, 150);
-        };
-        
-        // Keyboard shortcuts
-        textEditor.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                cancelEditing();
-            } else if (e.ctrlKey && e.key === 'Enter') {
-                e.preventDefault();
-                finishEditing();
-            } else if (e.key === 'Tab') {
-                e.preventDefault();
-                document.execCommand('insertText', false, '\t');
-            }
-        });
-        
-        // Click outside to finish
-        handleClickOutside = (e) => {
-            if (!textEditor.contains(e.target) && !hintOverlay.contains(e.target)) {
-                finishEditing();
-            }
-        };
-        
-        setTimeout(() => {
-            document.addEventListener('click', handleClickOutside);
-        }, 100);
     },
 
     /**
@@ -438,7 +279,8 @@ export const TextToolMixin = {
 
     /**
      * Start inline text editing for a text element
-     * Creates a contentEditable overlay positioned over the SVG element
+     * Creates a textarea overlay positioned over the SVG element
+     * Using textarea instead of contentEditable for consistent newline handling
      * @param {Object} element - Text element to edit
      */
     startTextEditing(element) {
@@ -447,25 +289,30 @@ export const TextToolMixin = {
             return;
         }
         
-        // Hide the original SVG text element completely during editing for clean WYSIWYG
+        // Hide the SVG text content during editing to prevent seeing double text
         if (element.svgElement) {
-            element.svgElement.style.visibility = 'hidden';
+            element.svgElement.style.opacity = '0';
         }
         
-        // Create an inline contentEditable div for seamless editing
-        const textEditor = document.createElement('div');
+        // Create a textarea for seamless editing
+        // Using textarea instead of contentEditable because:
+        // 1. Native newline handling (1 Enter = 1 \n)
+        // 2. Simple .value property for getting/setting text
+        // 3. No DOM parsing or newline normalization needed
+        // 4. Consistent across all browsers
+        const textEditor = document.createElement('textarea');
         textEditor.className = 'sww-text-editor-inline';
-        textEditor.contentEditable = true;
-        textEditor.textContent = element.originalText || element.text || '';
+        
+        // Load the text directly - no transformation needed
+        const originalText = element.originalText || element.text || '';
+        textEditor.value = originalText;
         
         // Get accurate screen coordinates using SVG transformation
         let svgPoint, screenPoint;
         
         if (element.width && element.height) {
-            // Text has a boundary - position editor to match the boundary
             svgPoint = { x: element.x, y: element.y };
         } else {
-            // Text without boundary - use text position with some adjustments for baseline
             const bounds = this.getElementBounds(element);
             svgPoint = { x: bounds.x, y: bounds.y };
         }
@@ -478,7 +325,6 @@ export const TextToolMixin = {
                 y: matrix.b * svgPoint.x + matrix.d * svgPoint.y + matrix.f
             };
         } else {
-            // Fallback method
             const rect = this.svg.getBoundingClientRect();
             screenPoint = {
                 x: (svgPoint.x - this.viewBox.x) / this.viewBox.width * rect.width + rect.left,
@@ -487,55 +333,56 @@ export const TextToolMixin = {
         }
         
         // Calculate editor dimensions
-        let editorWidth, editorHeight;
+        let editorWidth;
         
         if (element.width && element.height) {
-            // Use boundary dimensions
             if (this.svg.getScreenCTM) {
                 const matrix = this.svg.getScreenCTM();
                 editorWidth = Math.abs(element.width * matrix.a);
-                editorHeight = Math.abs(element.height * matrix.d);
             } else {
                 const rect = this.svg.getBoundingClientRect();
                 editorWidth = Math.abs(element.width) / this.viewBox.width * rect.width;
-                editorHeight = Math.abs(element.height) / this.viewBox.height * rect.height;
             }
         } else {
-            // Default dimensions for unbounded text
-            editorWidth = Math.max(200, element.fontSize * 10);
-            editorHeight = element.fontSize * 1.5;
+            const zoomMatrix = this.svg.getScreenCTM ? this.svg.getScreenCTM() : null;
+            const zoomScale = zoomMatrix ? Math.abs(zoomMatrix.a) : 1;
+            editorWidth = Math.max(200 * zoomScale, element.fontSize * 10 * zoomScale);
         }
         
-        // Apply inline styling to match the SVG element exactly
+        // Get zoom scale factor for font size and padding
+        const zoomMatrix = this.svg.getScreenCTM ? this.svg.getScreenCTM() : null;
+        const zoomScale = zoomMatrix ? Math.abs(zoomMatrix.a) : 1;
+        const scaledFontSize = element.fontSize * zoomScale;
+        const scaledPadding = 10 * zoomScale;
+        
+        // Calculate initial height based on content
+        const lines = originalText.split('\n');
+        const lineCount = Math.max(1, lines.length);
+        const lineHeight = scaledFontSize * 1.3;
+        const initialHeight = Math.max((lineCount * lineHeight) + (scaledPadding * 2), scaledFontSize * 2 + (scaledPadding * 2));
+        
+        // Apply styling to match the SVG element
         textEditor.style.position = 'fixed';
         textEditor.style.left = `${screenPoint.x}px`;
         textEditor.style.top = `${screenPoint.y}px`;
         textEditor.style.width = `${editorWidth}px`;
-        textEditor.style.height = element.width && element.height ? `${editorHeight}px` : 'auto';
-        textEditor.style.minHeight = `${element.fontSize * 1.3}px`;
-        textEditor.style.fontSize = `${element.fontSize}px`;
+        textEditor.style.height = `${initialHeight}px`;
+        textEditor.style.minHeight = `${scaledFontSize * 2}px`;
+        textEditor.style.fontSize = `${scaledFontSize}px`;
         textEditor.style.fontFamily = element.fontFamily || 'Arial';
-        
-        // Inline styling - appears directly on the element
         textEditor.style.background = 'transparent';
-        textEditor.style.padding = '10px'; // Match SVG padding exactly (was 8px)
+        textEditor.style.border = 'none';
+        textEditor.style.padding = `${scaledPadding}px`;
         textEditor.style.boxSizing = 'border-box';
         textEditor.style.zIndex = '10000';
         textEditor.style.outline = 'none';
         textEditor.style.color = element.textColor || element.strokeColor || '#000';
         textEditor.style.lineHeight = '1.3';
-        textEditor.style.whiteSpace = 'pre-wrap';
-        textEditor.style.wordWrap = 'break-word';
-        textEditor.style.overflow = element.width && element.height ? 'auto' : 'visible';
+        textEditor.style.resize = 'none';
+        textEditor.style.overflow = 'hidden';
         
-        // Set text alignment to match element alignment
         if (element.textAlign) {
             textEditor.style.textAlign = element.textAlign;
-        }
-        
-        // Add empty placeholder attribute
-        if (!textEditor.textContent) {
-            textEditor.setAttribute('data-placeholder', 'Type text here...');
         }
         
         document.body.appendChild(textEditor);
@@ -558,129 +405,130 @@ export const TextToolMixin = {
         `;
         document.body.appendChild(hintOverlay);
         
-        // Add focus styling with animation
+        // Focus and select all text
         setTimeout(() => {
-            textEditor.style.borderColor = 'rgba(0, 255, 153, 1)';
             textEditor.focus();
-            
-            // Select all text in contentEditable
-            const range = document.createRange();
-            range.selectNodeContents(textEditor);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
+            textEditor.select();
         }, 50);
         
-        let isEditing = true; // Flag to prevent double cleanup
-        
-        // Declare click-outside handler first
+        let isEditing = true;
         let handleClickOutside;
         
+        // Auto-resize function - simple and clean with textarea
+        const autoResize = () => {
+            if (!textEditor.parentNode) return;
+            
+            const currentText = textEditor.value || '';
+            const lines = currentText.split('\n');
+            const lineCount = Math.max(1, lines.length);
+            const lineHeight = scaledFontSize * 1.3;
+            const padding = scaledPadding * 2;
+            
+            // Update textarea height
+            const newHeight = Math.max((lineCount * lineHeight) + padding, scaledFontSize * 2 + padding);
+            textEditor.style.height = `${newHeight}px`;
+            
+            // Update element height for selection handles
+            const svgLineHeight = element.fontSize * 1.3;
+            const svgPadding = 20;
+            element.height = Math.max((lineCount * svgLineHeight) + svgPadding, element.fontSize * 2 + svgPadding);
+            
+            if (this.selectedElements.has(element)) {
+                this.updateSelectionHandles();
+            }
+        };
+        
         const finishEditing = () => {
-            if (!isEditing) return; // Prevent double execution
+            if (!isEditing) return;
             isEditing = false;
             
-            // Smooth exit animation
-            textEditor.style.opacity = '0.5';
-            textEditor.style.borderColor = 'rgba(0, 255, 153, 0.3)';
+            textEditor.style.opacity = '0';
             hintOverlay.style.opacity = '0';
             
             setTimeout(() => {
-                const newText = textEditor.textContent || 'Text';
-                element.originalText = newText; // Store original text for future wrapping
+                // Get text directly from textarea - no normalization needed!
+                let newText = textEditor.value || 'Text';
                 
-                // If element has boundary, adjust text to fit and wrap
-                if (element.width && element.height) {
-                    element.text = newText; // Store original first
-                    if (this.adjustTextToFitBounds) {
-                        this.adjustTextToFitBounds(element); // Then wrap it if available
-                    }
-                } else {
-                    element.text = newText;
+                // Only remove trailing empty lines
+                let lines = newText.split('\n');
+                while (lines.length > 1 && lines[lines.length - 1].trim() === '') {
+                    lines.pop();
                 }
                 
-                // Show the original SVG element again
+                const cleanedText = lines.join('\n');
+                element.originalText = cleanedText;
+                
+                // Calculate height based on line count
+                const lineCount = Math.max(1, lines.length);
+                const lineHeight = element.fontSize * 1.3;
+                const padding = 20;
+                const calculatedHeight = (lineCount * lineHeight) + padding;
+                
+                element.height = Math.max(calculatedHeight, element.fontSize * 2 + padding);
+                
+                if (element.width && element.height) {
+                    element.text = cleanedText;
+                    if (this.adjustTextToFitBounds) {
+                        this.adjustTextToFitBounds(element);
+                    }
+                } else {
+                    element.text = cleanedText;
+                }
+                
                 if (element.svgElement) {
-                    element.svgElement.style.visibility = 'visible';
+                    element.svgElement.style.opacity = '1';
                 }
                 
                 this.updateSVGElement(element);
                 
-                // Safely remove the elements
                 if (textEditor.parentNode) textEditor.remove();
                 if (hintOverlay.parentNode) hintOverlay.remove();
                 
-                // Clean up click-outside listener
                 if (handleClickOutside) {
                     document.removeEventListener('click', handleClickOutside);
                 }
                 
-                // Update selection handles if element is selected
                 if (this.selectedElements.has(element)) {
                     this.updateSelectionHandles();
                 }
                 
-                // Auto-switch to select tool after text editing for better UX
-                if (this.currentTool === 'text') {
-                    this.setTool('select');
-                }
-            }, 150); // Small delay for animation
-        };
-        
-        const cancelEditing = () => {
-            if (!isEditing) return; // Prevent double execution
-            isEditing = false;
-            
-            // Smooth exit animation for cancel
-            textEditor.style.opacity = '0.3';
-            textEditor.style.borderColor = 'rgba(255, 0, 0, 0.3)';
-            hintOverlay.style.opacity = '0';
-            
-            setTimeout(() => {
-                // Show the original SVG element again
-                if (element.svgElement) {
-                    element.svgElement.style.visibility = 'visible';
-                }
-                
-                // Safely remove the elements without saving changes
-                if (textEditor.parentNode) textEditor.remove();
-                if (hintOverlay.parentNode) hintOverlay.remove();
-                
-                // Clean up click-outside listener
-                if (handleClickOutside) {
-                    document.removeEventListener('click', handleClickOutside);
-                }
-                
-                // Auto-switch to select tool even when canceling for better UX
                 if (this.currentTool === 'text') {
                     this.setTool('select');
                 }
             }, 150);
         };
         
-        // Enhanced auto-resize function for contentEditable
-        const autoResize = () => {
-            if (!textEditor.parentNode) return;
+        const cancelEditing = () => {
+            if (!isEditing) return;
+            isEditing = false;
             
-            // Only auto-resize for unbounded text elements
-            if (!(element.width && element.height)) {
-                // ContentEditable automatically sizes to content
-                // Just ensure minimum dimensions
-                const minWidth = Math.max(element.fontSize * 3, 50);
-                const minHeight = element.fontSize * 1.3;
+            textEditor.style.opacity = '0';
+            hintOverlay.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (element.svgElement) {
+                    element.svgElement.style.opacity = '1';
+                }
                 
-                if (textEditor.offsetWidth < minWidth) {
-                    textEditor.style.minWidth = minWidth + 'px';
+                if (textEditor.parentNode) textEditor.remove();
+                if (hintOverlay.parentNode) hintOverlay.remove();
+                
+                if (handleClickOutside) {
+                    document.removeEventListener('click', handleClickOutside);
                 }
-                if (textEditor.offsetHeight < minHeight) {
-                    textEditor.style.minHeight = minHeight + 'px';
+                
+                if (this.selectedElements.has(element)) {
+                    this.updateSelectionHandles();
                 }
-            }
+                
+                if (this.currentTool === 'text') {
+                    this.setTool('select');
+                }
+            }, 150);
         };
         
-        // Enhanced keyboard interactions for contentEditable
+        // Keyboard event handling
         textEditor.addEventListener('keydown', (e) => {
-            // Enhanced keyboard shortcuts
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 finishEditing();
@@ -689,40 +537,35 @@ export const TextToolMixin = {
                 cancelEditing();
             } else if (e.key === 'Tab') {
                 e.preventDefault();
-                // Insert tab character (4 spaces) in contentEditable
-                document.execCommand('insertText', false, '    ');
+                // Insert 4 spaces at cursor position
+                const start = textEditor.selectionStart;
+                const end = textEditor.selectionEnd;
+                textEditor.value = textEditor.value.substring(0, start) + '    ' + textEditor.value.substring(end);
+                textEditor.selectionStart = textEditor.selectionEnd = start + 4;
+                autoResize();
             }
         });
         
-        // Add input event listener for real-time resizing with debouncing
-        let resizeTimeout;
-        textEditor.addEventListener('input', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(autoResize, 50); // Debounced resize
-        });
+        // Auto-resize on input
+        textEditor.addEventListener('input', autoResize);
         
-        textEditor.addEventListener('blur', (e) => {
-            finishEditing();
-        });
+        // Finish on blur
+        textEditor.addEventListener('blur', finishEditing);
         
-        // Add click-outside listener for intuitive editing
+        // Click outside handler
         handleClickOutside = (e) => {
-            // Check if click is outside the text editor
             if (!textEditor.contains(e.target) && textEditor.parentNode) {
-                // Don't finish editing if clicking on toolbar buttons or other UI elements
                 const isToolbarClick = e.target.closest('.sww-toolbar') || 
                                      e.target.closest('button') || 
                                      e.target.classList.contains('sww-toolbar-button');
                 
                 if (!isToolbarClick) {
                     finishEditing();
-                    // Remove this listener after use
                     document.removeEventListener('click', handleClickOutside);
                 }
             }
         };
         
-        // Add the listener with a slight delay to prevent immediate triggering
         setTimeout(() => {
             document.addEventListener('click', handleClickOutside);
         }, 100);
@@ -737,7 +580,7 @@ export const TextToolMixin = {
             }
         }, 5000);
         
-        // Initial resize to fit existing content
+        // Initial resize
         autoResize();
     }
 };

@@ -1042,6 +1042,93 @@ marker {
   pointer-events: none;
 }
 
+/* Inline Text Editor - True WYSIWYG (invisible overlay) */
+.sww-text-editor-inline {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  caret-color: var(--sww-accent-color, #00ff99);
+  resize: none;
+  overflow: visible;
+}
+
+.sww-text-editor-inline:focus {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.sww-text-editor-inline:empty:before {
+  content: attr(data-placeholder);
+  color: #999;
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* Keyboard Hints Overlay - Positioned near the editor */
+.sww-text-editor-hint {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(24, 24, 27, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  z-index: 10001;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  animation: sww-hint-fade-in 0.2s ease-out;
+  transition: opacity 0.3s ease;
+}
+
+@keyframes sww-hint-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.sww-text-editor-hint-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sww-text-editor-hint-item kbd {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sww-accent-color, #00ff99);
+}
+
+.sww-text-editor-hint-item span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+
+.sww-text-editor-hint-separator {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .sww-text-properties {
   background: var(--sww-panel-hover);
   padding: 1px 0px;
