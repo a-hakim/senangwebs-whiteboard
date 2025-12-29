@@ -1,4 +1,10 @@
+/*!*********************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js!./node_modules/@bookklik/senangstart-icons/dist/senangstart.min.css ***!
+  \*********************************************************************************************************************/
 .ss{display:inline-block;height:1em;vertical-align:middle;width:1em}.ss svg{display:block;height:100%;width:100%}
+/*!*******************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js!./src/css/sww.css ***!
+  \*******************************************************************/
 /**
  * SenangWebs Whiteboard (SWW) - CSS Styles
  * Version: 1.1.1
@@ -957,7 +963,7 @@ body.sww-pseudo-fullscreen {
 }
 
 .sww-table-col-border:hover {
-  background: linear-gradient(90deg, transparent, rgba(0, 255, 153, 0.3));
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--sww-accent-color, #00ff99) 30%, transparent));
 }
 
 .sww-table-col-border .sww-table-border-add-btn {
@@ -984,7 +990,7 @@ body.sww-pseudo-fullscreen {
 }
 
 .sww-table-row-border:hover {
-  background: linear-gradient(180deg, transparent, rgba(0, 255, 153, 0.3));
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--sww-accent-color, #00ff99) 30%, transparent));
 }
 
 .sww-table-row-border .sww-table-border-add-btn {
@@ -1032,7 +1038,7 @@ body.sww-pseudo-fullscreen {
 }
 
 .sww-table-modern .sww-table-cell:hover {
-  background-color: rgba(0, 255, 153, 0.03);
+  background-color: color-mix(in srgb, var(--sww-accent-color, #00ff99) 3%, transparent);
 }
 
 .sww-table-modern .sww-table-row:hover {

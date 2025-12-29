@@ -672,7 +672,7 @@ export const SVGRendererMixin = {
       if (tableData.headers.length > 1) {
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "sww-table-col-delete-btn sww-table-inline-btn";
-        deleteBtn.innerHTML = "×";
+        deleteBtn.innerHTML = '<i class="ss ss-x-mark"></i>';
         deleteBtn.title = "Delete column";
         deleteBtn.setAttribute("data-action", "remove-column-at");
         deleteBtn.setAttribute("data-element-id", element.id);
@@ -686,7 +686,7 @@ export const SVGRendererMixin = {
       
       const addColBtn = document.createElement("button");
       addColBtn.className = "sww-table-border-add-btn sww-table-inline-btn";
-      addColBtn.innerHTML = "+";
+      addColBtn.innerHTML = '<i class="ss ss-plus"></i>';
       addColBtn.title = "Add column here";
       addColBtn.setAttribute("data-action", "add-column-at");
       addColBtn.setAttribute("data-element-id", element.id);
@@ -723,7 +723,7 @@ export const SVGRendererMixin = {
         if (colIndex === 0 && tableData.rows.length > 1) {
           const deleteRowBtn = document.createElement("button");
           deleteRowBtn.className = "sww-table-row-delete-btn sww-table-inline-btn";
-          deleteRowBtn.innerHTML = "×";
+          deleteRowBtn.innerHTML = '<i class="ss ss-x-mark"></i>';
           deleteRowBtn.title = "Delete row";
           deleteRowBtn.setAttribute("data-action", "remove-row-at");
           deleteRowBtn.setAttribute("data-element-id", element.id);
@@ -737,7 +737,7 @@ export const SVGRendererMixin = {
         
         const addRowBtn = document.createElement("button");
         addRowBtn.className = "sww-table-border-add-btn sww-table-inline-btn";
-        addRowBtn.innerHTML = "+";
+        addRowBtn.innerHTML = '<i class="ss ss-plus"></i>';
         addRowBtn.title = "Add row here";
         addRowBtn.setAttribute("data-action", "add-row-at");
         addRowBtn.setAttribute("data-element-id", element.id);
@@ -752,7 +752,7 @@ export const SVGRendererMixin = {
           
           const addColBtn = document.createElement("button");
           addColBtn.className = "sww-table-border-add-btn sww-table-inline-btn";
-          addColBtn.innerHTML = "+";
+          addColBtn.innerHTML = '<i class="ss ss-plus"></i>';
           addColBtn.title = "Add column here";
           addColBtn.setAttribute("data-action", "add-column-at");
           addColBtn.setAttribute("data-element-id", element.id);
