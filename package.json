@@ -9,7 +9,7 @@
     "dev": "webpack --mode development --watch"
   },
   "dependencies": {
-    "@bookklik/senangstart-icons": "^1.0.3",
+    "@bookklik/senangstart-icons": "^1.0.7",
     "marked": "^9.0.0"
   },
   "devDependencies": {
