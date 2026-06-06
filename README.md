@@ -34,6 +34,16 @@ SenangWebs Whiteboard (SWW) is a powerful, client-side JavaScript drawing librar
 npm install senangwebs-whiteboard
 ```
 
+Import the JavaScript bundle and stylesheet through your bundler:
+
+```javascript
+import SWW from "senangwebs-whiteboard";
+import "senangwebs-whiteboard/dist/sww.css";
+
+const container = document.getElementById("drawing-container");
+const whiteboard = SWW.init(container);
+```
+
 ### Using a CDN
 
 You can include SenangWebs Whiteboard directly in your HTML file using unpkg:
@@ -135,6 +145,7 @@ whiteboard.setTool("select"); // Selection mode
 whiteboard.getScene(); // Get current scene data
 whiteboard.loadScene(data); // Load scene from JSON
 whiteboard.clearAll(); // Clear all elements
+SWW.getInstance(container); // Get the instance attached to a container
 
 // Element Management
 whiteboard.getElementById(id); // Find element by ID

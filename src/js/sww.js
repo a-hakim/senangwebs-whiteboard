@@ -103,7 +103,7 @@ const SWW = {
     return container._swwInstance || null;
   },
 
-  version: "1.0.1",
+  version: __SWW_VERSION__,
 };
 
 // REMOVED: Legacy import no longer needed!
