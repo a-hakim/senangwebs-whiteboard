@@ -1,6 +1,6 @@
 {
   "name": "senangwebs-whiteboard",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A powerful, client-side JavaScript drawing library for creating digital whiteboards and vector drawings.",
   "main": "dist/sww.js",
   "module": "dist/sww.esm.mjs",
@@ -28,7 +28,7 @@
     "dev": "webpack --mode development --watch"
   },
   "dependencies": {
-    "@bookklik/senangstart-icons": "^1.0.7",
+    "@bookklik/senangstart-icons": "^1.0.14",
     "marked": "^9.0.0"
   },
   "devDependencies": {

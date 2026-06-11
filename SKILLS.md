@@ -1,7 +1,7 @@
 ---
 name: senangwebs-whiteboard
 description: Interactive digital whiteboard and vector drawing library with drawing tools, layers, undo/redo, spatial indexing, and export.
-version: 1.1.3
+version: 1.2.1
 package: senangwebs-whiteboard
 ---
 
