@@ -42,9 +42,11 @@ instance.setTool('select');
 Returns the current scene data as a JSON-serializable object.
 
 **Returns:** Object containing:
+- `version` (Number) - Scene schema version
 - `elements` (Array) - All scene elements with their properties
 - `viewBox` (Object) - Current viewport position and dimensions
 - `zoom` (Number) - Current zoom level
+- `backgroundColor`, `gridSize`, and `showGrid` - Canvas settings
 
 ```javascript
 const sceneData = instance.getScene();
@@ -63,6 +65,27 @@ Loads a scene from JSON data. Clears current scene and replaces with loaded data
 const savedData = JSON.parse(localStorage.getItem('my-drawing'));
 instance.loadScene(savedData);
 ```
+
+`loadScene()` validates the scene version, supported element types, duplicate IDs,
+numeric geometry, and table data before replacing the current scene.
+
+#### `destroy()`
+
+Removes the instance DOM, global listeners, observers, pending UI state, and the
+container instance reference. Calling it more than once is safe.
+
+```javascript
+instance.destroy();
+```
+
+### Events
+
+Events are dispatched from the whiteboard container.
+
+- `sww:sceneChanged` - A committed scene transaction. Detail includes
+  `actionType`, `affectedElementIds`, and `revision`.
+- `sww:selectionChanged` - Selection changed. Detail includes
+  `selectedElements` and `selectedElementIds`.
 
 #### `clearAll()`
 

@@ -490,7 +490,8 @@
         paletteMinimized = false;
 
       document.addEventListener("DOMContentLoaded", () => {
-        swwInstance = sww.init(document.getElementById("sww-drawing-canvas"), {
+        const container = document.getElementById("sww-drawing-canvas");
+        swwInstance = sww.init(container, {
           backgroundColor: "#ffffff",
           gridSize: 20,
           showGrid: true,
@@ -502,6 +503,9 @@
           secondaryAccentColor: "#2563eb",
         });
         window.swwInstance = swwInstance;
+        swwInstance.controlPanel = { updateLayers: updateLayersList };
+        container.addEventListener("sww:sceneChanged", updateLayersList);
+        container.addEventListener("sww:selectionChanged", updateLayersList);
 
         setupKeyboardShortcuts();
         setupEventListeners();
@@ -771,7 +775,6 @@
               setTimeout(updateLayersList, 100);
           });
         }
-        setInterval(updateLayersList, 3000);
       }
 
       document.addEventListener("keydown", (e) => {

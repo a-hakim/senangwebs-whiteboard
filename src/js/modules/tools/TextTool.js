@@ -25,7 +25,7 @@ export const TextToolMixin = {
         
         // Add element to the scene immediately
         this.addSVGElementToDOM(element);
-        this.elements.push(element);
+        this.addElement(element);
         this.updateSVGElement(element);
         
         // Save state for undo/redo
@@ -567,7 +567,9 @@ export const TextToolMixin = {
         };
         
         setTimeout(() => {
-            document.addEventListener('click', handleClickOutside);
+            document.addEventListener('click', handleClickOutside, {
+                signal: this.eventController?.signal
+            });
         }, 100);
         
         // Fade out hint after a few seconds

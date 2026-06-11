@@ -54,7 +54,7 @@ export const TableToolMixin = {
 
     // Add element to the scene
     this.addSVGElementToDOM(element);
-    this.elements.push(element);
+    this.addElement(element);
     this.updateSVGElement(element);
 
     // Save state for undo/redo
@@ -174,7 +174,7 @@ export const TableToolMixin = {
         resizeHandle.style.cursor = "col-resize";
         resizeHandle.style.zIndex = "10";
 
-        resizeHandle.addEventListener("mousedown", (e) => {
+        resizeHandle.addEventListener("pointerdown", (e) => {
           e.stopPropagation();
           this.startColumnResize(element, colIndex, e);
         });
@@ -233,7 +233,7 @@ export const TableToolMixin = {
           resizeHandle.style.cursor = "row-resize";
           resizeHandle.style.zIndex = "10";
 
-          resizeHandle.addEventListener("mousedown", (e) => {
+          resizeHandle.addEventListener("pointerdown", (e) => {
             e.stopPropagation();
             this.startRowResize(element, rowIndex, e);
           });
@@ -299,7 +299,7 @@ export const TableToolMixin = {
       isFinished = true;
       
       // Remove global click handler
-      document.removeEventListener("mousedown", handleOutsideClick, true);
+      document.removeEventListener("pointerdown", handleOutsideClick, true);
       
       if (save) {
         const newValue = input.value;
@@ -328,7 +328,10 @@ export const TableToolMixin = {
     
     // Add global click handler to catch outside clicks (use capture phase)
     setTimeout(() => {
-      document.addEventListener("mousedown", handleOutsideClick, true);
+      document.addEventListener("pointerdown", handleOutsideClick, {
+        capture: true,
+        signal: this.eventController?.signal,
+      });
     }, 10);
 
     input.addEventListener("blur", () => finishEdit(true));
@@ -361,13 +364,17 @@ export const TableToolMixin = {
     };
 
     const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("pointermove", onMouseMove);
+      document.removeEventListener("pointerup", onMouseUp);
       this.saveStateToHistory("resizeTableColumn");
     };
 
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("pointermove", onMouseMove, {
+      signal: this.eventController?.signal,
+    });
+    document.addEventListener("pointerup", onMouseUp, {
+      signal: this.eventController?.signal,
+    });
   },
 
   /**
@@ -390,13 +397,17 @@ export const TableToolMixin = {
     };
 
     const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("pointermove", onMouseMove);
+      document.removeEventListener("pointerup", onMouseUp);
       this.saveStateToHistory("resizeTableRow");
     };
 
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("pointermove", onMouseMove, {
+      signal: this.eventController?.signal,
+    });
+    document.addEventListener("pointerup", onMouseUp, {
+      signal: this.eventController?.signal,
+    });
   },
 
   /**

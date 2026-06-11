@@ -7,11 +7,13 @@ const packageJson = require(path.join(root, "package.json"));
 
 const expectedArtifacts = {
   main: "dist/sww.js",
+  module: "dist/sww.esm.mjs",
   style: "dist/sww.css",
 };
 const distributionArtifacts = [
   "dist/sww.js",
   "dist/sww.min.js",
+  "dist/sww.esm.mjs",
   "dist/sww.css",
   "dist/sww.min.css",
 ];
@@ -37,10 +39,18 @@ for (const artifact of distributionArtifacts) {
 }
 
 const bundle = fs.readFileSync(path.join(root, packageJson.main), "utf8");
-assert.ok(
-  bundle.includes(`version:"${packageJson.version}"`),
+assert.match(
+  bundle,
+  new RegExp(`version:\\s*["']${packageJson.version.replace(/\./g, "\\.")}["']`),
   `Built bundle does not expose package version ${packageJson.version}. Run npm run build.`,
 );
+for (const methodName of ["getScene", "loadScene", "destroy", "exportToSVG"]) {
+  assert.match(
+    bundle,
+    new RegExp(`\\b${methodName}\\b`),
+    `Built bundle is missing the public ${methodName} API.`,
+  );
+}
 
 console.log(
   `Package entry points and version ${packageJson.version} are valid.`,

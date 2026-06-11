@@ -144,6 +144,7 @@ whiteboard.setTool("select"); // Selection mode
 // Scene Management
 whiteboard.getScene(); // Get current scene data
 whiteboard.loadScene(data); // Load scene from JSON
+whiteboard.destroy(); // Remove listeners, observers, and instance DOM
 whiteboard.clearAll(); // Clear all elements
 SWW.getInstance(container); // Get the instance attached to a container
 

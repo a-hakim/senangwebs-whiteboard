@@ -175,7 +175,7 @@ export const SelectionBoxMixin = {
 
         this.elements.forEach(element => {
             // Skip hidden and locked elements
-            if (element.hidden || element.locked) return;
+            if (element.visible === false || element.locked) return;
 
             // Check if element intersects with selection box
             if (this.isElementInSelectionBox(element, boxX, boxY, boxWidth, boxHeight)) {

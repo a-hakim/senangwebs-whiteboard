@@ -59,6 +59,7 @@ export const ToolbarMixin = {
       button.appendChild(icon);
 
       button.title = action.title;
+      button.setAttribute("aria-label", action.title);
       button.addEventListener("click", action.action);
 
       actionGroup.appendChild(button);

@@ -1,3 +1,5 @@
+import { sanitizeUrl } from "../utils/security.js";
+
 /**
  * EmbedToolsMixin.js - Embedded content tools (website, image, markdown)
  *
@@ -64,7 +66,7 @@ export const EmbedToolsMixin = {
 
     // Add element to the scene
     this.addSVGElementToDOM(element);
-    this.elements.push(element);
+    this.addElement(element);
     this.updateSVGElement(element);
 
     // Save state for undo/redo
@@ -98,7 +100,7 @@ export const EmbedToolsMixin = {
 
     // Add element to the scene
     this.addSVGElementToDOM(element);
-    this.elements.push(element);
+    this.addElement(element);
     this.updateSVGElement(element);
 
     // Save state for undo/redo
@@ -132,7 +134,7 @@ export const EmbedToolsMixin = {
 
     // Add element to the scene
     this.addSVGElementToDOM(element);
-    this.elements.push(element);
+    this.addElement(element);
     this.updateSVGElement(element);
 
     // Save state for undo/redo
@@ -210,10 +212,18 @@ export const EmbedToolsMixin = {
       content.className = "sww-website-content";
 
       const iframe = document.createElement("iframe");
-      iframe.src = element.url;
+      iframe.src = sanitizeUrl(element.url, {
+        allowedProtocols: ["http:", "https:"],
+      });
       iframe.style.width = "100%";
       iframe.style.height = "100%";
       iframe.style.border = "none";
+      iframe.setAttribute(
+        "sandbox",
+        this.options.iframeSandbox || "allow-forms allow-popups allow-scripts"
+      );
+      iframe.setAttribute("referrerpolicy", "no-referrer");
+      iframe.setAttribute("allow", this.options.iframeAllow || "");
 
       content.appendChild(iframe);
       container.appendChild(addressBar);
@@ -282,7 +292,7 @@ export const EmbedToolsMixin = {
       this.applyStrokeAndFillToContainer(div, element);
 
       const img = document.createElement("img");
-      img.src = element.imageUrl;
+      img.src = sanitizeUrl(element.imageUrl, { allowDataImages: true });
       img.style.width = "100%";
       img.style.height = "100%";
       img.style.objectFit = "cover";

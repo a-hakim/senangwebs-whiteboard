@@ -3,18 +3,11 @@
  * Version: 1.1.1
  */
 
-import { marked } from "marked";
-import "@bookklik/senangstart-icons/dist/senangstart-icon.min.js";
-
-// Make marked available globally for markdown elements
-if (typeof window !== "undefined") {
-  window.marked = marked;
-}
-
 // Import modular components
 import { SWWInstance } from "./modules/core/SWWInstance.js";
 import { InitializationMixin } from "./modules/core/initialization.js";
 import { ElementManagementMixin } from "./modules/core/elementManagement.js";
+import { SceneStateMixin } from "./modules/core/SceneState.js";
 import { CanvasMixin } from "./modules/canvas/CanvasMixin.js";
 import { ToolbarMixin } from "./modules/ui/ToolbarMixin.js";
 import { EventHandlersMixin } from "./modules/core/eventHandlers.js";
@@ -49,6 +42,7 @@ import { ThemeManagerMixin } from "./modules/ui/ThemeManager.js";
 // Apply mixins to SWWInstance prototype
 Object.assign(SWWInstance.prototype, InitializationMixin);
 Object.assign(SWWInstance.prototype, ElementManagementMixin);
+Object.assign(SWWInstance.prototype, SceneStateMixin);
 Object.assign(SWWInstance.prototype, CanvasMixin);
 Object.assign(SWWInstance.prototype, ToolbarMixin);
 Object.assign(SWWInstance.prototype, EventHandlersMixin);

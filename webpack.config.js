@@ -9,7 +9,7 @@ const packageJson = require('./package.json');
 class RemoveStyleScriptPlugin {
   apply(compiler) {
     const removeStaleStyleScripts = () => {
-      for (const assetName of ['styles.js', 'styles.min.js']) {
+      for (const assetName of ['styles.js', 'styles.min.js', 'styles.esm.js', 'sww.esm.js']) {
         fs.rmSync(path.join(compiler.options.output.path, assetName), {
           force: true
         });
@@ -27,7 +27,7 @@ class RemoveStyleScriptPlugin {
         },
         () => {
           for (const assetName of Object.keys(compilation.assets)) {
-            if (/^styles(?:\.min)?\.js$/.test(assetName)) {
+            if (/^styles(?:\.min|\.esm)?\.js$/.test(assetName)) {
               compilation.deleteAsset(assetName);
             }
           }
@@ -37,20 +37,25 @@ class RemoveStyleScriptPlugin {
   }
 }
 
-function createConfig({ minified = false, mode = 'production' } = {}) {
+function createConfig({ minified = false, mode = 'production', format = 'umd' } = {}) {
   const suffix = minified ? '.min' : '';
+  const isEsm = format === 'esm';
 
   return {
-    name: minified ? 'minified' : 'unminified',
+    name: isEsm ? 'esm' : (minified ? 'minified' : 'unminified'),
     mode,
-    entry: {
+    entry: isEsm ? {
+      sww: './src/js/sww.js'
+    } : {
       sww: './src/js/sww.js',
       styles: './src/css/sww.css'
     },
     output: {
-      filename: `[name]${suffix}.js`,
+      filename: isEsm ? '[name].esm.mjs' : `[name]${suffix}.js`,
       path: path.resolve(__dirname, 'dist'),
-      library: {
+      library: isEsm ? {
+        type: 'module'
+      } : {
         name: 'SWW',
         type: 'umd',
         export: 'default'
@@ -58,6 +63,7 @@ function createConfig({ minified = false, mode = 'production' } = {}) {
       globalObject: 'this',
       assetModuleFilename: 'assets/[name][ext]'
     },
+    experiments: isEsm ? { outputModule: true } : undefined,
     module: {
       rules: [
         {
@@ -116,6 +122,7 @@ module.exports = (_env, argv) => {
 
   return [
     createConfig(),
-    createConfig({ minified: true })
+    createConfig({ minified: true }),
+    createConfig({ minified: true, format: 'esm' })
   ];
 };

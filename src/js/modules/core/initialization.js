@@ -11,6 +11,10 @@ export const InitializationMixin = {
      * Sets up UI, event listeners, and performance optimizations
      */
     init() {
+        if (this.container._swwInstance && this.container._swwInstance !== this) {
+            this.container._swwInstance.destroy();
+        }
+        this.container._swwInstance = this;
         this.createUI();
         this.setupEventListeners();
         
@@ -27,7 +31,7 @@ export const InitializationMixin = {
         this.updateHistoryButtons();
         
         // Set initial grid button state
-        setTimeout(() => {
+        this.initializationTimer = setTimeout(() => {
             this.updateGridButtonState();
             
             // If readOnly mode is enabled, automatically enter preview mode
@@ -76,10 +80,10 @@ export const InitializationMixin = {
         
         // Set up resize observer
         if (window.ResizeObserver) {
-            const observer = new ResizeObserver(() => {
+            this.resizeObserver = new ResizeObserver(() => {
                 this.debouncedViewportUpdate();
             });
-            observer.observe(this.container);
+            this.resizeObserver.observe(this.container);
         }
     },
 
@@ -88,9 +92,7 @@ export const InitializationMixin = {
      * Activates optimized render loop for scenes with >200 elements
      */
     setupPerformanceMonitoring() {
-        if (this.elements.length > 200) {
-            this.setupOptimizedRenderLoop();
-        }
+        this.updateVisibleElements();
     },
 
     /**
@@ -98,22 +100,7 @@ export const InitializationMixin = {
      * Limits FPS to 30 and uses LOD rendering
      */
     setupOptimizedRenderLoop() {
-        let lastRenderTime = 0;
-        const targetFPS = 30; // Lower FPS for large scenes
-        const frameTime = 1000 / targetFPS;
-        
-        const renderLoop = (currentTime) => {
-            if (currentTime - lastRenderTime >= frameTime) {
-                this.performOptimizedRender();
-                lastRenderTime = currentTime;
-            }
-            
-            if (this.elements.length > 200) {
-                requestAnimationFrame(renderLoop);
-            }
-        };
-        
-        requestAnimationFrame(renderLoop);
+        this.updateVisibleElements();
     },
 
     /**
@@ -186,31 +173,6 @@ export const InitializationMixin = {
             }
         }
         
-        // Also set on document root for global access
-        document.documentElement.style.setProperty('--sww-panel-bg', this.options.panelBackgroundColor);
-        document.documentElement.style.setProperty('--sww-panel-text', this.options.panelTextColor);
-        document.documentElement.style.setProperty('--sww-accent-color', this.options.accentColor);
-        document.documentElement.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
-        document.documentElement.setAttribute('data-panel-mode', this.options.panelMode);
-        
-        // Convert secondary accent to RGB for alpha transparency usage
-        const rgb = hexToRgb(this.options.secondaryAccentColor);
-        if (rgb) {
-            document.documentElement.style.setProperty('--sww-secondary-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-        }
-        
-        // Set mode-specific derived colors on document root
-        if (this.options.panelMode === 'light') {
-            document.documentElement.style.setProperty('--sww-panel-border', '#e5e7eb');
-            document.documentElement.style.setProperty('--sww-panel-hover', '#f3f4f6');
-            document.documentElement.style.setProperty('--sww-panel-active', '#e5e7eb');
-            document.documentElement.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.1)');
-        } else {
-            document.documentElement.style.setProperty('--sww-panel-border', '#27272a');
-            document.documentElement.style.setProperty('--sww-panel-hover', '#27272a');
-            document.documentElement.style.setProperty('--sww-panel-active', '#3f3f46');
-            document.documentElement.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.3)');
-        }
     },
 
     /**
@@ -232,7 +194,8 @@ export const InitializationMixin = {
             
             this.visibleElements.clear();
             
-            this.elements.forEach(element => {
+            const candidates = this.spatialIndex.queryBounds(viewBounds);
+            candidates.forEach(element => {
                 const bounds = this.getElementBounds(element);
                 const isInViewport = this.isElementInBounds(bounds, viewBounds);
                 
@@ -251,9 +214,38 @@ export const InitializationMixin = {
                     }
                 }
             });
+
+            this.elements.forEach((element) => {
+                if (!candidates.has(element) && element.svgElement) {
+                    element.svgElement.style.display = 'none';
+                }
+            });
             
             this.viewportUpdateScheduled = false;
         });
+    },
+
+    destroy() {
+        if (this.isDestroyed) return;
+        this.isDestroyed = true;
+
+        clearTimeout(this.initializationTimer);
+        this.eventController?.abort();
+        this.resizeObserver?.disconnect();
+        this.exitPreviewMode?.();
+        this.elements.forEach((element) => this.cleanupElement(element));
+        this.pendingAnimationFrames.forEach((frameId) => cancelAnimationFrame(frameId));
+        this.pendingAnimationFrames.clear();
+        this.elements = [];
+        this.elementsById.clear();
+        this.selectedElements.clear();
+        this.spatialIndex.clear();
+        this.visibleElements.clear();
+
+        if (this.container._swwInstance === this) {
+            delete this.container._swwInstance;
+        }
+        this.container.replaceChildren();
     },
 
     /**

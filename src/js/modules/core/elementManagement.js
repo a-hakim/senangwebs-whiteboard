@@ -3,32 +3,33 @@
  * Handles adding, removing, and updating elements in the scene
  */
 
-import { PerformanceUtils } from '../utils/PerformanceUtils.js';
-
 export const ElementManagementMixin = {
     /**
      * Add element to the scene and spatial index
      * @param {Object} element - Element object to add
      */
-    addElement(element) {
+    addElement(element, { emit = false } = {}) {
+        if (!element || this.elementsById.has(element.id)) return element;
         this.elements.push(element);
+        this.elementsById.set(element.id, element);
         const bounds = this.getElementBounds(element);
         this.spatialIndex.insert(element, bounds);
         
         // Add SVG element to DOM (critical for visibility!)
-        if (element.svgElement) {
+        if (element.svgElement && element.svgElement.parentNode !== this.elementsGroup) {
             this.addSVGElementToDOM(element);
         }
+
+        this.applyElementVisibility(element);
         
         // Update viewport if needed
         if (this.elements.length > 100) {
             this.debouncedViewportUpdate();
         }
         
-        // Update control panel if available
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
+        if (emit) this.emitSceneChanged("addElement", [element.id]);
+        return element;
     },
 
     /**
@@ -39,6 +40,7 @@ export const ElementManagementMixin = {
         const index = this.elements.indexOf(element);
         if (index !== -1) {
             this.elements.splice(index, 1);
+            this.elementsById.delete(element.id);
             this.spatialIndex.remove(element);
             
             // Clean up SVG element
@@ -46,10 +48,7 @@ export const ElementManagementMixin = {
                 element.svgElement.parentNode.removeChild(element.svgElement);
             }
             
-            // Update control panel if available
-            if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-                window.swwControlPanel.updateLayers();
-            }
+            this.updateControlPanelLayers();
         }
     },
 
@@ -77,6 +76,42 @@ export const ElementManagementMixin = {
         this.spatialIndex.remove(element);
         const bounds = this.getElementBounds(element);
         this.spatialIndex.insert(element, bounds);
+    },
+
+    applyElementVisibility(element) {
+        if (!element || !element.svgElement) return;
+        const isVisible = element.visible !== false;
+        element.svgElement.style.display = isVisible ? "block" : "none";
+        element.svgElement.classList.toggle("sww-hidden", !isVisible);
+    },
+
+    updateControlPanelLayers() {
+        const controlPanel = this.controlPanel || this.options.controlPanel;
+        if (controlPanel && typeof controlPanel.updateLayers === "function") {
+            controlPanel.updateLayers();
+        }
+    },
+
+    emitSceneChanged(actionType, affectedElementIds = []) {
+        if (this.isDestroyed || !this.container) return;
+        this.sceneRevision += 1;
+        this.container.dispatchEvent(new CustomEvent("sww:sceneChanged", {
+            detail: {
+                actionType,
+                affectedElementIds,
+                revision: this.sceneRevision,
+            },
+        }));
+    },
+
+    emitSelectionChanged() {
+        if (this.isDestroyed || !this.container) return;
+        this.container.dispatchEvent(new CustomEvent("sww:selectionChanged", {
+            detail: {
+                selectedElements: Array.from(this.selectedElements),
+                selectedElementIds: Array.from(this.selectedElements, (element) => element.id),
+            },
+        }));
     },
 
     /**

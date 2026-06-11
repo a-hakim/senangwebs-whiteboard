@@ -77,15 +77,14 @@ export const SelectionManagerMixin = {
         // Update UI to reflect selection
         this.updateSelectionHandles();
         this.syncPropertiesPanel();
+        this.emitSelectionChanged();
 
         // Ensure UI state is properly updated after selection change
         setTimeout(() => {
             this.updateTextPropertiesVisibility();
 
             // Update layers panel to reflect selection changes
-            if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-                window.swwControlPanel.updateLayers();
-            }
+            this.updateControlPanelLayers();
         }, 0);
     },
 
@@ -127,6 +126,7 @@ export const SelectionManagerMixin = {
         // Update UI
         this.updateSelectionHandles();
         this.syncPropertiesPanel();
+        this.emitSelectionChanged();
     },
 
     /**
@@ -148,6 +148,7 @@ export const SelectionManagerMixin = {
      * Commits any pending properties panel changes first
      */
     clearSelection() {
+        const hadSelection = this.selectedElements.size > 0;
         // Commit any pending changes in properties panel before clearing selection
         this.commitPropertiesPanelChanges();
 
@@ -181,9 +182,8 @@ export const SelectionManagerMixin = {
         this.syncPropertiesPanel();
 
         // Update layers panel to reflect selection changes
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
+        if (hadSelection) this.emitSelectionChanged();
     },
 
     /**
@@ -194,7 +194,7 @@ export const SelectionManagerMixin = {
         this.clearSelection();
         this.elements.forEach(element => {
             // Skip hidden elements
-            if (element.hidden) return;
+            if (element.visible === false || element.locked) return;
             
             this.selectElement(element, true); // Add to selection
         });
@@ -219,6 +219,7 @@ export const SelectionManagerMixin = {
         // Update UI once after all selections
         this.updateSelectionHandles();
         this.syncPropertiesPanel();
+        this.emitSelectionChanged();
     },
 
     /**
@@ -292,9 +293,6 @@ export const SelectionManagerMixin = {
                 return;
         }
 
-        // Save state for undo functionality
-        this.saveStateToHistory('moveElements');
-
         // Move all selected elements
         this.selectedElements.forEach(element => {
             element.x += dx;
@@ -312,6 +310,7 @@ export const SelectionManagerMixin = {
 
         // Update properties panel with new position values
         this.syncPropertiesPanel();
+        this.saveStateToHistory('moveElements');
     },
 
     /**

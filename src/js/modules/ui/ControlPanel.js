@@ -12,118 +12,6 @@
 
 export const ControlPanelMixin = {
     /**
-     * Apply theme colors to the UI
-     * Sets CSS custom properties for consistent theming
-     */
-    applyThemeColors() {
-        // Apply CSS custom properties for theme colors
-        if (!this.svg) return;
-        
-        // Helper function to convert hex to RGB
-        const hexToRgb = (hex) => {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? {
-                r: parseInt(result[1], 16),
-                g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16)
-            } : null;
-        };
-        
-        // Set CSS variables on the container
-        const container = this.container;
-        if (container) {
-            container.style.setProperty('--sww-panel-bg', this.options.panelBackgroundColor);
-            container.style.setProperty('--sww-panel-text', this.options.panelTextColor);
-            container.style.setProperty('--sww-accent-color', this.options.accentColor);
-            container.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
-            container.setAttribute('data-panel-mode', this.options.panelMode);
-            
-            // Convert secondary accent to RGB for alpha transparency usage
-            const rgb = hexToRgb(this.options.secondaryAccentColor);
-            if (rgb) {
-                container.style.setProperty('--sww-secondary-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-            }
-            
-            // Set mode-specific derived colors
-            if (this.options.panelMode === 'light') {
-                container.style.setProperty('--sww-panel-border', '#e5e7eb');
-                container.style.setProperty('--sww-panel-hover', '#f3f4f6');
-                container.style.setProperty('--sww-panel-active', '#e5e7eb');
-                container.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.1)');
-            } else {
-                container.style.setProperty('--sww-panel-border', '#27272a');
-                container.style.setProperty('--sww-panel-hover', '#27272a');
-                container.style.setProperty('--sww-panel-active', '#3f3f46');
-                container.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.3)');
-            }
-        }
-        
-        // Also set on document root for global access
-        document.documentElement.style.setProperty('--sww-panel-bg', this.options.panelBackgroundColor);
-        document.documentElement.style.setProperty('--sww-panel-text', this.options.panelTextColor);
-        document.documentElement.style.setProperty('--sww-accent-color', this.options.accentColor);
-        document.documentElement.style.setProperty('--sww-secondary-accent', this.options.secondaryAccentColor);
-        document.documentElement.setAttribute('data-panel-mode', this.options.panelMode);
-        
-        // Convert secondary accent to RGB for alpha transparency usage
-        const rgb = hexToRgb(this.options.secondaryAccentColor);
-        if (rgb) {
-            document.documentElement.style.setProperty('--sww-secondary-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-        }
-        
-        // Set mode-specific derived colors on document root
-        if (this.options.panelMode === 'light') {
-            document.documentElement.style.setProperty('--sww-panel-border', '#e5e7eb');
-            document.documentElement.style.setProperty('--sww-panel-hover', '#f3f4f6');
-            document.documentElement.style.setProperty('--sww-panel-active', '#e5e7eb');
-            document.documentElement.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.1)');
-        } else {
-            document.documentElement.style.setProperty('--sww-panel-border', '#27272a');
-            document.documentElement.style.setProperty('--sww-panel-hover', '#27272a');
-            document.documentElement.style.setProperty('--sww-panel-active', '#3f3f46');
-            document.documentElement.style.setProperty('--sww-panel-shadow', 'rgba(0, 0, 0, 0.3)');
-        }
-    },
-
-    /**
-     * Set the panel mode (light or dark) and update theme colors
-     * @param {string} mode - 'light' or 'dark'
-     * @returns {string} The current panel mode
-     */
-    setPanelMode(mode) {
-        if (mode !== 'light' && mode !== 'dark') {
-            console.warn('Invalid panel mode. Use "light" or "dark".');
-            return this.options.panelMode;
-        }
-        
-        this.options.panelMode = mode;
-        
-        // Update default colors based on the new mode
-        const defaultColors = mode === 'light' ? {
-            panelBackgroundColor: '#ffffff',
-            panelTextColor: '#1f2937',
-            accentColor: '#3b82f6',
-            secondaryAccentColor: '#2563eb'
-        } : {
-            panelBackgroundColor: '#18181b',
-            panelTextColor: '#ffffff',
-            accentColor: '#00FF99',
-            secondaryAccentColor: '#007370'
-        };
-        
-        // Update colors
-        this.options.panelBackgroundColor = defaultColors.panelBackgroundColor;
-        this.options.panelTextColor = defaultColors.panelTextColor;
-        this.options.accentColor = defaultColors.accentColor;
-        this.options.secondaryAccentColor = defaultColors.secondaryAccentColor;
-        
-        // Re-apply theme colors
-        this.applyThemeColors();
-        
-        return this.options.panelMode;
-    },
-
-    /**
      * Enter preview mode - lock all elements and fit to view
      * Useful for presentation/viewing without editing
      */
@@ -154,7 +42,9 @@ export const ControlPanelMixin = {
                     this.exitPreviewMode();
                 }
             };
-            document.addEventListener('keydown', this.previewModeKeyHandler);
+            document.addEventListener('keydown', this.previewModeKeyHandler, {
+                signal: this.eventController?.signal
+            });
             
             // Add fullscreen change listener to handle browser ESC
             this.fullscreenChangeHandler = (e) => {
@@ -162,7 +52,9 @@ export const ControlPanelMixin = {
                     this.exitPreviewMode();
                 }
             };
-            document.addEventListener('keydown', this.fullscreenChangeHandler);
+            document.addEventListener('keydown', this.fullscreenChangeHandler, {
+                signal: this.eventController?.signal
+            });
         }
         
         // Enable browser-frame fullscreen
@@ -446,8 +338,8 @@ export const ControlPanelMixin = {
      * Clear all elements and reset canvas
      */
     clearAll() {
-        this.saveStateToHistory('clearAll');
         this.elements = [];
+        this.elementsById.clear();
         this.selectedElements.clear();
         
         if (this.elementsGroup) {
@@ -466,9 +358,7 @@ export const ControlPanelMixin = {
         }
         
         // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
     },
 
     /**
@@ -490,6 +380,7 @@ export const ControlPanelMixin = {
         if (this.visibleElements) {
             this.visibleElements.clear();
         }
+        this.saveStateToHistory('clearAll');
         
         if (this.spatialIndex) {
             this.spatialIndex.clear();

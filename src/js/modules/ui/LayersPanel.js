@@ -17,8 +17,6 @@ export const LayersPanelMixin = {
     const element = this.getElementById(elementId);
     if (!element) return;
 
-    this.saveStateToHistory("visibility");
-
     // Toggle visibility state
     element.visible = element.visible !== false ? false : true;
 
@@ -40,13 +38,10 @@ export const LayersPanelMixin = {
       this.selectedElements.delete(element);
       this.updateSelectionHandles();
     }
+    this.saveStateToHistory("visibility");
 
-    // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      setTimeout(() => {
-        window.swwControlPanel.updateLayers();
-      }, 100);
-    }
+    this.updateControlPanelLayers();
+    return true;
   },
 
   /**
@@ -56,8 +51,6 @@ export const LayersPanelMixin = {
   toggleElementLock(elementId) {
     const element = this.getElementById(elementId);
     if (!element) return;
-
-    this.saveStateToHistory("lock");
 
     // Toggle lock state
     element.locked = !element.locked;
@@ -77,13 +70,9 @@ export const LayersPanelMixin = {
       this.selectedElements.delete(element);
       this.updateSelectionHandles();
     }
+    this.saveStateToHistory("lock");
 
-    // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      setTimeout(() => {
-        window.swwControlPanel.updateLayers();
-      }, 100);
-    }
+    this.updateControlPanelLayers();
   },
 
   /**
@@ -110,9 +99,7 @@ export const LayersPanelMixin = {
     this.updateViewBox();
 
     // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 
   /**
@@ -198,8 +185,6 @@ export const LayersPanelMixin = {
     const index = this.elements.indexOf(element);
     if (index === -1 || index === this.elements.length - 1) return; // Already at front
 
-    this.saveStateToHistory("reorder");
-
     // Remove from current position and add to end
     this.elements.splice(index, 1);
     this.elements.push(element);
@@ -208,11 +193,10 @@ export const LayersPanelMixin = {
     if (element.svgElement && element.svgElement.parentNode) {
       element.svgElement.parentNode.appendChild(element.svgElement);
     }
+    this.saveStateToHistory("reorder");
 
     // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 
   /**
@@ -225,8 +209,6 @@ export const LayersPanelMixin = {
 
     const index = this.elements.indexOf(element);
     if (index === -1 || index === 0) return; // Already at back
-
-    this.saveStateToHistory("reorder");
 
     // Remove from current position and add to start
     this.elements.splice(index, 1);
@@ -242,11 +224,10 @@ export const LayersPanelMixin = {
         parent.appendChild(element.svgElement);
       }
     }
+    this.saveStateToHistory("reorder");
 
     // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 
   /**
@@ -259,8 +240,6 @@ export const LayersPanelMixin = {
 
     const index = this.elements.indexOf(element);
     if (index === -1 || index === this.elements.length - 1) return; // Already at front
-
-    this.saveStateToHistory("reorder");
 
     // Swap with next element
     [this.elements[index], this.elements[index + 1]] = [
@@ -278,11 +257,10 @@ export const LayersPanelMixin = {
         );
       }
     }
+    this.saveStateToHistory("reorder");
 
     // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 
   /**
@@ -295,8 +273,6 @@ export const LayersPanelMixin = {
 
     const index = this.elements.indexOf(element);
     if (index === -1 || index === 0) return; // Already at back
-
-    this.saveStateToHistory("reorder");
 
     // Swap with previous element
     [this.elements[index], this.elements[index - 1]] = [
@@ -314,11 +290,10 @@ export const LayersPanelMixin = {
         );
       }
     }
+    this.saveStateToHistory("reorder");
 
     // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 
   /**
@@ -329,15 +304,8 @@ export const LayersPanelMixin = {
     const element = this.getElementById(elementId);
     if (!element) return;
 
-    this.saveStateToHistory("duplicate");
-
     // Create a deep copy of the element (except SVG reference)
-    const duplicate = JSON.parse(
-      JSON.stringify({
-        ...element,
-        svgElement: null,
-      })
-    );
+    const duplicate = this.serializeElement(element);
 
     // Generate new ID
     duplicate.id = `${element.type}-${Date.now()}-${Math.random()
@@ -348,20 +316,16 @@ export const LayersPanelMixin = {
     duplicate.x += 20;
     duplicate.y += 20;
 
-    // Add to elements array
-    this.elements.push(duplicate);
-
-    // Create SVG element
-    this.addSVGElementToDOM(duplicate);
+    duplicate.svgElement = this.createSVGElement(duplicate);
+    this.addElement(duplicate);
+    this.saveStateToHistory("duplicate");
 
     // Select the new element
     this.clearSelection();
     this.selectElement(duplicate);
 
     // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 
   /**
@@ -370,8 +334,6 @@ export const LayersPanelMixin = {
   groupSelectedElements() {
     if (this.selectedElements.size < 2) return;
 
-    this.saveStateToHistory("group");
-
     // Generate group ID
     const groupId = `group-${Date.now()}`;
 
@@ -379,11 +341,10 @@ export const LayersPanelMixin = {
     this.selectedElements.forEach((element) => {
       element.groupId = groupId;
     });
+    this.saveStateToHistory("group");
 
     // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 
   /**
@@ -397,8 +358,6 @@ export const LayersPanelMixin = {
       (el) => el.groupId
     );
     if (!hasGroupedElements) return;
-
-    this.saveStateToHistory("ungroup");
 
     // Get group IDs from selected elements
     const groupIds = new Set();
@@ -416,10 +375,9 @@ export const LayersPanelMixin = {
         }
       });
     });
+    this.saveStateToHistory("ungroup");
 
     // Update control panel if it exists
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 };

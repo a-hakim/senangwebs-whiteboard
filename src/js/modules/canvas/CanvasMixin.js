@@ -16,6 +16,9 @@ export const CanvasMixin = {
         // Create SVG canvas
         this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.svg.setAttribute('class', 'sww-canvas');
+        this.svg.setAttribute('tabindex', '0');
+        this.svg.setAttribute('role', 'application');
+        this.svg.setAttribute('aria-label', this.options.ariaLabel || 'Whiteboard drawing canvas');
         this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
         this.svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
         
@@ -50,6 +53,7 @@ export const CanvasMixin = {
     createBackground() {
         // Background rect
         const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        this.backgroundRect = bg;
         bg.setAttribute('x', this.viewBox.x - 5000);
         bg.setAttribute('y', this.viewBox.y - 5000);
         bg.setAttribute('width', 10000);
@@ -79,7 +83,8 @@ export const CanvasMixin = {
         
         this.gridDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         this.gridPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-        this.gridPattern.setAttribute('id', 'sww-grid');
+        this.gridPatternId = this.gridPatternId || `sww-grid-${this.generateId()}`;
+        this.gridPattern.setAttribute('id', this.gridPatternId);
         this.gridPattern.setAttribute('width', this.options.gridSize);
         this.gridPattern.setAttribute('height', this.options.gridSize);
         this.gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
@@ -92,15 +97,15 @@ export const CanvasMixin = {
         
         this.gridPattern.appendChild(path);
         this.gridDefs.appendChild(this.gridPattern);
-        this.svg.appendChild(this.gridDefs);
+        this.svg.insertBefore(this.gridDefs, this.elementsGroup || null);
         
         this.gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         this.gridRect.setAttribute('x', this.viewBox.x - 5000);
         this.gridRect.setAttribute('y', this.viewBox.y - 5000);
         this.gridRect.setAttribute('width', 10000);
         this.gridRect.setAttribute('height', 10000);
-        this.gridRect.setAttribute('fill', 'url(#sww-grid)');
-        this.svg.appendChild(this.gridRect);
+        this.gridRect.setAttribute('fill', `url(#${this.gridPatternId})`);
+        this.svg.insertBefore(this.gridRect, this.elementsGroup || null);
     },
 
     /**

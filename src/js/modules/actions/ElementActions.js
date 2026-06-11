@@ -18,8 +18,6 @@ export const ElementActionsMixin = {
     lockSelected() {
         if (this.selectedElements.size === 0) return;
         
-        this.saveStateToHistory('lockElements');
-        
         this.selectedElements.forEach(element => {
             if (!element.locked) {
                 element.locked = true;
@@ -32,11 +30,10 @@ export const ElementActionsMixin = {
                 }
             }
         });
+        this.saveStateToHistory('lockElements');
         
         // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
     },
 
     /**
@@ -44,8 +41,6 @@ export const ElementActionsMixin = {
      */
     unlockSelected() {
         if (this.selectedElements.size === 0) return;
-        
-        this.saveStateToHistory('unlockElements');
         
         this.selectedElements.forEach(element => {
             if (element.locked) {
@@ -57,11 +52,10 @@ export const ElementActionsMixin = {
                 }
             }
         });
+        this.saveStateToHistory('unlockElements');
         
         // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
     },
 
     /**
@@ -70,22 +64,19 @@ export const ElementActionsMixin = {
     groupSelected() {
         if (this.selectedElements.size < 2) return;
         
-        this.saveStateToHistory('groupElements');
-        
         const groupId = this.generateId();
         
         this.selectedElements.forEach(element => {
             element.groupId = groupId;
         });
+        this.saveStateToHistory('groupElements');
         
         if (this.showNotification) {
             this.showNotification(`Grouped ${this.selectedElements.size} elements`, 'success');
         }
         
         // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
     },
 
     /**
@@ -93,8 +84,6 @@ export const ElementActionsMixin = {
      */
     ungroupSelected() {
         if (this.selectedElements.size === 0) return;
-        
-        this.saveStateToHistory('ungroupElements');
         
         let ungroupedCount = 0;
         
@@ -111,15 +100,14 @@ export const ElementActionsMixin = {
                 ungroupedCount += groupElements.length;
             }
         });
+        if (ungroupedCount > 0) this.saveStateToHistory('ungroupElements');
         
         if (ungroupedCount > 0 && this.showNotification) {
             this.showNotification(`Ungrouped ${ungroupedCount} elements`, 'success');
         }
         
         // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
     },
 
     /**
@@ -138,12 +126,11 @@ export const ElementActionsMixin = {
             return;
         }
         
-        this.saveStateToHistory('deleteElements');
-        
         elementsToDelete.forEach(element => {
             this.removeElement(element);
             this.selectedElements.delete(element);
         });
+        this.saveStateToHistory('deleteElements');
         
         // Update selection handles for remaining elements
         if (this.selectedElements.size > 0) {
@@ -157,9 +144,7 @@ export const ElementActionsMixin = {
         }
         
         // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
         
         if (this.showNotification) {
             this.showNotification(`Deleted ${elementsToDelete.length} element${elementsToDelete.length > 1 ? 's' : ''}`, 'success');
@@ -178,8 +163,6 @@ export const ElementActionsMixin = {
      */
     bringToFront() {
         if (this.selectedElements.size === 0) return;
-        
-        this.saveStateToHistory('bringToFront');
         
         // Convert to array and sort by current position in elements array
         const selectedArray = Array.from(this.selectedElements);
@@ -209,11 +192,10 @@ export const ElementActionsMixin = {
         if (this.spatialIndex && this.spatialIndex.rebuild) {
             this.spatialIndex.rebuild(this.elements, (el) => this.getElementBounds(el));
         }
+        this.saveStateToHistory('bringToFront');
         
         // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
     },
 
     /**
@@ -221,8 +203,6 @@ export const ElementActionsMixin = {
      */
     sendToBack() {
         if (this.selectedElements.size === 0) return;
-        
-        this.saveStateToHistory('sendToBack');
         
         // Convert to array and sort by current position in elements array
         const selectedArray = Array.from(this.selectedElements);
@@ -251,11 +231,10 @@ export const ElementActionsMixin = {
         if (this.spatialIndex && this.spatialIndex.rebuild) {
             this.spatialIndex.rebuild(this.elements, (el) => this.getElementBounds(el));
         }
+        this.saveStateToHistory('sendToBack');
         
         // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
     },
 
     /**
@@ -343,5 +322,6 @@ export const ElementActionsMixin = {
         if (this.syncPropertiesPanel) {
             this.syncPropertiesPanel();
         }
+        this.emitSelectionChanged();
     }
 };

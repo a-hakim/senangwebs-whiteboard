@@ -60,7 +60,7 @@ export const ThemeManagerMixin = {
     applyThemeColors() {
         if (!this.container) return;
         
-        const root = document.documentElement;
+        const root = this.container;
         
         // Set CSS custom properties for theming
         root.style.setProperty('--sww-panel-bg', this.options.panelBackgroundColor);

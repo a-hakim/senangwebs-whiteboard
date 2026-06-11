@@ -222,8 +222,9 @@ export const ViewportMixin = {
      */
     getPointerPosition(e) {
         const rect = this.svg.getBoundingClientRect();
-        const clientX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY);
+        const touch = e.touches?.[0] || e.changedTouches?.[0];
+        const clientX = e.clientX ?? touch?.clientX ?? 0;
+        const clientY = e.clientY ?? touch?.clientY ?? 0;
         
         // Use SVG's coordinate transformation if available (more accurate)
         if (this.svg.getScreenCTM) {

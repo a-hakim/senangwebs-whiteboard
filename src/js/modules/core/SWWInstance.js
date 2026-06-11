@@ -14,7 +14,7 @@ export class SWWInstance {
         this.container = container;
         
         // Determine panel mode (light or dark)
-        const panelMode = options.panelMode || 'dark';
+        const panelMode = options.panelMode === 'light' ? 'light' : 'dark';
         
         // Set default colors based on panel mode
         const defaultColors = THEME_COLORS[panelMode];
@@ -43,6 +43,7 @@ export class SWWInstance {
     initializeState() {
         // State
         this.elements = [];
+        this.elementsById = new Map();
         this.selectedElements = new Set();
         
         // Initialize tool system (will be extended by ToolManagerMixin)
@@ -109,6 +110,11 @@ export class SWWInstance {
         this.selectionUpdateScheduled = false;
         this.visibleElements = new Set();
         this.viewportUpdateScheduled = false;
+        this.sceneRevision = 0;
+        this.isDestroyed = false;
+        this.eventController = null;
+        this.resizeObserver = null;
+        this.pendingAnimationFrames = new Set();
     }
     
     init() {

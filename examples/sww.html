@@ -305,6 +305,10 @@
           showGrid: true,
           readOnly: false, // default false
         });
+        swwInstance.controlPanel = { updateLayers };
+        container.addEventListener("sww:sceneChanged", updateLayers);
+        container.addEventListener("sww:selectionChanged", updateLayers);
+        updateLayers();
 
         // NOTE: SWWControlPanel is no longer needed in the modular architecture
         // All control panel functionality is now built into the instance
@@ -521,16 +525,6 @@
         }
       }
 
-      /**
-       * Make updateLayers available globally for LayersPanel.js
-       * This replaces the old SWWControlPanel.updateLayers() pattern
-       */
-      window.swwControlPanel = {
-        updateLayers: updateLayers,
-      };
-
-      // Auto-update layers panel periodically
-      setInterval(updateLayers, 1000);
     </script>
   </body>
 </html>

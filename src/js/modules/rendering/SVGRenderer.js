@@ -1,3 +1,6 @@
+import { escapeHtml, sanitizeHtml, sanitizeUrl } from "../utils/security.js";
+import { marked } from "marked";
+
 /**
  * SVG Rendering Engine
  *
@@ -472,10 +475,18 @@ export const SVGRendererMixin = {
       content.className = "sww-website-content";
 
       const iframe = document.createElement("iframe");
-      iframe.src = element.url;
+      iframe.src = sanitizeUrl(element.url, {
+        allowedProtocols: ["http:", "https:"],
+      });
       iframe.style.width = "100%";
       iframe.style.height = "100%";
       iframe.style.border = "none";
+      iframe.setAttribute(
+        "sandbox",
+        this.options.iframeSandbox || "allow-forms allow-popups allow-scripts"
+      );
+      iframe.setAttribute("referrerpolicy", "no-referrer");
+      iframe.setAttribute("allow", this.options.iframeAllow || "");
 
       content.appendChild(iframe);
       container.appendChild(addressBar);
@@ -519,7 +530,7 @@ export const SVGRendererMixin = {
       this._applyContainerStyles(div, element);
 
       const img = document.createElement("img");
-      img.src = element.imageUrl;
+      img.src = sanitizeUrl(element.imageUrl, { allowDataImages: true });
       img.style.width = "100%";
       img.style.height = "100%";
       img.style.objectFit = "cover";
@@ -989,21 +1000,20 @@ export const SVGRendererMixin = {
     // Use marked.js library for parsing markdown
     if (typeof marked !== "undefined") {
       try {
-        // Configure marked options for security and functionality
+        // Marked parses markdown; sanitizeHtml enforces the rendering policy.
         marked.setOptions({
           breaks: true, // Support single line breaks
           gfm: true, // GitHub flavored markdown
-          sanitize: false, // We'll trust the input since it's user content
           smartLists: true, // Better list handling
           smartypants: false, // Don't convert quotes
         });
 
-        return marked.parse(text);
+        return sanitizeHtml(marked.parse(text));
       } catch (error) {
-        return text.replace(/\n/g, "<br>");
+        return escapeHtml(text).replace(/\n/g, "<br>");
       }
     } else {
-      return text.replace(/\n/g, "<br>");
+      return escapeHtml(text).replace(/\n/g, "<br>");
     }
   },
 

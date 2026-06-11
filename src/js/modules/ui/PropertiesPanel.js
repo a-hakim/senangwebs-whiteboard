@@ -1056,9 +1056,7 @@ export const PropertiesPanelMixin = {
     this.saveStateToHistory("updateProperty");
 
     // Update layers panel to reflect any changes
-    if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-      window.swwControlPanel.updateLayers();
-    }
+    this.updateControlPanelLayers();
   },
 
   /**

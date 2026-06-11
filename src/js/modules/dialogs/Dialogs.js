@@ -154,7 +154,9 @@ export const DialogsMixin = {
                 document.removeEventListener('keydown', handleEscape);
             }
         };
-        document.addEventListener('keydown', handleEscape);
+        document.addEventListener('keydown', handleEscape, {
+            signal: this.eventController?.signal
+        });
         
         // Clean up event listener when overlay is removed
         const originalRemove = overlay.remove.bind(overlay);

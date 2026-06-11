@@ -14,55 +14,23 @@ export const HistoryMixin = {
     /**
      * Save current state to history stack
      * @param {string} actionType - Type of action being saved (e.g., 'draw', 'move', 'delete')
-     * @param {Object} beforeState - Optional state before the action
      */
-    saveStateToHistory(actionType, beforeState = null) {
+    saveStateToHistory(actionType) {
         if (this.isPerformingHistoryAction) return;
         if (!this.elements) return;
         
         // Dynamically adjust max history size based on element count for performance
         const maxSize = this.elements.length > 500 ? 20 : this.maxHistorySize;
         
-        // Create optimized state copy - only store essential data
         const currentState = {
-            elements: this.elements.map(el => ({
-                id: el.id,
-                type: el.type,
-                x: el.x,
-                y: el.y,
-                width: el.width,
-                height: el.height,
-                strokeColor: el.strokeColor,
-                strokeWidth: el.strokeWidth,
-                fillColor: el.fillColor,
-                fillStyle: el.fillStyle,
-                opacity: el.opacity,
-                fontSize: el.fontSize,
-                fontFamily: el.fontFamily,
-                textAlign: el.textAlign,
-                textColor: el.textColor,
-                text: el.text,
-                points: el.points,
-                url: el.url,
-                imageUrl: el.imageUrl,
-                markdown: el.markdown,
-                src: el.src,
-                // Only store properties that change from defaults to save memory
-                ...(el.rotation !== 0 && { rotation: el.rotation }),
-                ...(el.locked && { locked: el.locked }),
-                ...(el.visible === false && { visible: el.visible }),
-                ...(el.groupId && { groupId: el.groupId }),
-                ...(el.gradientType && { gradientType: el.gradientType }),
-                ...(el.gradientStops && { gradientStops: el.gradientStops })
-            })),
-            selectedElements: Array.from(this.selectedElements).map(el => el.id),
+            ...this.createSceneSnapshot(),
             actionType: actionType,
             timestamp: Date.now()
         };
-        
-        // If beforeState is provided, use it as the previous state
-        if (beforeState) {
-            currentState.beforeState = beforeState;
+
+        const previousState = this.historyStack[this.historyIndex];
+        if (previousState && JSON.stringify(previousState.elements) === JSON.stringify(currentState.elements)) {
+            return;
         }
         
         // Remove any history beyond current index (when undoing then making new changes)
@@ -79,6 +47,10 @@ export const HistoryMixin = {
         }
         
         this.updateHistoryButtons();
+        this.emitSceneChanged(
+            actionType,
+            Array.from(this.selectedElements, (element) => element.id)
+        );
     },
 
     /**
@@ -97,6 +69,7 @@ export const HistoryMixin = {
         
         this.isPerformingHistoryAction = false;
         this.updateHistoryButtons();
+        this.emitSceneChanged('undo');
     },
 
     /**
@@ -115,6 +88,7 @@ export const HistoryMixin = {
         
         this.isPerformingHistoryAction = false;
         this.updateHistoryButtons();
+        this.emitSceneChanged('redo');
     },
 
     /**
@@ -122,98 +96,7 @@ export const HistoryMixin = {
      * @param {Object} state - The state object to restore
      */
     restoreState(state) {
-        // Clear current state
-        this.elements = [];
-        this.selectedElements.clear();
-        
-        if (this.elementsGroup) {
-            this.elementsGroup.innerHTML = '';
-        }
-        
-        if (this.spatialIndex) {
-            this.spatialIndex.clear();
-        }
-        
-        // Restore elements with proper data structure
-        this.elements = state.elements.map(elementData => {
-            // Create a complete element object with all properties
-            const element = {
-                id: elementData.id,
-                type: elementData.type,
-                x: elementData.x,
-                y: elementData.y,
-                width: elementData.width,
-                height: elementData.height,
-                strokeColor: elementData.strokeColor,
-                strokeWidth: elementData.strokeWidth,
-                fillColor: elementData.fillColor,
-                fillStyle: elementData.fillStyle,
-                opacity: elementData.opacity,
-                fontSize: elementData.fontSize,
-                fontFamily: elementData.fontFamily,
-                textAlign: elementData.textAlign,
-                textColor: elementData.textColor,
-                text: elementData.text,
-                points: elementData.points,
-                url: elementData.url,
-                imageUrl: elementData.imageUrl,
-                markdown: elementData.markdown,
-                src: elementData.src,
-                rotation: elementData.rotation || 0,
-                locked: elementData.locked || false,
-                visible: elementData.visible !== false,
-                groupId: elementData.groupId || null,
-                gradientType: elementData.gradientType || null,
-                gradientStops: elementData.gradientStops || null
-            };
-            
-            return element;
-        });
-        
-        // Recreate SVG elements and add them to the DOM with spatial index
-        this.elements.forEach(element => {
-            const svgElement = this.createSVGElement(element);
-            element.svgElement = svgElement;
-            this.addSVGElementToDOM(element);
-            
-            // Add to spatial index
-            if (this.spatialIndex) {
-                const bounds = this.getElementBounds(element);
-                this.spatialIndex.insert(element, bounds);
-            }
-        });
-        
-        // Restore selection based on element IDs
-        this.selectedElements.clear();
-        if (state.selectedElements && state.selectedElements.length > 0) {
-            state.selectedElements.forEach(elementId => {
-                const element = this.elements.find(el => el.id === elementId);
-                if (element) {
-                    this.selectedElements.add(element);
-                }
-            });
-        }
-        
-        // Update UI with performance optimization
-        this.updateSelectionHandles();
-        
-        if (this.syncPropertiesPanel) {
-            this.syncPropertiesPanel();
-        }
-        
-        if (this.updateTextPropertiesVisibility) {
-            this.updateTextPropertiesVisibility();
-        }
-        
-        // Update visible elements for performance
-        if (this.elements.length > 100 && this.updateVisibleElements) {
-            this.updateVisibleElements();
-        }
-        
-        // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.applySceneSnapshot(state, { preserveHistory: true });
     },
 
     /**

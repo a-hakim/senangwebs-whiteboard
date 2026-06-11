@@ -95,9 +95,7 @@ export const SelectionHandlesMixin = {
             this.selectionUpdateScheduled = false;
 
             // Update control panel if available
-            if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-                window.swwControlPanel.updateLayers();
-            }
+            this.updateControlPanelLayers();
         });
     },
 
@@ -175,18 +173,12 @@ export const SelectionHandlesMixin = {
             handleRect.style.cursor = handle.cursor;
 
             // Add event listeners for resize
-            handleRect.addEventListener('mousedown', (e) => {
+            handleRect.addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                handleRect.setPointerCapture?.(e.pointerId);
                 this.startResize(handle.type, this.getPointerPosition(e));
             });
-
-            handleRect.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const touch = e.touches[0];
-                this.startResize(handle.type, this.getPointerPosition(touch));
-            }, { passive: false });
 
             this.selectionGroup.appendChild(handleRect);
         });
@@ -206,18 +198,12 @@ export const SelectionHandlesMixin = {
         rotateHandle.setAttribute('r', 6);
         rotateHandle.style.cursor = 'crosshair'; // Rotation cursor
 
-        rotateHandle.addEventListener('mousedown', (e) => {
+        rotateHandle.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             e.preventDefault();
+            rotateHandle.setPointerCapture?.(e.pointerId);
             this.startRotation(this.getPointerPosition(e));
         });
-
-        rotateHandle.addEventListener('touchstart', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            const touch = e.touches[0];
-            this.startRotation(this.getPointerPosition(touch));
-        }, { passive: false });
 
         this.selectionGroup.appendChild(rotateHandle);
 
@@ -263,18 +249,12 @@ export const SelectionHandlesMixin = {
             handleRect.style.cursor = handle.cursor;
 
             // Add event listeners for resize (moving endpoints)
-            handleRect.addEventListener('mousedown', (e) => {
+            handleRect.addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                handleRect.setPointerCapture?.(e.pointerId);
                 this.startResize(handle.type, this.getPointerPosition(e));
             });
-
-            handleRect.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const touch = e.touches[0];
-                this.startResize(handle.type, this.getPointerPosition(touch));
-            }, { passive: false });
 
             this.selectionGroup.appendChild(handleRect);
         });

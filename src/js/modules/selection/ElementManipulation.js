@@ -39,21 +39,16 @@ export const ElementManipulationMixin = {
 
         const dx = point.x - this.dragStartPoint.x;
         const dy = point.y - this.dragStartPoint.y;
+        const selectedElements = Array.from(this.selectedElements);
+        const shouldSnapDrag = this.snapToGrid &&
+            selectedElements.some(element => element.type !== 'path');
+        const moveX = shouldSnapDrag ? this.snapToGridValue(dx) : dx;
+        const moveY = shouldSnapDrag ? this.snapToGridValue(dy) : dy;
 
         // Move all selected elements
-        this.selectedElements.forEach(element => {
-            const newX = element.dragStartX + dx;
-            const newY = element.dragStartY + dy;
-
-            // Apply grid snapping
-            if (this.snapToGrid) {
-                const snappedPoint = this.snapToGridPoint({ x: newX, y: newY });
-                element.x = snappedPoint.x;
-                element.y = snappedPoint.y;
-            } else {
-                element.x = newX;
-                element.y = newY;
-            }
+        selectedElements.forEach(element => {
+            element.x = element.dragStartX + moveX;
+            element.y = element.dragStartY + moveY;
 
             this.updateSVGElement(element);
         });
@@ -70,10 +65,11 @@ export const ElementManipulationMixin = {
         // Save state after the drag operation is complete
         this.saveStateToHistory('moveElements');
 
-        // Clean up drag state
+        // Clean up drag state and update spatial index
         this.selectedElements.forEach(element => {
             delete element.dragStartX;
             delete element.dragStartY;
+            this.updateElementInSpatialIndex(element);
         });
 
         this.isDraggingElement = false;
@@ -514,6 +510,8 @@ export const ElementManipulationMixin = {
                 // Update the SVG element with normalized dimensions
                 this.updateSVGElement(element);
             }
+
+            this.updateElementInSpatialIndex(element);
         });
 
         // Update selection handles after normalization
@@ -598,9 +596,10 @@ export const ElementManipulationMixin = {
         // Save state after the rotation operation is complete
         this.saveStateToHistory('rotateElements');
 
-        // Clean up rotation state
+        // Clean up rotation state and update spatial index
         this.selectedElements.forEach(element => {
             delete element.rotateStartAngle;
+            this.updateElementInSpatialIndex(element);
         });
 
         this.isRotating = false;

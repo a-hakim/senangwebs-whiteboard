@@ -28,31 +28,7 @@ export const UtilitiesMixin = {
      * @returns {Object|null} Element object or null if not found
      */
     getElementById(elementId) {
-        return this.elements.find(element => element.id === elementId) || null;
-    },
-
-    /**
-     * Toggle element visibility
-     * @param {string} elementId - Element ID to toggle
-     * @returns {boolean} True if toggled successfully
-     */
-    toggleElementVisibility(elementId) {
-        const element = this.getElementById(elementId);
-        if (element) {
-            element.hidden = !element.hidden;
-            
-            // Update the SVG element visibility
-            if (element.svgElement) {
-                element.svgElement.style.display = element.hidden ? 'none' : '';
-            }
-            
-            // Trigger an optimized render update
-            if (this.performOptimizedRender) {
-                this.performOptimizedRender();
-            }
-            return true;
-        }
-        return false;
+        return this.elementsById.get(elementId) || null;
     },
 
     /**
@@ -362,16 +338,25 @@ export const UtilitiesMixin = {
      * @param {Object} element - Element to clean up
      */
     cleanupElement(element) {
-        // Remove event listeners
-        if (element.svgElement) {
-            element.svgElement.removeEventListener('mousedown', element._mouseDownHandler);
-            element.svgElement.removeEventListener('touchstart', element._touchStartHandler);
-        }
-        
         // Clear references
         element.svgElement = null;
-        element._mouseDownHandler = null;
-        element._touchStartHandler = null;
+    },
+
+    /**
+     * Convert a screen-space selection radius to canvas coordinates.
+     * This keeps thin strokes equally selectable at every zoom level.
+     */
+    getSelectionTolerance(screenPixels = 12) {
+        const rect = this.svg?.getBoundingClientRect?.();
+
+        if (rect?.width > 0 && rect?.height > 0 && this.viewBox) {
+            const unitsPerPixelX = this.viewBox.width / rect.width;
+            const unitsPerPixelY = this.viewBox.height / rect.height;
+            return screenPixels * Math.max(unitsPerPixelX, unitsPerPixelY);
+        }
+
+        const zoom = Math.max(Number(this.zoom) || 1, 0.1);
+        return screenPixels / zoom;
     },
 
     /**
@@ -381,30 +366,23 @@ export const UtilitiesMixin = {
      * @returns {Object|null} Element at point or null
      */
     getElementAtPoint(point) {
-        // Use spatial index for efficient hit testing with large numbers of elements
-        const candidates = this.spatialIndex.query(point);
+        const tolerance = this.getSelectionTolerance();
+        const candidates = this.spatialIndex.queryBounds({
+            x: point.x - tolerance,
+            y: point.y - tolerance,
+            width: tolerance * 2,
+            height: tolerance * 2
+        });
         
         // Convert Set to Array and reverse for proper z-order (top elements first)
         const candidateArray = Array.from(candidates);
         
         // Sort by z-index (array index represents z-order)
-        candidateArray.sort((a, b) => {
-            const indexA = this.elements.indexOf(a);
-            const indexB = this.elements.indexOf(b);
-            return indexB - indexA; // Reverse order for top-to-bottom checking
-        });
+        const zOrder = new Map(this.elements.map((element, index) => [element, index]));
+        candidateArray.sort((a, b) => zOrder.get(b) - zOrder.get(a));
         
         // Check candidates for actual hit
         for (const element of candidateArray) {
-            if (this.isPointInElement(point, element)) {
-                return element;
-            }
-        }
-        
-        // Fallback to original method if spatial index doesn't find anything
-        // This handles edge cases where elements might not be properly indexed
-        for (let i = this.elements.length - 1; i >= 0; i--) {
-            const element = this.elements[i];
             if (this.isPointInElement(point, element)) {
                 return element;
             }
@@ -422,7 +400,7 @@ export const UtilitiesMixin = {
      */
     isPointInElement(point, element) {
         const bounds = this.getElementBounds(element);
-        const tolerance = 12; // Minimum 12px tolerance for better UI/UX across all elements
+        const tolerance = this.getSelectionTolerance();
         
         switch (element.type) {
             case 'text':
@@ -435,35 +413,33 @@ export const UtilitiesMixin = {
             case 'line':
             case 'arrow':
                 // For lines, use increased tolerance for easier selection
-                const lineSelectionTolerance = Math.max(element.strokeWidth / 2 + 8, tolerance); // Minimum 12px for easy clicking
+                const lineSelectionTolerance = (element.strokeWidth || 2) / 2 + tolerance;
                 return this.distanceToLine(point, 
                     { x: element.x, y: element.y }, 
                     { x: element.x + element.width, y: element.y + element.height }
                 ) <= lineSelectionTolerance;
                 
             case 'path':
-                // For paths, check if near any point in the path
-                if (element.points) {
-                    for (let i = 0; i < element.points.length; i++) {
-                        const pathPoint = element.points[i];
-                        let absoluteX, absoluteY;
-                        
-                        // Check if this is the current element being drawn
-                        if (this.currentElement && this.currentElement.id === element.id) {
-                            // During drawing: points are absolute coordinates
-                            absoluteX = pathPoint.x;
-                            absoluteY = pathPoint.y;
-                        } else {
-                            // Finished element: convert relative point to absolute coordinates
-                            absoluteX = pathPoint.x + element.x;
-                            absoluteY = pathPoint.y + element.y;
+                if (element.points && element.points.length > 0) {
+                    const pathTolerance = (element.strokeWidth || 2) / 2 + tolerance;
+                    const isCurrentlyDrawing = this.currentElement && this.currentElement.id === element.id;
+
+                    const getAbsolutePoint = (pathPoint) => {
+                        if (isCurrentlyDrawing) {
+                            return { x: pathPoint.x, y: pathPoint.y };
                         }
-                        
-                        const distance = Math.sqrt(
-                            Math.pow(point.x - absoluteX, 2) + 
-                            Math.pow(point.y - absoluteY, 2)
-                        );
-                        if (distance <= Math.max(element.strokeWidth || 2, tolerance)) {
+                        return { x: pathPoint.x + element.x, y: pathPoint.y + element.y };
+                    };
+
+                    const firstAbs = getAbsolutePoint(element.points[0]);
+                    if (this.distanceToLine(point, firstAbs, firstAbs) <= pathTolerance) {
+                        return true;
+                    }
+
+                    for (let i = 1; i < element.points.length; i++) {
+                        const absStart = getAbsolutePoint(element.points[i - 1]);
+                        const absEnd = getAbsolutePoint(element.points[i]);
+                        if (this.distanceToLine(point, absStart, absEnd) <= pathTolerance) {
                             return true;
                         }
                     }

@@ -10,6 +10,10 @@ export const EventHandlersMixin = {
      * Set up all event listeners for the canvas
      */
     setupEventListeners() {
+        this.eventController?.abort();
+        this.eventController = new AbortController();
+        const listenerOptions = { signal: this.eventController.signal };
+
         // Throttled pointer move for performance
         const throttledPointerMove = PerformanceUtils.throttle((e) => this.handlePointerMove(e), 16);
         
@@ -22,14 +26,24 @@ export const EventHandlersMixin = {
         // Debounced viewport update for scroll/zoom
         const debouncedViewportUpdate = PerformanceUtils.debounce(() => this.updateVisibleElements(), 100);
         
-        // Mouse events
-        this.svg.addEventListener('mousedown', (e) => this.handlePointerDown(e));
-        this.svg.addEventListener('mousemove', (e) => {
+        this.svg.addEventListener('pointerdown', (e) => {
+            this.isActive = true;
+            this.svg.focus({ preventScroll: true });
+            if (this.svg.setPointerCapture && e.pointerId !== undefined) {
+                this.svg.setPointerCapture(e.pointerId);
+            }
+            this.handlePointerDown(e);
+        }, listenerOptions);
+        this.svg.addEventListener('pointermove', (e) => {
             trackCursorPosition(e);
             throttledPointerMove(e);
-        });
-        this.svg.addEventListener('mouseup', (e) => this.handlePointerUp(e));
-        this.svg.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
+        }, listenerOptions);
+        this.svg.addEventListener('pointerup', (e) => this.handlePointerUp(e), listenerOptions);
+        this.svg.addEventListener('pointercancel', (e) => this.handlePointerUp(e), listenerOptions);
+        this.svg.addEventListener('dblclick', (e) => this.handleDoubleClick(e), listenerOptions);
+        this.svg.addEventListener('blur', () => {
+            this.isActive = false;
+        }, listenerOptions);
         
         // Handle middle mouse button specifically with auxclick event
         this.svg.addEventListener('auxclick', (e) => {
@@ -37,33 +51,32 @@ export const EventHandlersMixin = {
                 e.preventDefault();
                 // Already handled in mousedown, but prevent default behavior
             }
-        });
+        }, listenerOptions);
         
         this.svg.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             this.showContextMenu(e);
-        });
-        
-        // Touch events
-        this.svg.addEventListener('touchstart', (e) => this.handlePointerDown(e));
-        this.svg.addEventListener('touchmove', throttledPointerMove);
-        this.svg.addEventListener('touchend', (e) => this.handlePointerUp(e));
+        }, listenerOptions);
         
         // Keyboard events
-        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        document.addEventListener('keydown', (e) => {
+            if (this.isActive || this.container.contains(document.activeElement)) {
+                this.handleKeyDown(e);
+            }
+        }, listenerOptions);
         
         // Context menu - hide on click outside
         document.addEventListener('click', (e) => {
             if (this.contextMenu && !this.contextMenu.contains(e.target)) {
                 this.hideContextMenu();
             }
-        });
+        }, listenerOptions);
         
         // Wheel event for zooming
         this.svg.addEventListener('wheel', (e) => {
             this.handleWheel(e);
             debouncedViewportUpdate();
-        });
+        }, { ...listenerOptions, passive: false });
 
         // Table control button clicks (event delegation)
         this.svg.addEventListener('click', (e) => {
@@ -126,7 +139,7 @@ export const EventHandlersMixin = {
                     }
                 }
             }
-        });
+        }, listenerOptions);
     },
 
     /**
@@ -204,8 +217,9 @@ export const EventHandlersMixin = {
      */
     getPointerPosition(e) {
         const rect = this.svg.getBoundingClientRect();
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        const touch = e.touches?.[0] || e.changedTouches?.[0];
+        const clientX = e.clientX ?? touch?.clientX ?? 0;
+        const clientY = e.clientY ?? touch?.clientY ?? 0;
         
         if (this.svg.getScreenCTM) {
             const point = this.svg.createSVGPoint();
@@ -321,8 +335,9 @@ export const EventHandlersMixin = {
             // For panning, we need to work in screen space, not SVG space
             // because the SVG coordinates change as we update the viewBox
             const rect = this.svg.getBoundingClientRect();
-            const screenX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX);
-            const screenY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY);
+            const touch = e.touches?.[0] || e.changedTouches?.[0];
+            const screenX = e.clientX ?? touch?.clientX ?? 0;
+            const screenY = e.clientY ?? touch?.clientY ?? 0;
             
             if (!this.panStartScreenPos) {
                 this.panStartScreenPos = { x: screenX, y: screenY };

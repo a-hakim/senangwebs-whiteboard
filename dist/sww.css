@@ -1054,6 +1054,15 @@ body.sww-pseudo-fullscreen {
   height: 100%;
   display: block;
   cursor: crosshair;
+  touch-action: none;
+  outline: none;
+}
+
+.sww-canvas:focus-visible,
+.sww-tool-button:focus-visible,
+.sww-panel-header-button:focus-visible {
+  outline: 2px solid var(--sww-accent-color, #2563eb);
+  outline-offset: 2px;
 }
 
 .sww-toolbar {

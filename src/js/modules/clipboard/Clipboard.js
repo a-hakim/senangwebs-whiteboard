@@ -29,14 +29,11 @@ export const ClipboardMixin = {
         this.selectedElements.forEach(element => {
             // Create a deep copy of the element (without SVG reference)
             const elementCopy = {
-                ...element,
+                ...this.serializeElement(element),
                 id: this.generateId(), // Generate new ID for paste
                 x: element.x + 20, // Offset for paste
                 y: element.y + 20
             };
-            
-            // Remove SVG reference from copy
-            delete elementCopy.svgElement;
             
             this.clipboard.push(elementCopy);
         });
@@ -90,9 +87,6 @@ export const ClipboardMixin = {
             return;
         }
         
-        // Save state before pasting
-        this.saveStateToHistory('pasteElements');
-        
         // Clear current selection
         this.clearSelection();
         
@@ -124,8 +118,7 @@ export const ClipboardMixin = {
             // Create SVG element and add to canvas
             const svgElement = this.createSVGElement(newElement);
             newElement.svgElement = svgElement;
-            this.elements.push(newElement);
-            this.addSVGElementToDOM(newElement);
+            this.addElement(newElement);
             
             // Select the new element
             this.selectElement(newElement);
@@ -137,6 +130,8 @@ export const ClipboardMixin = {
             element.x += 20;
             element.y += 20;
         });
+
+        this.saveStateToHistory('pasteElements');
         
         if (this.showNotification) {
             this.showNotification(
@@ -145,10 +140,7 @@ export const ClipboardMixin = {
             );
         }
         
-        // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
         
         return pastedElements;
     },
@@ -164,9 +156,6 @@ export const ClipboardMixin = {
             return;
         }
         
-        // Save state before duplicating
-        this.saveStateToHistory('duplicateElements');
-        
         // Store original selection
         const originalSelection = Array.from(this.selectedElements);
         
@@ -177,25 +166,23 @@ export const ClipboardMixin = {
         const duplicates = [];
         originalSelection.forEach(element => {
             const duplicate = {
-                ...element,
+                ...this.serializeElement(element),
                 id: this.generateId(),
                 x: element.x + 20,
                 y: element.y + 20
             };
             
-            // Remove SVG reference
-            delete duplicate.svgElement;
-            
             // Create SVG element and add to canvas
             const svgElement = this.createSVGElement(duplicate);
             duplicate.svgElement = svgElement;
-            this.elements.push(duplicate);
-            this.addSVGElementToDOM(duplicate);
+            this.addElement(duplicate);
             
             // Select the duplicate
             this.selectElement(duplicate);
             duplicates.push(duplicate);
         });
+
+        this.saveStateToHistory('duplicateElements');
         
         if (this.showNotification) {
             this.showNotification(
@@ -204,10 +191,7 @@ export const ClipboardMixin = {
             );
         }
         
-        // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
         
         return duplicates;
     },
@@ -258,11 +242,7 @@ export const ClipboardMixin = {
             return;
         }
         
-        this.clipboard = elements.map(element => {
-            const elementCopy = { ...element };
-            delete elementCopy.svgElement; // Remove SVG reference
-            return elementCopy;
-        });
+        this.clipboard = elements.map(element => this.serializeElement(element));
         
         // Update context menu state if available
         if (this.updateContextMenuState) {
@@ -302,9 +282,6 @@ export const ClipboardMixin = {
             return;
         }
         
-        // Save state before pasting
-        this.saveStateToHistory('pasteElements');
-        
         // Clear current selection
         this.clearSelection();
         
@@ -332,13 +309,14 @@ export const ClipboardMixin = {
             // Create SVG element and add to canvas
             const svgElement = this.createSVGElement(newElement);
             newElement.svgElement = svgElement;
-            this.elements.push(newElement);
-            this.addSVGElementToDOM(newElement);
+            this.addElement(newElement);
             
             // Select the new element
             this.selectElement(newElement);
             pastedElements.push(newElement);
         });
+
+        this.saveStateToHistory('pasteElements');
         
         if (this.showNotification) {
             this.showNotification(
@@ -347,10 +325,7 @@ export const ClipboardMixin = {
             );
         }
         
-        // Update control panel if it exists
-        if (window.swwControlPanel && window.swwControlPanel.updateLayers) {
-            window.swwControlPanel.updateLayers();
-        }
+        this.updateControlPanelLayers();
         
         return pastedElements;
     }

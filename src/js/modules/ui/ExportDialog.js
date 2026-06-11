@@ -10,32 +10,60 @@
  */
 
 export const ExportDialogMixin = {
+  createExportSVG(options = {}) {
+    const mode = options.mode || "all";
+    const padding = Number.isFinite(options.padding) ? options.padding : 20;
+    const clonedSVG = this.svg.cloneNode(true);
+
+    clonedSVG.querySelector(".sww-selection")?.remove();
+    clonedSVG
+      .querySelectorAll(
+        ".sww-selection-handle, .sww-rotation-handle, .sww-table-control-btn, .sww-table-inline-btn"
+      )
+      .forEach((element) => element.remove());
+
+    clonedSVG.querySelectorAll("[data-element-id]").forEach((svgElement) => {
+      const element = this.elementsById.get(svgElement.getAttribute("data-element-id"));
+      svgElement.style.display = element?.visible === false ? "none" : "block";
+      svgElement.classList.remove("selected");
+    });
+
+    let bounds = { ...this.viewBox };
+    if (mode === "all") {
+      const visibleElements = this.elements.filter((element) => element.visible !== false);
+      if (visibleElements.length > 0) {
+        const elementBounds = visibleElements.map((element) => this.getElementBounds(element));
+        const minX = Math.min(...elementBounds.map((item) => item.x));
+        const minY = Math.min(...elementBounds.map((item) => item.y));
+        const maxX = Math.max(...elementBounds.map((item) => item.x + item.width));
+        const maxY = Math.max(...elementBounds.map((item) => item.y + item.height));
+        bounds = {
+          x: minX - padding,
+          y: minY - padding,
+          width: Math.max(1, maxX - minX + padding * 2),
+          height: Math.max(1, maxY - minY + padding * 2),
+        };
+      }
+    }
+
+    clonedSVG.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clonedSVG.setAttribute(
+      "viewBox",
+      `${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`
+    );
+    clonedSVG.setAttribute("width", bounds.width);
+    clonedSVG.setAttribute("height", bounds.height);
+
+    return { clonedSVG, bounds };
+  },
+
   /**
    * Export canvas as SVG file
    * Creates a downloadable SVG file with all elements
    * @returns {string} SVG data string
    */
-  exportToSVG() {
-    // Clone the SVG to avoid modifying the original
-    const clonedSVG = this.svg.cloneNode(true);
-
-    // Remove UI elements that shouldn't be in the export
-    const selectionGroup = clonedSVG.querySelector(".sww-selection");
-    if (selectionGroup) {
-      selectionGroup.remove();
-    }
-
-    // Remove selection handles
-    const selectionHandles = clonedSVG.querySelectorAll(
-      ".sww-selection-handle"
-    );
-    selectionHandles.forEach((handle) => handle.remove());
-
-    // Remove rotation handle
-    const rotationHandle = clonedSVG.querySelector(".sww-rotation-handle");
-    if (rotationHandle) {
-      rotationHandle.remove();
-    }
+  exportToSVG(options = {}) {
+    const { clonedSVG } = this.createExportSVG(options);
 
     // Serialize SVG to string
     const svgData = new XMLSerializer().serializeToString(clonedSVG);
@@ -59,28 +87,45 @@ export const ExportDialogMixin = {
    * Export canvas as PNG file
    * Converts SVG to PNG raster image and downloads
    */
-  exportToPNG() {
+  exportToPNG(options = {}) {
+    const unsupportedElement = this.elements.find(
+      (element) => element.visible !== false && element.type === "website"
+    );
+    if (unsupportedElement) {
+      this.showNotification?.(
+        "PNG export does not support live website embeds. Use SVG or hide the embed.",
+        "warning"
+      );
+      return false;
+    }
+
+    const crossOriginImage = this.elements.find((element) => {
+      if (element.visible === false || element.type !== "image" || !element.imageUrl) {
+        return false;
+      }
+      try {
+        const url = new URL(element.imageUrl, window.location.href);
+        return ["http:", "https:"].includes(url.protocol) &&
+          url.origin !== window.location.origin;
+      } catch {
+        return true;
+      }
+    });
+    if (crossOriginImage) {
+      this.showNotification?.(
+        "PNG export requires same-origin or embedded image data.",
+        "warning"
+      );
+      return false;
+    }
+
     // Create canvas element for conversion
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const img = new Image();
 
-    // Get SVG data (without downloading)
-    const clonedSVG = this.svg.cloneNode(true);
-
-    // Remove UI elements
-    const selectionGroup = clonedSVG.querySelector(".sww-selection");
-    if (selectionGroup) {
-      selectionGroup.remove();
-    }
-    const selectionHandles = clonedSVG.querySelectorAll(
-      ".sww-selection-handle"
-    );
-    selectionHandles.forEach((handle) => handle.remove());
-    const rotationHandle = clonedSVG.querySelector(".sww-rotation-handle");
-    if (rotationHandle) {
-      rotationHandle.remove();
-    }
+    const { clonedSVG, bounds } = this.createExportSVG(options);
+    const scale = Math.max(0.1, Number(options.scale) || 1);
 
     const svgData = new XMLSerializer().serializeToString(clonedSVG);
     const svgBlob = new Blob([svgData], {
@@ -89,15 +134,19 @@ export const ExportDialogMixin = {
     const url = URL.createObjectURL(svgBlob);
 
     img.onload = () => {
-      // Set canvas dimensions to match SVG
-      canvas.width = img.width || this.viewBox.width;
-      canvas.height = img.height || this.viewBox.height;
+      canvas.width = Math.ceil(bounds.width * scale);
+      canvas.height = Math.ceil(bounds.height * scale);
 
       // Draw SVG image to canvas
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       // Convert canvas to PNG blob and download
       canvas.toBlob((blob) => {
+        if (!blob) {
+          URL.revokeObjectURL(url);
+          this.showNotification?.("PNG export failed", "error");
+          return;
+        }
         const pngUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = pngUrl;
@@ -401,6 +450,8 @@ export const ExportDialogMixin = {
         document.removeEventListener("keydown", escHandler);
       }
     };
-    document.addEventListener("keydown", escHandler);
+    document.addEventListener("keydown", escHandler, {
+      signal: this.eventController?.signal,
+    });
   },
 };
