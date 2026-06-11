@@ -641,146 +641,146 @@ export const SVGRendererMixin = {
 
     svg.innerHTML = "";
 
-    const container = document.createElement("div");
-    container.className = "sww-table-element sww-table-modern";
-    container.style.position = "relative";
+    var container = document.createElement("div");
+    container.className = "sww-table-element";
     container.style.width = "100%";
     container.style.height = "100%";
+    container.style.display = "flex";
+    container.style.flexDirection = "column";
     container.style.overflow = "hidden";
 
     this._applyContainerStyles(container, element);
 
-    const tableData = element.tableData || {
+    var tableData = element.tableData || {
       headers: ["Header 1", "Header 2", "Header 3"],
       rows: [["", "", ""], ["", "", ""]],
-      columnWidths: [100, 100, 100],
-      rowHeights: [40, 40],
     };
 
-    const tableWrapper = document.createElement("div");
-    tableWrapper.className = "sww-table-wrapper";
+    var scrollWrapper = document.createElement("div");
+    scrollWrapper.className = "sww-table-scroll";
+    scrollWrapper.style.flex = "1";
+    scrollWrapper.style.overflow = "auto";
 
-    const table = document.createElement("table");
+    var table = document.createElement("table");
     table.className = "sww-table";
+    var bindCellEditing = function (cellElement, rowIndex, colIndex) {
+      if (!this.editTableCell) return;
 
-    // Header row with delete column on header hover
-    const thead = document.createElement("thead");
-    const headerRow = document.createElement("tr");
+      cellElement.addEventListener("pointerdown", function (e) {
+        e.stopPropagation();
+      });
+      cellElement.addEventListener("click", function (e) {
+        e.stopPropagation();
+
+        if (this.currentTool === "select" && element && this.selectElement) {
+          if (!this.selectedElements || !this.selectedElements.has(element)) {
+            this.clearSelection?.();
+            this.selectElement(element);
+          }
+        }
+
+        if (e.detail < 2) return;
+
+        e.preventDefault();
+        this.editTableCell(element, rowIndex, colIndex, cellElement);
+      }.bind(this));
+    }.bind(this);
+
+    var thead = document.createElement("thead");
+    var headerRow = document.createElement("tr");
     headerRow.className = "sww-table-header-row";
 
-    tableData.headers.forEach((header, colIndex) => {
-      const th = document.createElement("th");
+    tableData.headers.forEach(function (header, colIndex) {
+      var th = document.createElement("th");
       th.className = "sww-table-cell sww-table-header";
+      th.setAttribute("data-row", "header");
       th.setAttribute("data-col-index", colIndex);
-      
-      // Header text
-      const headerText = document.createElement("span");
-      headerText.className = "sww-header-text";
-      headerText.textContent = header;
-      th.appendChild(headerText);
-
-      // Delete column button (appears on header hover)
-      if (tableData.headers.length > 1) {
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "sww-table-col-delete-btn sww-table-inline-btn";
-        deleteBtn.innerHTML = '<i class="ss ss-x-mark"></i>';
-        deleteBtn.title = "Delete column";
-        deleteBtn.setAttribute("data-action", "remove-column-at");
-        deleteBtn.setAttribute("data-element-id", element.id);
-        deleteBtn.setAttribute("data-position", colIndex);
-        th.appendChild(deleteBtn);
-      }
-
-      // Add column button on right border (between columns)
-      const addColBorder = document.createElement("div");
-      addColBorder.className = "sww-table-col-border";
-      
-      const addColBtn = document.createElement("button");
-      addColBtn.className = "sww-table-border-add-btn sww-table-inline-btn";
-      addColBtn.innerHTML = '<i class="ss ss-plus"></i>';
-      addColBtn.title = "Add column here";
-      addColBtn.setAttribute("data-action", "add-column-at");
-      addColBtn.setAttribute("data-element-id", element.id);
-      addColBtn.setAttribute("data-position", colIndex + 1);
-      addColBorder.appendChild(addColBtn);
-      th.appendChild(addColBorder);
-
+      th.textContent = header;
+      bindCellEditing(th, "header", colIndex);
       headerRow.appendChild(th);
-    });
+    }, this);
 
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
-    // Body rows with left edge delete and bottom border add
-    const tbody = document.createElement("tbody");
-    tableData.rows.forEach((row, rowIndex) => {
-      const tr = document.createElement("tr");
+    var tbody = document.createElement("tbody");
+    tableData.rows.forEach(function (row, rowIndex) {
+      var tr = document.createElement("tr");
       tr.className = "sww-table-row";
-      tr.setAttribute("data-row-index", rowIndex);
-
-      row.forEach((cell, colIndex) => {
-        const td = document.createElement("td");
+      row.forEach(function (cell, colIndex) {
+        var td = document.createElement("td");
         td.className = "sww-table-cell";
         td.setAttribute("data-row-index", rowIndex);
         td.setAttribute("data-col-index", colIndex);
-        
-        // Cell text
-        const cellText = document.createElement("span");
-        cellText.className = "sww-cell-text";
-        cellText.textContent = cell;
-        td.appendChild(cellText);
-
-        // Delete row button on left edge (first cell only)
-        if (colIndex === 0 && tableData.rows.length > 1) {
-          const deleteRowBtn = document.createElement("button");
-          deleteRowBtn.className = "sww-table-row-delete-btn sww-table-inline-btn";
-          deleteRowBtn.innerHTML = '<i class="ss ss-x-mark"></i>';
-          deleteRowBtn.title = "Delete row";
-          deleteRowBtn.setAttribute("data-action", "remove-row-at");
-          deleteRowBtn.setAttribute("data-element-id", element.id);
-          deleteRowBtn.setAttribute("data-position", rowIndex);
-          td.appendChild(deleteRowBtn);
-        }
-
-        // Add row button on bottom border
-        const addRowBorder = document.createElement("div");
-        addRowBorder.className = "sww-table-row-border";
-        
-        const addRowBtn = document.createElement("button");
-        addRowBtn.className = "sww-table-border-add-btn sww-table-inline-btn";
-        addRowBtn.innerHTML = '<i class="ss ss-plus"></i>';
-        addRowBtn.title = "Add row here";
-        addRowBtn.setAttribute("data-action", "add-row-at");
-        addRowBtn.setAttribute("data-element-id", element.id);
-        addRowBtn.setAttribute("data-position", rowIndex + 1);
-        addRowBorder.appendChild(addRowBtn);
-        td.appendChild(addRowBorder);
-
-        // Add column button on right border (last row only for cleaner look)
-        if (rowIndex === 0) {
-          const addColBorder = document.createElement("div");
-          addColBorder.className = "sww-table-col-border";
-          
-          const addColBtn = document.createElement("button");
-          addColBtn.className = "sww-table-border-add-btn sww-table-inline-btn";
-          addColBtn.innerHTML = '<i class="ss ss-plus"></i>';
-          addColBtn.title = "Add column here";
-          addColBtn.setAttribute("data-action", "add-column-at");
-          addColBtn.setAttribute("data-element-id", element.id);
-          addColBtn.setAttribute("data-position", colIndex + 1);
-          addColBorder.appendChild(addColBtn);
-          td.appendChild(addColBorder);
-        }
-
+        td.textContent = cell;
+        bindCellEditing(td, rowIndex, colIndex);
         tr.appendChild(td);
-      });
-
+      }, this);
       tbody.appendChild(tr);
-    });
-
+    }, this);
     table.appendChild(tbody);
-    tableWrapper.appendChild(table);
-    container.appendChild(tableWrapper);
+
+    scrollWrapper.appendChild(table);
+
+    var toolbar = document.createElement("div");
+    toolbar.className = "sww-table-toolbar";
+
+    var canRemoveRow = tableData.rows.length > 1;
+    var canRemoveCol = tableData.headers.length > 1;
+
+    var addRowBtn = document.createElement("button");
+    addRowBtn.className = "sww-table-toolbar-btn";
+    addRowBtn.type = "button";
+    addRowBtn.setAttribute("data-table-action", "add-row");
+    addRowBtn.setAttribute("data-element-id", element.id);
+    addRowBtn.title = "Add row";
+    addRowBtn.innerHTML = '<i class="ss ss-plus"></i> <span>Row</span>';
+
+    var removeRowBtn = document.createElement("button");
+    removeRowBtn.className = "sww-table-toolbar-btn";
+    removeRowBtn.type = "button";
+    removeRowBtn.setAttribute("data-table-action", "remove-row");
+    removeRowBtn.setAttribute("data-element-id", element.id);
+    removeRowBtn.title = "Remove row";
+    removeRowBtn.innerHTML = '<i class="ss ss-minus"></i> <span>Row</span>';
+    if (!canRemoveRow) removeRowBtn.disabled = true;
+
+    var addColBtn = document.createElement("button");
+    addColBtn.className = "sww-table-toolbar-btn";
+    addColBtn.type = "button";
+    addColBtn.setAttribute("data-table-action", "add-column");
+    addColBtn.setAttribute("data-element-id", element.id);
+    addColBtn.title = "Add column";
+    addColBtn.innerHTML = '<i class="ss ss-plus"></i> <span>Col</span>';
+
+    var removeColBtn = document.createElement("button");
+    removeColBtn.className = "sww-table-toolbar-btn";
+    removeColBtn.type = "button";
+    removeColBtn.setAttribute("data-table-action", "remove-column");
+    removeColBtn.setAttribute("data-element-id", element.id);
+    removeColBtn.title = "Remove column";
+    removeColBtn.innerHTML = '<i class="ss ss-minus"></i> <span>Col</span>';
+    if (!canRemoveCol) removeColBtn.disabled = true;
+
+    toolbar.appendChild(addRowBtn);
+    toolbar.appendChild(removeRowBtn);
+    toolbar.appendChild(addColBtn);
+    toolbar.appendChild(removeColBtn);
+
+    [addRowBtn, removeRowBtn, addColBtn, removeColBtn].forEach(function (button) {
+      button.addEventListener("pointerdown", function (e) {
+        e.stopPropagation();
+      });
+      button.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (button.disabled || !this.handleTableAction) return;
+        this.handleTableAction(element, button.getAttribute("data-table-action"));
+      }.bind(this));
+    }, this);
+
+    container.appendChild(scrollWrapper);
+    container.appendChild(toolbar);
 
     svg.appendChild(container);
   },

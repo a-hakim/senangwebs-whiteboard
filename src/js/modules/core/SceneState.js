@@ -100,6 +100,28 @@ function normalizeElement(rawElement, generateId) {
     if (!tableData || !Array.isArray(tableData.headers) || !Array.isArray(tableData.rows)) {
       throw new TypeError("Table elements require valid tableData.");
     }
+
+    if (tableData.headers.length === 0) {
+      tableData.headers = ["Header 1"];
+    }
+    if (tableData.rows.length === 0) {
+      tableData.rows = [new Array(tableData.headers.length).fill("")];
+    }
+
+    tableData.headers = tableData.headers.map(function (h) { return String(h ?? ""); });
+
+    var headerCount = tableData.headers.length;
+    tableData.rows = tableData.rows.map(function (row) {
+      if (!Array.isArray(row)) return new Array(headerCount).fill("");
+      var normalized = row.slice(0, headerCount).map(function (cell) { return String(cell ?? ""); });
+      while (normalized.length < headerCount) {
+        normalized.push("");
+      }
+      return normalized;
+    });
+
+    delete tableData.columnWidths;
+    delete tableData.rowHeights;
   }
 
   return element;
@@ -187,6 +209,7 @@ export const SceneStateMixin = {
   applySceneSnapshot(sceneData, { preserveHistory = false, actionType = "loadScene" } = {}) {
     const scene = this.validateScene(sceneData);
 
+    this.closeActiveTableEditor?.(false);
     this.clearSelection();
     this.elements.forEach((element) => this.cleanupElement(element));
     this.elements = [];

@@ -28,10 +28,11 @@ export const GridMixin = {
         
         // Create defs element for pattern definition
         this.gridDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        this.gridPatternId = this.gridPatternId || `sww-grid-${this.generateId()}`;
         
         // Create grid pattern
         this.gridPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-        this.gridPattern.setAttribute('id', 'sww-grid');
+        this.gridPattern.setAttribute('id', this.gridPatternId);
         this.gridPattern.setAttribute('width', this.options.gridSize);
         this.gridPattern.setAttribute('height', this.options.gridSize);
         this.gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
@@ -45,7 +46,7 @@ export const GridMixin = {
         
         this.gridPattern.appendChild(path);
         this.gridDefs.appendChild(this.gridPattern);
-        this.svg.appendChild(this.gridDefs);
+        this.svg.insertBefore(this.gridDefs, this.elementsGroup || this.selectionGroup || null);
         
         // Create rectangle that uses the grid pattern
         this.gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -53,8 +54,8 @@ export const GridMixin = {
         this.gridRect.setAttribute('y', this.viewBox.y - 5000);
         this.gridRect.setAttribute('width', 10000);
         this.gridRect.setAttribute('height', 10000);
-        this.gridRect.setAttribute('fill', 'url(#sww-grid)');
-        this.svg.appendChild(this.gridRect);
+        this.gridRect.setAttribute('fill', `url(#${this.gridPatternId})`);
+        this.svg.insertBefore(this.gridRect, this.elementsGroup || this.selectionGroup || null);
     },
 
     /**

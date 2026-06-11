@@ -251,8 +251,6 @@ export const ElementManagementMixin = {
             element.tableData = {
                 headers: ['Header 1', 'Header 2', 'Header 3'],
                 rows: [['', '', ''], ['', '', '']],
-                columnWidths: [100, 100, 100],
-                rowHeights: [40, 40],
             };
             element.text = 'Table';
         }

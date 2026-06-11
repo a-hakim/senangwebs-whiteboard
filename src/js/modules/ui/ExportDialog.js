@@ -18,7 +18,7 @@ export const ExportDialogMixin = {
     clonedSVG.querySelector(".sww-selection")?.remove();
     clonedSVG
       .querySelectorAll(
-        ".sww-selection-handle, .sww-rotation-handle, .sww-table-control-btn, .sww-table-inline-btn"
+        ".sww-selection-handle, .sww-rotation-handle, .sww-table-toolbar"
       )
       .forEach((element) => element.remove());
 

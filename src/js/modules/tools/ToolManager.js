@@ -385,12 +385,4 @@ export const ToolManagerMixin = {
         const embedTools = ['website', 'image', 'markdown', 'table'];
         return embedTools.includes(this.currentTool);
     },
-
-    /**
-     * Check if current tool is table tool
-     * @returns {boolean} True if current tool is table
-     */
-    isTableTool() {
-        return this.currentTool === 'table';
-    }
 };

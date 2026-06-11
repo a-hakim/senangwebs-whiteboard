@@ -122,7 +122,7 @@ Configure your whiteboard using these options:
 - **Lines**: Line, Arrow
 - **Text**: Rich text with multiple font families
 - **Media**: Website embeds, Images, Markdown documents
-- **Tables**: Editable tables with resizable columns and rows
+- **Tables**: Editable tables with toolbar controls for adding/removing rows and columns
 - **Utility**: Selection tool, Freehand drawing
 
 ### Setting Tools

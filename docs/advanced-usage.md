@@ -161,9 +161,7 @@ const tableElement = {
         rows: [
             ["Row 1 Cell 1", "Row 1 Cell 2", "Row 1 Cell 3"],
             ["Row 2 Cell 1", "Row 2 Cell 2", "Row 2 Cell 3"]
-        ],
-        columnWidths: [100, 100, 100],
-        rowHeights: [40, 40]
+        ]
     }
 };
 
@@ -179,7 +177,8 @@ swwInstance.removeTableColumn(tableElement, 2); // Remove third column
 
 // Table interaction:
 // - Double-click a cell to edit its content
-// - Drag column borders to resize columns
-// - Drag row borders to resize rows
+// - Use the toolbar below the table to add/remove rows and columns
+// - The toolbar only appends/removes at the end (minimum 1 row, 1 column)
+// - Position-based add/remove methods remain available via the API
 // - Press Enter to save cell, Escape to cancel
 ```

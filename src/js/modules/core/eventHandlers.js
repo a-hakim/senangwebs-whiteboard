@@ -6,6 +6,13 @@
 import { PerformanceUtils } from '../utils/PerformanceUtils.js';
 
 export const EventHandlersMixin = {
+    isInteractiveTableTarget(target) {
+        if (!target || !target.closest) return false;
+        return Boolean(
+            target.closest('.sww-table-cell, .sww-table-cell-input, .sww-table-toolbar-btn')
+        );
+    },
+
     /**
      * Set up all event listeners for the canvas
      */
@@ -27,6 +34,9 @@ export const EventHandlersMixin = {
         const debouncedViewportUpdate = PerformanceUtils.debounce(() => this.updateVisibleElements(), 100);
         
         this.svg.addEventListener('pointerdown', (e) => {
+            if (this.isInteractiveTableTarget(e.target)) {
+                return;
+            }
             this.isActive = true;
             this.svg.focus({ preventScroll: true });
             if (this.svg.setPointerCapture && e.pointerId !== undefined) {
@@ -80,62 +90,22 @@ export const EventHandlersMixin = {
 
         // Table control button clicks (event delegation)
         this.svg.addEventListener('click', (e) => {
-            // Handle both old .sww-table-control-btn and new .sww-table-inline-btn
-            const controlBtn = e.target.closest('.sww-table-control-btn, .sww-table-inline-btn');
-            if (controlBtn) {
+            var target = e.target;
+            if (target && target.nodeType === 3) {
+                target = target.parentElement;
+            }
+            const actionBtn = target && target.closest ? target.closest('[data-table-action]') : null;
+            if (actionBtn) {
                 e.preventDefault();
                 e.stopPropagation();
-                
-                const action = controlBtn.getAttribute('data-action');
-                const elementId = controlBtn.getAttribute('data-element-id');
-                const position = controlBtn.getAttribute('data-position');
-                
+
+                const action = actionBtn.getAttribute('data-table-action');
+                const elementId = actionBtn.getAttribute('data-element-id');
+
                 if (action && elementId) {
-                    const element = this.elements.find(el => el.id === elementId);
-                    if (element && element.type === 'table') {
-                        const pos = position !== null ? parseInt(position, 10) : null;
-                        
-                        switch (action) {
-                            // Legacy actions (add at end)
-                            case 'add-row':
-                                this.addTableRow(element);
-                                break;
-                            case 'remove-row':
-                                if (element.tableData.rows.length > 1) {
-                                    this.removeTableRow(element, element.tableData.rows.length - 1);
-                                }
-                                break;
-                            case 'add-column':
-                                this.addTableColumn(element);
-                                break;
-                            case 'remove-column':
-                                if (element.tableData.headers.length > 1) {
-                                    this.removeTableColumn(element, element.tableData.headers.length - 1);
-                                }
-                                break;
-                            
-                            // Position-specific actions
-                            case 'add-row-at':
-                                if (pos !== null) {
-                                    this.addTableRowAt(element, pos);
-                                }
-                                break;
-                            case 'remove-row-at':
-                                if (pos !== null && element.tableData.rows.length > 1) {
-                                    this.removeTableRow(element, pos);
-                                }
-                                break;
-                            case 'add-column-at':
-                                if (pos !== null) {
-                                    this.addTableColumnAt(element, pos);
-                                }
-                                break;
-                            case 'remove-column-at':
-                                if (pos !== null && element.tableData.headers.length > 1) {
-                                    this.removeTableColumn(element, pos);
-                                }
-                                break;
-                        }
+                    const element = this.elements.find(function (el) { return el.id === elementId; });
+                    if (element && element.type === 'table' && this.handleTableAction) {
+                        this.handleTableAction(element, action);
                     }
                 }
             }
@@ -266,6 +236,10 @@ export const EventHandlersMixin = {
             e.preventDefault();
             e.stopPropagation();
         }
+
+        if (this.isInteractiveTableTarget(e.target)) {
+            return;
+        }
         
         e.preventDefault();
         
@@ -379,6 +353,10 @@ export const EventHandlersMixin = {
      * Completes current operation (selection, resize, drag, drawing)
      */
     handlePointerUp(e) {
+        if (this.isInteractiveTableTarget(e.target)) {
+            return;
+        }
+
         e.preventDefault();
         const point = this.getPointerPosition(e);
         
@@ -533,6 +511,10 @@ export const EventHandlersMixin = {
      * @param {Event} e - Double-click event
      */
     handleDoubleClick(e) {
+        if (this.isInteractiveTableTarget(e.target)) {
+            return;
+        }
+
         e.preventDefault();
         
         // Prevent editing in preview mode
@@ -583,19 +565,18 @@ export const EventHandlersMixin = {
                     textarea.addEventListener('blur', handleBlur);
                 }
             } else if (element.type === 'table') {
-                // For table elements, the editing happens inline via the TableToolMixin
-                // Select the cell that was clicked for inline editing
-                const clickedCell = e.target.closest('.sww-table-cell');
+                var clickedTarget = e.target;
+                if (clickedTarget && clickedTarget.nodeType === 3) {
+                    clickedTarget = clickedTarget.parentElement;
+                }
+                const clickedCell = clickedTarget && clickedTarget.closest ? clickedTarget.closest('.sww-table-cell') : null;
                 if (clickedCell && this.editTableCell) {
-                    const isHeader = clickedCell.classList.contains('sww-table-header');
-                    const row = clickedCell.closest('tr');
-                    const tbody = element.svgElement.querySelector('tbody');
-                    const rows = tbody ? Array.from(tbody.querySelectorAll('tr')) : [];
-                    const rowIndex = isHeader ? 'header' : rows.indexOf(row);
-                    const cells = Array.from(row.querySelectorAll('th, td'));
-                    const colIndex = cells.indexOf(clickedCell);
-                    
-                    if (rowIndex !== -1 && colIndex !== -1) {
+                    const rowIndex = clickedCell.getAttribute('data-row') === 'header'
+                        ? 'header'
+                        : parseInt(clickedCell.getAttribute('data-row-index'), 10);
+                    const colIndex = parseInt(clickedCell.getAttribute('data-col-index'), 10);
+
+                    if ((rowIndex === 'header' || !isNaN(rowIndex)) && !isNaN(colIndex)) {
                         this.editTableCell(element, rowIndex, colIndex, clickedCell);
                     }
                 }

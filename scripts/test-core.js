@@ -229,6 +229,293 @@ async function testEsmEntry() {
   assert.equal(module.default.version, require("../package.json").version);
 }
 
+// DOM polyfill for Node.js test environment
+if (!global.document) {
+  var { JSDOM } = require("jsdom");
+  var dom = new JSDOM("<!DOCTYPE html><html><body></body></html>");
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.HTMLInputElement = dom.window.HTMLInputElement;
+  global.KeyboardEvent = dom.window.KeyboardEvent;
+  global.Event = dom.window.Event;
+  global.Element = dom.window.Element;
+}
+
+async function testTableNormalization() {
+  var { SceneStateMixin } = await importSource("src/js/modules/core/SceneState.js");
+  var counter = 0;
+  var instance = {
+    ...SceneStateMixin,
+    generateId: function () { counter += 1; return "id-" + counter; },
+  };
+
+  // Default table: no sizing arrays, at least 1 header and 1 row
+  var defaultTable = instance.deserializeElement({
+    type: "table",
+    tableData: { headers: ["A", "B"], rows: [["1", "2"], ["3", "4"]] },
+  });
+  assert.deepEqual(defaultTable.tableData.headers, ["A", "B"]);
+  assert.deepEqual(defaultTable.tableData.rows, [["1", "2"], ["3", "4"]]);
+  assert.equal(defaultTable.tableData.columnWidths, undefined);
+  assert.equal(defaultTable.tableData.rowHeights, undefined);
+
+  // Legacy scene: strips columnWidths and rowHeights
+  var legacyTable = instance.deserializeElement({
+    type: "table",
+    tableData: {
+      headers: ["H1", "H2"],
+      rows: [["a", "b"]],
+      columnWidths: [120, 180],
+      rowHeights: [44],
+    },
+  });
+  assert.equal(legacyTable.tableData.columnWidths, undefined);
+  assert.equal(legacyTable.tableData.rowHeights, undefined);
+
+  // Ragged rows: pads short rows, trims long rows
+  var ragged = instance.deserializeElement({
+    type: "table",
+    tableData: {
+      headers: ["A", "B", "C"],
+      rows: [["1"], ["2", "3", "4", "5"], [], ["ok"]],
+    },
+  });
+  assert.equal(ragged.tableData.headers.length, 3);
+  assert.equal(ragged.tableData.rows.length, 4);
+  assert.deepEqual(ragged.tableData.rows[0], ["1", "", ""]);
+  assert.deepEqual(ragged.tableData.rows[1], ["2", "3", "4"]);
+  assert.deepEqual(ragged.tableData.rows[2], ["", "", ""]);
+  assert.deepEqual(ragged.tableData.rows[3], ["ok", "", ""]);
+
+  // Non-string cells: converted to strings, rows trimmed to header count
+  var mixed = instance.deserializeElement({
+    type: "table",
+    tableData: {
+      headers: ["H"],
+      rows: [[null, 42, undefined]],
+    },
+  });
+  assert.equal(mixed.tableData.headers.length, 1);
+  assert.deepEqual(mixed.tableData.rows[0], [""]);
+
+  // More headers than row cells: pads with empty strings
+  var moreHeaders = instance.deserializeElement({
+    type: "table",
+    tableData: {
+      headers: ["A", "B", "C"],
+      rows: [["x"]],
+    },
+  });
+  assert.equal(moreHeaders.tableData.rows[0].length, 3);
+  assert.deepEqual(moreHeaders.tableData.rows[0], ["x", "", ""]);
+
+  // Empty headers: defaults to one
+  var emptyHeaders = instance.deserializeElement({
+    type: "table",
+    tableData: { headers: [], rows: [["x", "y"]] },
+  });
+  assert.deepEqual(emptyHeaders.tableData.headers, ["Header 1"]);
+  assert.deepEqual(emptyHeaders.tableData.rows[0], ["x"]);
+
+  // Empty rows: defaults to one row
+  var emptyRows = instance.deserializeElement({
+    type: "table",
+    tableData: { headers: ["A", "B"], rows: [] },
+  });
+  assert.equal(emptyRows.tableData.rows.length, 1);
+  assert.deepEqual(emptyRows.tableData.rows[0], ["", ""]);
+
+  console.log("  Table normalization tests passed.");
+}
+
+async function testTableMutations() {
+  var { TableToolMixin } = await importSource("src/js/modules/tools/TableTool.js");
+  var history = [];
+  var element = {
+    id: "t1",
+    type: "table",
+    x: 0, y: 0, width: 200, height: 100, opacity: 1,
+    tableData: {
+      headers: ["A", "B"],
+      rows: [["1", "2"]],
+    },
+  };
+  var instance = {
+    ...TableToolMixin,
+    updateSVGElement: function () {},
+    saveStateToHistory: function (action) { history.push(action); },
+  };
+
+  // addTableRow appends a row
+  instance.addTableRow(element);
+  assert.equal(element.tableData.rows.length, 2);
+  assert.deepEqual(element.tableData.rows[1], ["", ""]);
+  assert.equal(element.tableData.rows[0][0], "1");
+
+  // addTableRowAt inserts at position
+  instance.addTableRowAt(element, 1);
+  assert.equal(element.tableData.rows.length, 3);
+  assert.deepEqual(element.tableData.rows[1], ["", ""]);
+
+  // addTableColumn appends a column
+  instance.addTableColumn(element);
+  assert.equal(element.tableData.headers.length, 3);
+  assert.equal(element.tableData.headers[2], "New Column");
+  assert.equal(element.tableData.rows[0].length, 3);
+
+  // addTableColumnAt inserts at position
+  instance.addTableColumnAt(element, 1);
+  assert.equal(element.tableData.headers.length, 4);
+  assert.equal(element.tableData.headers[1], "New Column");
+
+  // removeTableRow within bounds
+  instance.removeTableRow(element, 0);
+  assert.equal(element.tableData.rows.length, 2);
+
+  // removeTableRow minimum constraint
+  instance.removeTableRow(element, 0);
+  instance.removeTableRow(element, 0); // should be no-op (only 1 row left)
+  assert.equal(element.tableData.rows.length, 1);
+
+  // removeTableColumn minimum constraint
+  instance.removeTableColumn(element, 3);
+  instance.removeTableColumn(element, 2);
+  instance.removeTableColumn(element, 1);
+  instance.removeTableColumn(element, 0); // should be no-op (only 1 col left)
+  assert.equal(element.tableData.headers.length, 1);
+
+  // handleTableAction dispatch
+  element.tableData = { headers: ["X"], rows: [["a"]] };
+  // Add row
+  instance.handleTableAction(element, "add-row");
+  assert.equal(element.tableData.rows.length, 2);
+  // Add column
+  instance.handleTableAction(element, "add-column");
+  assert.equal(element.tableData.headers.length, 2);
+  // Remove row (last) - should work
+  instance.handleTableAction(element, "remove-row");
+  assert.equal(element.tableData.rows.length, 1);
+  // Remove row again - should not go below 1
+  instance.handleTableAction(element, "remove-row");
+  assert.equal(element.tableData.rows.length, 1);
+  // Remove column - should work
+  instance.handleTableAction(element, "remove-column");
+  assert.equal(element.tableData.headers.length, 1);
+  // Remove column again - should not go below 1
+  instance.handleTableAction(element, "remove-column");
+  assert.equal(element.tableData.headers.length, 1);
+
+  console.log("  Table mutation tests passed.");
+}
+
+async function testTableCellEditing() {
+  var { TableToolMixin } = await importSource("src/js/modules/tools/TableTool.js");
+  var history = [];
+  var renderCount = 0;
+  var element = {
+    id: "t1",
+    type: "table",
+    x: 0, y: 0, width: 200, height: 100, opacity: 1,
+    tableData: {
+      headers: ["H1"],
+      rows: [["old"]],
+    },
+  };
+  var instance = {
+    ...TableToolMixin,
+    updateSVGElement: function () { renderCount += 1; },
+    saveStateToHistory: function (action) { history.push(action); },
+  };
+
+  // editTableCell creates input, blur saves on value change
+  var cell = document.createElement("td");
+  cell.className = "sww-table-cell";
+  cell.setAttribute("data-row-index", "0");
+  cell.setAttribute("data-col-index", "0");
+  cell.textContent = "old";
+
+  instance.editTableCell(element, 0, 0, cell);
+
+  var input = cell.querySelector(".sww-table-cell-input");
+  assert.ok(input, "Input should be created");
+  assert.equal(input.value, "old");
+
+  // Change value and blur to save
+  input.value = "new";
+  input.dispatchEvent(new Event("blur", { bubbles: true }));
+
+  assert.equal(element.tableData.rows[0][0], "new");
+  assert.equal(history[history.length - 1], "editTable");
+  assert.ok(renderCount >= 1, "Should re-render on save");
+
+  // Edit a header cell
+  history.length = 0;
+  var headerCell = document.createElement("th");
+  headerCell.className = "sww-table-cell sww-table-header";
+  headerCell.setAttribute("data-row", "header");
+  headerCell.setAttribute("data-col-index", "0");
+  headerCell.textContent = "H1";
+
+  instance.editTableCell(element, "header", 0, headerCell);
+  var headerInput = headerCell.querySelector(".sww-table-cell-input");
+  headerInput.value = "Updated";
+  headerInput.dispatchEvent(new Event("blur", { bubbles: true }));
+
+  assert.equal(element.tableData.headers[0], "Updated");
+  assert.equal(history[history.length - 1], "editTable");
+
+  // No-op edit: same value does not create history entry
+  history.length = 0;
+  renderCount = 0;
+  var noopCell = document.createElement("td");
+  noopCell.className = "sww-table-cell";
+  noopCell.setAttribute("data-row-index", "0");
+  noopCell.setAttribute("data-col-index", "0");
+  noopCell.textContent = "new";
+
+  instance.editTableCell(element, 0, 0, noopCell);
+  var noopInput = noopCell.querySelector(".sww-table-cell-input");
+  noopInput.value = "new"; // same value
+  noopInput.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+
+  assert.equal(history.length, 0, "No-op edit should not create history entry");
+  assert.ok(renderCount >= 1, "Should still re-render even for no-op");
+
+  console.log("  Cell editing tests passed.");
+}
+
+async function testGridLayerOrdering() {
+  var { GridMixin } = await importSource("src/js/modules/grid/Grid.js");
+  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  var backgroundRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  var elementsGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  var selectionGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  backgroundRect.setAttribute("id", "bg");
+  elementsGroup.setAttribute("id", "elements");
+  selectionGroup.setAttribute("id", "selection");
+  svg.appendChild(backgroundRect);
+  svg.appendChild(elementsGroup);
+  svg.appendChild(selectionGroup);
+
+  var instance = {
+    ...GridMixin,
+    svg: svg,
+    elementsGroup: elementsGroup,
+    selectionGroup: selectionGroup,
+    options: { gridSize: 20, showGrid: true },
+    viewBox: { x: 0, y: 0, width: 1000, height: 1000 },
+    generateId: function () { return "grid-test"; },
+  };
+
+  instance.createGrid();
+
+  assert.equal(instance.gridDefs.nextSibling, instance.gridRect);
+  assert.equal(instance.gridRect.nextSibling, elementsGroup);
+  assert.equal(svg.lastChild, selectionGroup);
+
+  console.log("  Grid layer ordering tests passed.");
+}
+
 Promise.all([
   testSceneState(),
   testSpatialIndex(),
@@ -236,6 +523,10 @@ Promise.all([
   testHistoryRoundTrip(),
   testUrlPolicy(),
   testEsmEntry(),
+  testTableNormalization(),
+  testTableMutations(),
+  testTableCellEditing(),
+  testGridLayerOrdering(),
 ])
   .then(() => {
     console.log("Core scene-state, history, Draw interaction, URL-policy, spatial-index, and ESM tests passed.");
