@@ -6,10 +6,11 @@ const { pathToFileURL } = require("node:url");
 const root = path.resolve(__dirname, "..");
 
 async function importSource(relativePath) {
+  // File-URL import (not data:) so modules with relative imports resolve.
+  // The cache-buster keeps the previous "fresh copy per test" behavior.
   const filePath = path.join(root, relativePath);
-  const source = fs.readFileSync(filePath, "utf8");
-  const dataUrl = `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`;
-  return import(dataUrl);
+  const bust = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return import(`${pathToFileURL(filePath).href}?t=${bust}`);
 }
 
 async function testSceneState() {
@@ -516,6 +517,89 @@ async function testGridLayerOrdering() {
   console.log("  Grid layer ordering tests passed.");
 }
 
+async function testColorSanitization() {
+  var { SceneStateMixin } = await importSource("src/js/modules/core/SceneState.js");
+  var counter = 0;
+  var instance = {
+    ...SceneStateMixin,
+    generateId: function () { counter += 1; return "id-" + counter; },
+  };
+
+  // Legitimate colors are preserved
+  var ok = instance.deserializeElement({
+    type: "rectangle",
+    strokeColor: "#FF00FF",
+    fillColor: "rgba(255, 0, 0, 0.5)",
+    textColor: "transparent",
+    gradientType: "linear",
+    gradientStops: [
+      { color: "#ff0000", offset: 0 },
+      { color: "blue", offset: 1 },
+    ],
+  });
+  assert.equal(ok.strokeColor, "#FF00FF");
+  assert.equal(ok.fillColor, "rgba(255, 0, 0, 0.5)");
+  assert.equal(ok.textColor, "transparent");
+  assert.deepEqual(
+    ok.gradientStops,
+    [{ color: "#ff0000", offset: 0 }, { color: "blue", offset: 1 }],
+  );
+
+  // Hostile values from a malicious scene file are replaced with safe fallbacks
+  var hostile = instance.deserializeElement({
+    type: "rectangle",
+    strokeColor: "url(https://attacker.example/beacon.png)",
+    fillColor: "red; background-image: url(https://attacker.example/x.png)",
+    gradientStops: [{ color: "url(https://attacker.example/g.png)", offset: 0 }],
+  });
+  assert.equal(hostile.strokeColor, "#000000");
+  assert.equal(hostile.fillColor, "#ffffff");
+  assert.equal(hostile.gradientStops[0].color, "#000000");
+
+  console.log("  Color sanitization tests passed.");
+}
+
+async function testPerInstanceDefs() {
+  var { SVGRendererMixin } = await importSource("src/js/modules/rendering/SVGRenderer.js");
+  var counter = 0;
+  var makeInstance = function () {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    return {
+      ...SVGRendererMixin,
+      svg: svg,
+      generateId: function () { counter += 1; return "sww-inst" + counter; },
+      toolSettings: { gradientStops: [{ color: "#000", offset: 0 }] },
+    };
+  };
+
+  var a = makeInstance();
+  var b = makeInstance();
+
+  // Each instance namespaces its own defs container and hatch pattern
+  var hatchA = a.createHatchPattern("#ff0000");
+  var hatchB = b.createHatchPattern("#ff0000");
+  assert.notEqual(hatchA, hatchB, "Hatch pattern IDs must be per-instance");
+  assert.equal(a.svg.querySelector("pattern").getAttribute("id"), hatchA);
+  assert.equal(b.svg.querySelector("pattern").getAttribute("id"), hatchB);
+
+  // Arrow markers are namespaced per instance too
+  var markerA = a.createArrowMarker("#00ff00");
+  var markerB = b.createArrowMarker("#00ff00");
+  assert.notEqual(markerA, markerB, "Arrow marker IDs must be per-instance");
+  assert.equal(
+    a.markerDefs.querySelector("marker").getAttribute("id"),
+    markerA,
+    "Marker exists in its own instance defs",
+  );
+  assert.equal(
+    b.markerDefs.querySelector("marker").getAttribute("id"),
+    markerB,
+    "Second instance marker exists in its own defs",
+  );
+
+  console.log("  Per-instance SVG defs tests passed.");
+}
+
 Promise.all([
   testSceneState(),
   testSpatialIndex(),
@@ -527,6 +611,8 @@ Promise.all([
   testTableMutations(),
   testTableCellEditing(),
   testGridLayerOrdering(),
+  testColorSanitization(),
+  testPerInstanceDefs(),
 ])
   .then(() => {
     console.log("Core scene-state, history, Draw interaction, URL-policy, spatial-index, and ESM tests passed.");

@@ -40,17 +40,6 @@ import { PerformanceUtils } from '../utils/PerformanceUtils.js';
  */
 export const SelectionHandlesMixin = {
     /**
-     * Initialize selection handles system
-     * Called during instance initialization
-     */
-    initializeSelectionHandles() {
-        // State is initialized in constructor
-        // this.selectionUpdateScheduled = false;
-        
-        // No additional initialization needed
-    },
-
-    /**
      * Update selection handles for current selection
      * Throttled with requestAnimationFrame for performance
      * Shows selection boxes and resize/rotate handles

@@ -127,8 +127,8 @@ export const ElementManipulationMixin = {
     updateResize(point) {
         if (!this.isResizing || !this.dragStartPoint) return;
 
-        let dx = point.x - this.dragStartPoint.x;
-        let dy = point.y - this.dragStartPoint.y;
+        const baseDx = point.x - this.dragStartPoint.x;
+        const baseDy = point.y - this.dragStartPoint.y;
 
         this.selectedElements.forEach(element => {
             const startX = element.resizeStartX;
@@ -137,8 +137,8 @@ export const ElementManipulationMixin = {
             const startHeight = element.resizeStartHeight;
 
             // Transform dx/dy to account for element rotation
-            let localDx = dx;
-            let localDy = dy;
+            let localDx = baseDx;
+            let localDy = baseDy;
 
             if (element.rotation && element.rotation !== 0) {
                 const angle = -element.rotation * Math.PI / 180; // Negative for inverse transformation
@@ -146,13 +146,13 @@ export const ElementManipulationMixin = {
                 const sin = Math.sin(angle);
 
                 // Rotate the delta vector to match element's local coordinate system
-                localDx = dx * cos - dy * sin;
-                localDy = dx * sin + dy * cos;
+                localDx = baseDx * cos - baseDy * sin;
+                localDy = baseDx * sin + baseDy * cos;
             }
 
-            // Use local deltas for resize calculations
-            dx = localDx;
-            dy = localDy;
+            // Use per-element local deltas (shadow the outer base deltas)
+            const dx = localDx;
+            const dy = localDy;
 
             // Store the original values in case we need to constrain
             let newX = element.x;

@@ -1,7 +1,7 @@
 ---
 name: senangwebs-whiteboard
 description: Interactive digital whiteboard and vector drawing library with drawing tools, layers, undo/redo, spatial indexing, and export.
-version: 1.2.1
+version: 1.2.2
 package: senangwebs-whiteboard
 ---
 
@@ -10,9 +10,10 @@ package: senangwebs-whiteboard
 ## Quick Reference
 
 - **Purpose**: Canvas-based whiteboard/drawing application with layers, tools, and performance optimizations
-- **Entry**: `dist/sww.js`; stylesheet: `dist/sww.css`
-- **Dependencies**: `@bookklik/senangstart-icons`, `marked`
-- **Scripts**: `npm run test`, `npm run build`, `npm run dev`
+- **Entry**: `dist/sww.js`; stylesheet: `dist/sww.css`; types: `index.d.ts`
+- **Dependencies**: None at runtime (icons and `marked` are bundled into `dist/`)
+- **Scripts**: `npm run test`, `npm run build`, `npm run dev` (outputs to `dist-dev/`), `npm run icons:build`
+- **CI**: `.github/workflows/ci.yml` (test + build matrix, dist drift check)
 
 ## Workflow
 

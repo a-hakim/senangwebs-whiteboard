@@ -45,92 +45,6 @@ export const TextToolMixin = {
     },
 
     /**
-     * Create SVG text element
-     * @param {Object} element - Element object
-     * @returns {SVGTextElement} Created SVG text element
-     */
-    createTextSVGElement(element) {
-        const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        svgElement.setAttribute('data-element-id', element.id);
-        svgElement.setAttribute('class', 'sww-element');
-        return svgElement;
-    },
-
-    /**
-     * Update text SVG attributes
-     * @param {Object} element - Element object with SVG reference
-     */
-    updateTextSVG(element) {
-        const svg = element.svgElement;
-        if (!svg) return;
-        
-        const textContent = element.text || 'Text';
-        const lines = textContent.split('\n');
-        
-        // Always position text with padding inside the boundary
-        const padding = 10;
-        const textX = element.x + padding; // Left padding
-        const textY = element.y + element.fontSize + padding; // Top padding + baseline
-        
-        svg.setAttribute('x', textX);
-        svg.setAttribute('y', textY);
-        svg.setAttribute('font-size', element.fontSize);
-        svg.setAttribute('font-family', element.fontFamily);
-        svg.setAttribute('fill', element.textColor || element.strokeColor); // Use textColor for fill
-        
-        // Show placeholder styling for empty text
-        if (!element.text || element.text.trim() === '') {
-            svg.setAttribute('opacity', '0.4');
-            svg.setAttribute('font-style', 'italic');
-        } else {
-            svg.setAttribute('font-style', 'normal');
-        }
-        
-        // Text can have stroke for outline effect
-        if (element.strokeWidth > 0) {
-            svg.setAttribute('stroke', element.strokeColor);
-            svg.setAttribute('stroke-width', element.strokeWidth);
-        } else {
-            svg.removeAttribute('stroke');
-            svg.removeAttribute('stroke-width');
-        }
-        
-        // Clear existing content
-        svg.innerHTML = '';
-        
-        // Add each line as a tspan with proper alignment
-        lines.forEach((line, index) => {
-            const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-            
-            // Calculate X position based on alignment
-            let lineX = textX;
-            if (element.textAlign && element.width) {
-                const lineWidth = this.measureText(line, element.fontSize, element.fontFamily).width;
-                const availableWidth = element.width - (padding * 2); // Account for padding
-                
-                switch (element.textAlign) {
-                    case 'center':
-                        lineX = element.x + (element.width / 2) - (lineWidth / 2);
-                        break;
-                    case 'right':
-                        lineX = element.x + element.width - padding - lineWidth;
-                        break;
-                    case 'left':
-                    default:
-                        lineX = textX;
-                }
-            }
-            
-            tspan.setAttribute('x', lineX);
-            tspan.setAttribute('dy', index === 0 ? 0 : element.fontSize * 1.3); // Line height
-            // Use non-breaking space (char code 160) for empty lines - regular spaces are collapsed by SVG
-            tspan.textContent = line || String.fromCharCode(160);
-            
-            svg.appendChild(tspan);
-        });
-    },
-
-    /**
      * Convert SVG coordinates to screen coordinates
      * @param {Object} svgPoint - {x, y} in SVG coordinates
      * @returns {Object} {x, y} in screen coordinates
@@ -236,29 +150,6 @@ export const TextToolMixin = {
             </div>
         `;
         return hintOverlay;
-    },
-
-    /**
-     * Measure text dimensions
-     * @param {string} text - Text to measure
-     * @param {number} fontSize - Font size in pixels
-     * @param {string} fontFamily - Font family name
-     * @returns {Object} {width, height} in pixels
-     */
-    measureText(text, fontSize, fontFamily) {
-        // Create temporary canvas for measurement
-        if (!this.textMeasurementCanvas) {
-            this.textMeasurementCanvas = document.createElement('canvas');
-        }
-        
-        const ctx = this.textMeasurementCanvas.getContext('2d');
-        ctx.font = `${fontSize}px ${fontFamily}`;
-        const metrics = ctx.measureText(text);
-        
-        return {
-            width: metrics.width,
-            height: fontSize * 1.3 // Approximate line height
-        };
     },
 
     /**
@@ -386,6 +277,8 @@ export const TextToolMixin = {
         }
         
         document.body.appendChild(textEditor);
+        // Track for cleanup on destroy()
+        this._activeTextEditor = textEditor;
         
         // Create keyboard shortcuts hint overlay
         const hintOverlay = document.createElement('div');
@@ -404,6 +297,8 @@ export const TextToolMixin = {
             </div>
         `;
         document.body.appendChild(hintOverlay);
+        // Track for cleanup on destroy()
+        this._activeTextEditorHint = hintOverlay;
         
         // Focus and select all text
         setTimeout(() => {
@@ -481,8 +376,15 @@ export const TextToolMixin = {
                 
                 this.updateSVGElement(element);
                 
+                // Record the committed text as its own undo step (only when it changed)
+                if (cleanedText !== originalText) {
+                    this.saveStateToHistory('editText');
+                }
+                
                 if (textEditor.parentNode) textEditor.remove();
                 if (hintOverlay.parentNode) hintOverlay.remove();
+                this._activeTextEditor = null;
+                this._activeTextEditorHint = null;
                 
                 if (handleClickOutside) {
                     document.removeEventListener('click', handleClickOutside);
@@ -512,6 +414,8 @@ export const TextToolMixin = {
                 
                 if (textEditor.parentNode) textEditor.remove();
                 if (hintOverlay.parentNode) hintOverlay.remove();
+                this._activeTextEditor = null;
+                this._activeTextEditorHint = null;
                 
                 if (handleClickOutside) {
                     document.removeEventListener('click', handleClickOutside);

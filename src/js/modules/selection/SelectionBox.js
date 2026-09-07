@@ -36,19 +36,6 @@
  */
 export const SelectionBoxMixin = {
     /**
-     * Initialize selection box system
-     * Called during instance initialization
-     */
-    initializeSelectionBox() {
-        // Selection box state is already initialized in SWWInstance constructor
-        // this.isCreatingSelectionBox = false;
-        // this.currentSelectionBox = null;
-        // this.selectionBoxStart = null;
-        
-        // No additional initialization needed at this time
-    },
-
-    /**
      * Start creating a selection box
      * Called on mousedown/pointerdown on empty canvas
      * 

@@ -108,8 +108,10 @@ export const ClipboardMixin = {
         // Create new elements from clipboard
         const pastedElements = [];
         this.clipboard.forEach(elementData => {
+            // Deep-clone so nested data (tableData, points, gradientStops) is not
+            // shared by reference with the clipboard copy
             const newElement = {
-                ...elementData,
+                ...this.serializeElement(elementData),
                 id: this.generateId(),
                 x: elementData.x + offsetX,
                 y: elementData.y + offsetY
@@ -119,11 +121,11 @@ export const ClipboardMixin = {
             const svgElement = this.createSVGElement(newElement);
             newElement.svgElement = svgElement;
             this.addElement(newElement);
-            
-            // Select the new element
-            this.selectElement(newElement);
             pastedElements.push(newElement);
         });
+
+        // Select all pasted elements
+        this.selectMultiple(pastedElements);
         
         // Update clipboard positions for next paste (add small offset)
         this.clipboard.forEach(element => {
@@ -176,11 +178,11 @@ export const ClipboardMixin = {
             const svgElement = this.createSVGElement(duplicate);
             duplicate.svgElement = svgElement;
             this.addElement(duplicate);
-            
-            // Select the duplicate
-            this.selectElement(duplicate);
             duplicates.push(duplicate);
         });
+
+        // Select all duplicated elements
+        this.selectMultiple(duplicates);
 
         this.saveStateToHistory('duplicateElements');
         
@@ -299,8 +301,10 @@ export const ClipboardMixin = {
         // Create new elements from clipboard
         const pastedElements = [];
         this.clipboard.forEach(elementData => {
+            // Deep-clone so nested data (tableData, points, gradientStops) is not
+            // shared by reference with the clipboard copy
             const newElement = {
-                ...elementData,
+                ...this.serializeElement(elementData),
                 id: this.generateId(),
                 x: elementData.x + offsetX,
                 y: elementData.y + offsetY
@@ -310,11 +314,12 @@ export const ClipboardMixin = {
             const svgElement = this.createSVGElement(newElement);
             newElement.svgElement = svgElement;
             this.addElement(newElement);
-            
-            // Select the new element
-            this.selectElement(newElement);
             pastedElements.push(newElement);
         });
+
+        // Select all pasted elements
+        this.selectMultiple(pastedElements);
+
 
         this.saveStateToHistory('pasteElements');
         

@@ -121,8 +121,8 @@ export const SVGRendererMixin = {
       svg.setAttribute("fill", element.fillColor);
     } else if (element.fillStyle === "hachure") {
       // Create hatch pattern
-      svg.setAttribute("fill", "url(#hatch)");
-      this.createHatchPattern(element.fillColor);
+      const hatchId = this.createHatchPattern(element.fillColor);
+      svg.setAttribute("fill", `url(#${hatchId})`);
     } else if (element.fillStyle === "gradient") {
       // Create gradient
       const gradientId = this.createGradient(element);
@@ -475,9 +475,14 @@ export const SVGRendererMixin = {
       content.className = "sww-website-content";
 
       const iframe = document.createElement("iframe");
-      iframe.src = sanitizeUrl(element.url, {
+      const safeUrl = sanitizeUrl(element.url, {
         allowedProtocols: ["http:", "https:"],
       });
+      // Only set src when the URL passed sanitization; assigning "" would
+      // navigate the iframe to the host page itself
+      if (safeUrl) {
+        iframe.src = safeUrl;
+      }
       iframe.style.width = "100%";
       iframe.style.height = "100%";
       iframe.style.border = "none";
@@ -818,28 +823,43 @@ export const SVGRendererMixin = {
   },
 
   /**
-   * Create hatch pattern for fills
-   * @param {string} color - Pattern color
+   * Lazily create the per-instance defs element used for markers, patterns
+   * and gradients. All def IDs are namespaced per instance so multiple
+   * whiteboards on one page never share (or lose) paint servers.
+   * @private
+   * @returns {SVGDefsElement} The instance's dedicated defs element
    */
-  createHatchPattern(color) {
-    if (document.getElementById("hatch")) return;
-
-    // Ensure we have a dedicated defs element for markers and patterns (not the grid defs)
-    if (!this.markerDefs) {
+  _getMarkerDefs() {
+    if (!this._swwDefsNs) {
+      this._swwDefsNs = String(this.generateId()).replace(/^sww-/, "");
+    }
+    if (!this.markerDefs || !this.markerDefs.isConnected) {
       this.markerDefs = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "defs"
       );
-      this.markerDefs.setAttribute("id", "sww-marker-defs");
+      this.markerDefs.setAttribute("id", `sww-marker-defs-${this._swwDefsNs}`);
       this.svg.appendChild(this.markerDefs);
     }
-    const defs = this.markerDefs;
+    return this.markerDefs;
+  },
+
+  /**
+   * Create hatch pattern for fills
+   * @param {string} color - Pattern color
+   * @returns {string} Pattern ID
+   */
+  createHatchPattern(color) {
+    const defs = this._getMarkerDefs();
+    const patternId = `hatch-${this._swwDefsNs}`;
+
+    if (document.getElementById(patternId)) return patternId;
 
     const pattern = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "pattern"
     );
-    pattern.setAttribute("id", "hatch");
+    pattern.setAttribute("id", patternId);
     pattern.setAttribute("patternUnits", "userSpaceOnUse");
     pattern.setAttribute("width", "8");
     pattern.setAttribute("height", "8");
@@ -851,6 +871,8 @@ export const SVGRendererMixin = {
 
     pattern.appendChild(path);
     defs.appendChild(pattern);
+
+    return patternId;
   },
 
   /**
@@ -859,21 +881,12 @@ export const SVGRendererMixin = {
    * @returns {string} Marker ID
    */
   createArrowMarker(strokeColor = "#000000") {
-    // Create unique marker ID for each color
-    const markerId = `arrowhead-${strokeColor.replace("#", "")}`;
+    // Create unique marker ID per instance and color
+    const markerId = `arrowhead-${this._swwDefsNs}-${strokeColor.replace("#", "")}`;
 
     if (document.getElementById(markerId)) return markerId;
 
-    // Ensure we have a dedicated defs element for markers (not the grid defs)
-    if (!this.markerDefs) {
-      this.markerDefs = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "defs"
-      );
-      this.markerDefs.setAttribute("id", "sww-marker-defs");
-      this.svg.appendChild(this.markerDefs);
-    }
-    const defs = this.markerDefs;
+    const defs = this._getMarkerDefs();
 
     const marker = document.createElementNS(
       "http://www.w3.org/2000/svg",
@@ -906,18 +919,9 @@ export const SVGRendererMixin = {
    * @returns {string} Gradient ID
    */
   createGradient(element) {
-    const gradientId = `gradient-${element.id}`;
+    const gradientId = `gradient-${this._swwDefsNs}-${element.id}`;
 
-    // Ensure we have a dedicated defs element for markers and patterns (not the grid defs)
-    if (!this.markerDefs) {
-      this.markerDefs = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "defs"
-      );
-      this.markerDefs.setAttribute("id", "sww-marker-defs");
-      this.svg.appendChild(this.markerDefs);
-    }
-    const defs = this.markerDefs;
+    const defs = this._getMarkerDefs();
 
     // Remove existing gradient if it exists
     const existingGradient = defs.querySelector(`#${gradientId}`);

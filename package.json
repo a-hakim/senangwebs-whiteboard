@@ -1,21 +1,26 @@
 {
   "name": "senangwebs-whiteboard",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A powerful, client-side JavaScript drawing library for creating digital whiteboards and vector drawings.",
   "main": "dist/sww.js",
   "module": "dist/sww.esm.mjs",
   "style": "dist/sww.css",
+  "types": "index.d.ts",
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "import": "./dist/sww.esm.mjs",
       "require": "./dist/sww.js",
       "default": "./dist/sww.js"
     },
+    "./dist/*": "./dist/*",
     "./dist/sww.css": "./dist/sww.css",
-    "./dist/sww.min.css": "./dist/sww.min.css"
+    "./dist/sww.min.css": "./dist/sww.min.css",
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
+    "index.d.ts",
     "README.md",
     "LICENSE.md"
   ],
@@ -25,29 +30,31 @@
   "scripts": {
     "test": "node scripts/check-package.js && node scripts/test-core.js",
     "build": "webpack --mode production",
-    "dev": "webpack --mode development --watch"
+    "dev": "webpack --mode development --watch",
+    "icons:build": "node scripts/generate-icon-subset.js",
+    "prepublishOnly": "npm test && npm run build"
   },
-  "dependencies": {
-    "@bookklik/senangstart-icons": "^1.0.14",
-    "marked": "^9.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.0.0",
     "@babel/preset-env": "^7.0.0",
+    "@bookklik/senangstart-icons": "^1.0.14",
     "babel-loader": "^9.0.0",
     "css-loader": "^6.0.0",
     "css-minimizer-webpack-plugin": "^8.0.0",
-    "file-loader": "^6.2.0",
     "jsdom": "^29.1.1",
+    "marked": "^9.0.0",
     "mini-css-extract-plugin": "^2.0.0",
-    "style-loader": "^3.0.0",
-    "url-loader": "^4.1.1",
-    "webpack": "^5.0.0",
+    "webpack": "^5.17.0",
     "webpack-cli": "^4.0.0"
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/a-hakim/senangwebs-whiteboard.git"
+  },
+  "homepage": "https://github.com/a-hakim/senangwebs-whiteboard#readme",
+  "bugs": {
+    "url": "https://github.com/a-hakim/senangwebs-whiteboard/issues"
   },
   "keywords": [
     "whiteboard",

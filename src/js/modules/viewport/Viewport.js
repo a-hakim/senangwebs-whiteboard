@@ -168,39 +168,10 @@ export const ViewportMixin = {
         this.updateViewBox();
     },
 
-    /**
-     * Start panning operation
-     * @param {Object} point - Starting point
+    /*
+     * Panning (startPan/updatePan/finishPan) is implemented inline in
+     * core/eventHandlers.js (isPanning state + screen-space viewBox math).
      */
-    startPan(point) {
-        this.isPanning = true;
-        this.panStartPoint = point;
-        this.setCursor('grabbing');
-    },
-
-    /**
-     * Update panning during drag
-     * @param {Object} currentPoint - Current pointer position
-     */
-    updatePan(currentPoint) {
-        if (!this.isPanning || !this.lastPointerPosition) return;
-        
-        const dx = currentPoint.x - this.lastPointerPosition.x;
-        const dy = currentPoint.y - this.lastPointerPosition.y;
-        
-        this.viewBox.x -= dx;
-        this.viewBox.y -= dy;
-        this.updateViewBox();
-    },
-
-    /**
-     * Finish panning operation
-     */
-    finishPan() {
-        this.isPanning = false;
-        this.panStartPoint = null;
-        this.setCursor('default');
-    },
 
     /**
      * Update SVG viewBox attribute

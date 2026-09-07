@@ -491,27 +491,9 @@ const InitializationMixin = {
   },
   /**
    * Set up performance monitoring for large scenes
-   * Activates optimized render loop for scenes with >200 elements
    */
   setupPerformanceMonitoring() {
     this.updateVisibleElements();
-  },
-  /**
-   * Create optimized render loop for large scenes
-   * Limits FPS to 30 and uses LOD rendering
-   */
-  setupOptimizedRenderLoop() {
-    this.updateVisibleElements();
-  },
-  /**
-   * Perform optimized render pass
-   * Only renders visible elements with level-of-detail optimization
-   */
-  performOptimizedRender() {
-    // Only render visible elements with LOD
-    this.visibleElements.forEach(element => {
-      this.updateSVGElementWithLOD(element);
-    });
   },
   /**
    * Rebuild spatial index from scratch
@@ -620,6 +602,11 @@ const InitializationMixin = {
     this.eventController?.abort();
     this.resizeObserver?.disconnect();
     this.exitPreviewMode?.();
+
+    // Remove any orphaned editors/overlays appended to document.body
+    // (inline text editor, its hint overlay) that survive the container teardown
+    this._activeTextEditor?.remove();
+    this._activeTextEditorHint?.remove();
     this.elements.forEach(element => this.cleanupElement(element));
     this.pendingAnimationFrames.forEach(frameId => cancelAnimationFrame(frameId));
     this.pendingAnimationFrames.clear();
@@ -749,66 +736,6 @@ const ElementManagementMixin = {
     }));
   },
   /**
-   * Get level of detail for element based on screen size
-   * @param {Object} element - Element to check
-   * @returns {string} LOD level: 'hidden', 'simple', 'medium', or 'full'
-   */
-  getLevelOfDetail(element) {
-    const elementSize = Math.max(Math.abs(element.width || 0), Math.abs(element.height || 0));
-    const screenSize = elementSize * this.zoom;
-    if (screenSize < 5) return 'hidden';
-    if (screenSize < 20) return 'simple';
-    if (screenSize < 100) return 'medium';
-    return 'full';
-  },
-  /**
-   * Update SVG element with level-of-detail optimization
-   * @param {Object} element - Element to update
-   */
-  updateSVGElementWithLOD(element) {
-    if (!element.svgElement) return;
-    const lod = this.getLevelOfDetail(element);
-    if (lod === 'hidden') {
-      element.svgElement.style.display = 'none';
-      return;
-    }
-    element.svgElement.style.display = 'block';
-
-    // Apply LOD optimizations for small elements
-    switch (lod) {
-      case 'simple':
-        // Simplify rendering - use solid colors, remove gradients
-        if (element.svgElement.setAttribute) {
-          element.svgElement.setAttribute('fill', element.strokeColor);
-          element.svgElement.setAttribute('stroke', 'none');
-          element.svgElement.style.filter = 'none';
-        }
-        break;
-      case 'medium':
-        // Reduced detail - simpler strokes
-        this.updateSVGElementMediumDetail(element);
-        break;
-      case 'full':
-      default:
-        // Full detail rendering
-        this.updateSVGElement(element);
-        break;
-    }
-  },
-  /**
-   * Update element with medium level of detail
-   * @param {Object} element - Element to update
-   */
-  updateSVGElementMediumDetail(element) {
-    // Medium LOD - simplified but recognizable
-    if (element.svgElement.setAttribute) {
-      element.svgElement.setAttribute('stroke', element.strokeColor);
-      element.svgElement.setAttribute('stroke-width', Math.max(1, element.strokeWidth / 2));
-      element.svgElement.setAttribute('fill', element.fillColor);
-      element.svgElement.setAttribute('opacity', element.opacity);
-    }
-  },
-  /**
    * Create a new element object with default properties
    * @param {String} type - Element type (rectangle, ellipse, etc.)
    * @param {Object} point - Starting point {x, y}
@@ -905,6 +832,25 @@ function cloneSerializable(value) {
 function finiteNumber(value, fallback) {
   return Number.isFinite(Number(value)) ? Number(value) : fallback;
 }
+
+// Safe CSS color values only: hex, rgb(a)/hsl(a) functions, or plain named
+// colors. Rejects anything else (e.g. url(...) beacons or malformed values)
+// coming from imported scene files.
+const CSS_COLOR_PATTERN = /^#[0-9a-f]{3,8}$|^(?:rgb|rgba|hsl|hsla)\([^()]*\)$|^[a-z]+$/i;
+function safeColor(value, fallback) {
+  if (typeof value !== "string") return fallback;
+  const color = value.trim();
+  if (color.length === 0 || color.length > 64) return fallback;
+  return CSS_COLOR_PATTERN.test(color) ? color : fallback;
+}
+function safeGradientStops(value) {
+  if (!Array.isArray(value)) return undefined;
+  const stops = value.filter(stop => stop && typeof stop === "object").map(stop => ({
+    color: safeColor(stop.color, "#000000"),
+    offset: finiteNumber(stop.offset, 0)
+  }));
+  return stops.length > 0 ? stops : undefined;
+}
 function normalizeElement(rawElement, generateId) {
   if (!rawElement || typeof rawElement !== "object" || !ELEMENT_TYPES.has(rawElement.type)) {
     throw new TypeError("Scene contains an unsupported element type.");
@@ -923,15 +869,21 @@ function normalizeElement(rawElement, generateId) {
   element.opacity = Math.max(0, Math.min(1, finiteNumber(element.opacity, 1)));
   element.fontSize = finiteNumber(element.fontSize, 16);
   element.rotation = finiteNumber(element.rotation, 0);
-  element.strokeColor = typeof element.strokeColor === "string" ? element.strokeColor : "#000000";
-  element.fillColor = typeof element.fillColor === "string" ? element.fillColor : "#ffffff";
+  element.strokeColor = safeColor(element.strokeColor, "#000000");
+  element.fillColor = safeColor(element.fillColor, "#ffffff");
   element.fillStyle = typeof element.fillStyle === "string" ? element.fillStyle : "solid";
   element.fontFamily = typeof element.fontFamily === "string" ? element.fontFamily : "Arial";
   element.textAlign = typeof element.textAlign === "string" ? element.textAlign : "left";
-  element.textColor = typeof element.textColor === "string" ? element.textColor : "#000000";
+  element.textColor = safeColor(element.textColor, "#000000");
   element.locked = Boolean(element.locked);
   element.visible = element.visible !== false;
   element.groupId = element.groupId || null;
+  const gradientStops = safeGradientStops(element.gradientStops);
+  if (gradientStops) {
+    element.gradientStops = gradientStops;
+  } else if (element.gradientStops !== undefined) {
+    delete element.gradientStops;
+  }
   if (element.type === "path" && !Array.isArray(element.points)) {
     element.points = [];
   }
@@ -1123,9 +1075,6 @@ const CanvasMixin = {
     this.svg.appendChild(this.selectionGroup);
     this.container.appendChild(this.svg);
 
-    // Create toolbar
-    this.createToolbar();
-
     // Create properties panel
     this.createPropertiesPanel();
 
@@ -1150,157 +1099,17 @@ const CanvasMixin = {
     this.createGrid();
     this.updateGridVisibility();
   },
-  /**
-   * Create grid pattern for snap-to-grid functionality
+  /*
+   * Grid pattern creation and visibility (createGrid, updateGridVisibility,
+   * showGrid, hideGrid) live in modules/grid/Grid.js, which is applied after
+   * this mixin in sww.js and therefore wins at runtime.
    */
-  createGrid() {
-    // Remove existing grid if it exists
-    if (this.gridPattern) {
-      this.gridPattern.remove();
-    }
-    if (this.gridRect) {
-      this.gridRect.remove();
-    }
-    if (this.gridDefs) {
-      this.gridDefs.remove();
-    }
-    this.gridDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    this.gridPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-    this.gridPatternId = this.gridPatternId || `sww-grid-${this.generateId()}`;
-    this.gridPattern.setAttribute('id', this.gridPatternId);
-    this.gridPattern.setAttribute('width', this.options.gridSize);
-    this.gridPattern.setAttribute('height', this.options.gridSize);
-    this.gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${this.options.gridSize} 0 L 0 0 0 ${this.options.gridSize}`);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', '#e0e0e0');
-    path.setAttribute('stroke-width', '1');
-    this.gridPattern.appendChild(path);
-    this.gridDefs.appendChild(this.gridPattern);
-    this.svg.insertBefore(this.gridDefs, this.elementsGroup || null);
-    this.gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    this.gridRect.setAttribute('x', this.viewBox.x - 5000);
-    this.gridRect.setAttribute('y', this.viewBox.y - 5000);
-    this.gridRect.setAttribute('width', 10000);
-    this.gridRect.setAttribute('height', 10000);
-    this.gridRect.setAttribute('fill', `url(#${this.gridPatternId})`);
-    this.svg.insertBefore(this.gridRect, this.elementsGroup || null);
-  },
-  /**
-   * Update grid visibility based on snapToGrid state
-   */
-  updateGridVisibility() {
-    if (this.snapToGrid) {
-      this.showGrid();
-    } else {
-      this.hideGrid();
-    }
-  },
-  /**
-   * Show grid pattern
-   */
-  showGrid() {
-    if (!this.gridRect && !this.gridDefs && !this.gridPattern) {
-      this.createGrid();
-    } else if (this.gridRect && this.gridDefs) {
-      this.gridRect.style.display = 'block';
-      this.gridDefs.style.display = 'block';
-    }
-  },
-  /**
-   * Hide grid pattern
-   */
-  hideGrid() {
-    if (this.gridRect) {
-      this.gridRect.style.display = 'none';
-    }
-    if (this.gridDefs) {
-      this.gridDefs.style.display = 'none';
-    }
-  },
+
   /**
    * Update viewBox attribute on SVG
    */
   updateViewBox() {
     this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
-  }
-};
-;// ./src/js/modules/ui/ToolbarMixin.js
-/**
- * Toolbar Mixin for SWWInstance
- * Creates basic toolbar with action buttons
- * Note: Full properties panel still in legacy - will be extracted in separate module
- */
-
-const ToolbarMixin = {
-  /**
-   * Create simple toolbar with action buttons
-   * Full toolbar in examples/sww.html handles tool selection
-   */
-  createToolbar() {
-    const toolbar = document.createElement("div");
-    toolbar.className = "sww-toolbar";
-    const actionGroup = document.createElement("div");
-    actionGroup.className = "sww-tool-group";
-    const actions = [{
-      id: "lock",
-      icon: "ss ss-lock-closed",
-      title: "Lock/Unlock Selected",
-      action: () => this.toggleLockSelected()
-    }, {
-      id: "group",
-      icon: "ss ss-group-object",
-      title: "Group Selected",
-      action: () => this.groupSelected()
-    }, {
-      id: "ungroup",
-      icon: "ss ss-ungroup-object",
-      title: "Ungroup Selected",
-      action: () => this.ungroupSelected()
-    }, {
-      id: "select",
-      icon: "ss ss-check",
-      title: "Select All",
-      action: () => this.selectAll()
-    }, {
-      id: "clear",
-      icon: "ss ss-trash",
-      title: "Clear All",
-      action: () => this.clearAll()
-    }];
-    actions.forEach(action => {
-      const button = document.createElement("button");
-      button.className = "sww-tool-button";
-      button.setAttribute("data-action", action.id);
-      const icon = document.createElement("i");
-      icon.className = action.icon;
-      button.appendChild(icon);
-      button.title = action.title;
-      button.setAttribute("aria-label", action.title);
-      button.addEventListener("click", action.action);
-      actionGroup.appendChild(button);
-    });
-    toolbar.appendChild(actionGroup);
-    // Note: Toolbar not added to DOM here - external examples handle tool UI
-  },
-  /**
-   * Create simple properties panel stub
-   * Full implementation still in legacy - extracted separately due to size
-   */
-  createPropertiesPanel() {
-    // Stub - actual implementation in legacy
-    // Will be extracted to PropertiesPanel.js module
-    this.propertiesPanel = null;
-  },
-  /**
-   * Create context menu stub
-   * Full implementation still in legacy
-   */
-  createContextMenu() {
-    // Stub - actual implementation in legacy
-    // Will be extracted to ContextMenu.js module
-    this.contextMenu = null;
   }
 };
 ;// ./src/js/modules/core/eventHandlers.js
@@ -2280,262 +2089,6 @@ const ShapeToolsMixin = {
     this.currentElement = element;
     this.isDrawing = true;
     this.addSVGElementToDOM(element);
-  },
-  /**
-   * Update shape dimensions during drawing
-   * Called on pointer move while drawing
-   * @param {Object} point - {x, y} coordinates
-   */
-  handleShapeMove(point) {
-    if (!this.currentElement) return;
-
-    // Calculate width and height from start point to current point
-    this.currentElement.width = point.x - this.currentElement.x;
-    this.currentElement.height = point.y - this.currentElement.y;
-
-    // Update the SVG element to reflect new dimensions
-    this.updateSVGElement(this.currentElement);
-  },
-  /**
-   * Finalize shape creation
-   * Called on pointer up after drawing
-   */
-  handleShapeEnd() {
-    if (!this.currentElement) return;
-    const element = this.currentElement;
-
-    // Normalize dimensions to always be positive
-    // This ensures consistent resize behavior
-    if (element.width < 0) {
-      element.x += element.width;
-      element.width = -element.width;
-    }
-    if (element.height < 0) {
-      element.y += element.height;
-      element.height = -element.height;
-    }
-
-    // Update SVG with normalized dimensions
-    this.updateSVGElement(element);
-
-    // Add to elements array
-    this.addElement(element);
-
-    // Save state for undo/redo
-    this.saveStateToHistory('createElement');
-
-    // Select the newly created element
-    this.clearSelection();
-    const finishedElement = this.currentElement;
-
-    // Clean up drawing state
-    this.currentElement = null;
-    this.isDrawing = false;
-
-    // Select the finished element
-    this.selectElement(finishedElement);
-
-    // Auto-switch to select tool for better UX
-    this.setTool('select');
-  },
-  /**
-   * Create SVG element for a shape
-   * @param {Object} element - Element object
-   * @returns {SVGElement} Created SVG element
-   */
-  createShapeSVGElement(element) {
-    let svgElement;
-    switch (element.type) {
-      case 'rectangle':
-        svgElement = this.createRectangleSVG(element);
-        break;
-      case 'ellipse':
-        svgElement = this.createEllipseSVG(element);
-        break;
-      case 'diamond':
-        svgElement = this.createDiamondSVG(element);
-        break;
-      case 'parallelogram':
-        svgElement = this.createParallelogramSVG(element);
-        break;
-      case 'star':
-        svgElement = this.createStarSVG(element);
-        break;
-      default:
-        console.warn(`Unknown shape type: ${element.type}`);
-        svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    }
-    return svgElement;
-  },
-  /**
-   * Create rectangle SVG element
-   * @param {Object} element - Element object
-   * @returns {SVGRectElement} Rectangle SVG element
-   */
-  createRectangleSVG(element) {
-    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    svgElement.setAttribute('data-element-id', element.id);
-    svgElement.setAttribute('class', 'sww-element');
-    return svgElement;
-  },
-  /**
-   * Create ellipse SVG element
-   * @param {Object} element - Element object
-   * @returns {SVGEllipseElement} Ellipse SVG element
-   */
-  createEllipseSVG(element) {
-    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-    svgElement.setAttribute('data-element-id', element.id);
-    svgElement.setAttribute('class', 'sww-element');
-    return svgElement;
-  },
-  /**
-   * Create diamond SVG element (as polygon)
-   * @param {Object} element - Element object
-   * @returns {SVGPolygonElement} Diamond SVG element
-   */
-  createDiamondSVG(element) {
-    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    svgElement.setAttribute('data-element-id', element.id);
-    svgElement.setAttribute('class', 'sww-element');
-    return svgElement;
-  },
-  /**
-   * Create parallelogram SVG element (as polygon)
-   * @param {Object} element - Element object
-   * @returns {SVGPolygonElement} Parallelogram SVG element
-   */
-  createParallelogramSVG(element) {
-    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    svgElement.setAttribute('data-element-id', element.id);
-    svgElement.setAttribute('class', 'sww-element');
-    return svgElement;
-  },
-  /**
-   * Create star SVG element (as polygon)
-   * @param {Object} element - Element object
-   * @returns {SVGPolygonElement} Star SVG element
-   */
-  createStarSVG(element) {
-    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    svgElement.setAttribute('data-element-id', element.id);
-    svgElement.setAttribute('class', 'sww-element');
-    return svgElement;
-  },
-  /**
-   * Update rectangle SVG attributes
-   * @param {Object} element - Element object with SVG reference
-   */
-  updateRectangleSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-
-    // Handle negative dimensions for northwest direction
-    const rectX = element.width < 0 ? element.x + element.width : element.x;
-    const rectY = element.height < 0 ? element.y + element.height : element.y;
-    svg.setAttribute('x', rectX);
-    svg.setAttribute('y', rectY);
-    svg.setAttribute('width', Math.abs(element.width));
-    svg.setAttribute('height', Math.abs(element.height));
-  },
-  /**
-   * Update ellipse SVG attributes
-   * @param {Object} element - Element object with SVG reference
-   */
-  updateEllipseSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    const cx = element.x + element.width / 2;
-    const cy = element.y + element.height / 2;
-    const rx = Math.abs(element.width) / 2;
-    const ry = Math.abs(element.height) / 2;
-    svg.setAttribute('cx', cx);
-    svg.setAttribute('cy', cy);
-    svg.setAttribute('rx', rx);
-    svg.setAttribute('ry', ry);
-  },
-  /**
-   * Update diamond SVG attributes
-   * @param {Object} element - Element object with SVG reference
-   */
-  updateDiamondSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    const cx = element.x + element.width / 2;
-    const cy = element.y + element.height / 2;
-    const w = Math.abs(element.width) / 2;
-    const h = Math.abs(element.height) / 2;
-
-    // Diamond points: top, right, bottom, left
-    const points = `${cx},${cy - h} ${cx + w},${cy} ${cx},${cy + h} ${cx - w},${cy}`;
-    svg.setAttribute('points', points);
-  },
-  /**
-   * Update parallelogram SVG attributes
-   * @param {Object} element - Element object with SVG reference
-   */
-  updateParallelogramSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    const skew = element.width * 0.2; // 20% skew
-
-    // Parallelogram points: top-left, top-right, bottom-right, bottom-left
-    const points = `${element.x + skew},${element.y} ${element.x + element.width},${element.y} ${element.x + element.width - skew},${element.y + element.height} ${element.x},${element.y + element.height}`;
-    svg.setAttribute('points', points);
-  },
-  /**
-   * Update star SVG attributes
-   * @param {Object} element - Element object with SVG reference
-   */
-  updateStarSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    const points = this.createStarPoints(element.x, element.y, element.width, element.height);
-    svg.setAttribute('points', points);
-  },
-  /**
-   * Generate star polygon points
-   * @param {number} x - X coordinate
-   * @param {number} y - Y coordinate
-   * @param {number} width - Star width
-   * @param {number} height - Star height
-   * @returns {string} SVG points string
-   */
-  createStarPoints(x, y, width, height) {
-    const cx = x + width / 2;
-    const cy = y + height / 2;
-    const outerRadius = Math.min(Math.abs(width), Math.abs(height)) / 2;
-    const innerRadius = outerRadius * 0.4; // Inner radius is 40% of outer
-    const numPoints = 5; // 5-pointed star
-    const points = [];
-    for (let i = 0; i < numPoints * 2; i++) {
-      const angle = Math.PI / numPoints * i - Math.PI / 2; // Start from top
-      const radius = i % 2 === 0 ? outerRadius : innerRadius;
-      const px = cx + radius * Math.cos(angle);
-      const py = cy + radius * Math.sin(angle);
-      points.push(`${px},${py}`);
-    }
-    return points.join(' ');
-  },
-  /**
-   * Check if a tool is a shape tool
-   * @param {string} toolName - Tool name to check
-   * @returns {boolean} True if tool is a shape tool
-   */
-  isShapeToolType(toolName) {
-    const shapeTools = ['rectangle', 'ellipse', 'diamond', 'parallelogram', 'star'];
-    return shapeTools.includes(toolName);
-  },
-  /**
-   * Get default settings for shape elements
-   * @returns {Object} Default shape settings
-   */
-  getShapeDefaults() {
-    return {
-      strokeWidth: 2,
-      fillColor: '#ffffff',
-      fillStyle: 'solid'
-    };
   }
 };
 ;// ./src/js/modules/tools/LineToolsMixin.js
@@ -2556,216 +2109,6 @@ const LineToolsMixin = {
     this.currentElement = element;
     this.isDrawing = true;
     this.addSVGElementToDOM(element);
-  },
-  /**
-   * Update line endpoint during drawing
-   * Called on pointer move while drawing
-   * @param {Object} point - {x, y} coordinates
-   */
-  handleLineMove(point) {
-    if (!this.currentElement) return;
-
-    // Calculate width and height from start point to current point
-    // Width and height can be negative (allows drawing in any direction)
-    this.currentElement.width = point.x - this.currentElement.x;
-    this.currentElement.height = point.y - this.currentElement.y;
-
-    // Update the SVG element to reflect new endpoint
-    this.updateSVGElement(this.currentElement);
-  },
-  /**
-   * Finalize line creation
-   * Called on pointer up after drawing
-   */
-  handleLineEnd() {
-    if (!this.currentElement) return;
-    const element = this.currentElement;
-
-    // Lines and arrows can have negative dimensions (direction matters)
-    // No normalization needed unlike shapes
-
-    // Add to elements array
-    this.addElement(element);
-
-    // Save state for undo/redo
-    this.saveStateToHistory('createElement');
-
-    // Select the newly created element
-    this.clearSelection();
-    const finishedElement = this.currentElement;
-
-    // Clean up drawing state
-    this.currentElement = null;
-    this.isDrawing = false;
-
-    // Select the finished element
-    this.selectElement(finishedElement);
-
-    // Auto-switch to select tool for better UX
-    this.setTool('select');
-  },
-  /**
-   * Create SVG element for a line or arrow
-   * @param {Object} element - Element object
-   * @returns {SVGLineElement} Created SVG line element
-   */
-  createLineSVGElement(element) {
-    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    svgElement.setAttribute('data-element-id', element.id);
-    svgElement.setAttribute('class', 'sww-element');
-    return svgElement;
-  },
-  /**
-   * Update line/arrow SVG attributes
-   * @param {Object} element - Element object with SVG reference
-   */
-  updateLineSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-
-    // Set line coordinates
-    // x1, y1 is the start point (element.x, element.y)
-    // x2, y2 is the end point (element.x + width, element.y + height)
-    svg.setAttribute('x1', element.x);
-    svg.setAttribute('y1', element.y);
-    svg.setAttribute('x2', element.x + element.width);
-    svg.setAttribute('y2', element.y + element.height);
-
-    // Add arrow marker for arrow type
-    if (element.type === 'arrow') {
-      const markerId = this.createArrowMarker(element.strokeColor);
-      svg.setAttribute('marker-end', `url(#${markerId})`);
-
-      // Support for start marker if configured in toolState
-      if (this.toolState && this.toolState.arrowStartMarker) {
-        svg.setAttribute('marker-start', `url(#${markerId})`);
-      }
-    }
-  },
-  /**
-   * Create arrow marker definition for SVG
-   * Markers are reused across arrows with the same color
-   * @param {string} strokeColor - Hex color for the arrow marker
-   * @returns {string} Marker ID to reference in marker-end attribute
-   */
-  createArrowMarker(strokeColor = '#000000') {
-    // Create unique marker ID for each color
-    const markerId = `arrowhead-${strokeColor.replace('#', '')}`;
-
-    // Reuse existing marker if already created
-    if (document.getElementById(markerId)) {
-      return markerId;
-    }
-
-    // Ensure we have a dedicated defs element for markers
-    if (!this.markerDefs) {
-      this.markerDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-      this.markerDefs.setAttribute('id', 'sww-marker-defs');
-      this.svg.appendChild(this.markerDefs);
-    }
-    const defs = this.markerDefs;
-
-    // Create marker element
-    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-    marker.setAttribute('id', markerId);
-    marker.setAttribute('markerWidth', '10');
-    marker.setAttribute('markerHeight', '7');
-    marker.setAttribute('refX', '9'); // Position at tip of arrow
-    marker.setAttribute('refY', '3.5'); // Center vertically
-    marker.setAttribute('orient', 'auto'); // Auto-rotate to match line angle
-    marker.setAttribute('markerUnits', 'strokeWidth');
-
-    // Create arrow shape (triangle)
-    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
-    polygon.setAttribute('fill', strokeColor);
-    marker.appendChild(polygon);
-    defs.appendChild(marker);
-    return markerId;
-  },
-  /**
-   * Update arrow marker color when stroke color changes
-   * @param {Object} element - Arrow element
-   * @param {string} newColor - New stroke color
-   */
-  updateArrowMarker(element, newColor) {
-    if (element.type !== 'arrow') return;
-    const markerId = this.createArrowMarker(newColor);
-    if (element.svgElement) {
-      element.svgElement.setAttribute('marker-end', `url(#${markerId})`);
-      if (this.toolState && this.toolState.arrowStartMarker) {
-        element.svgElement.setAttribute('marker-start', `url(#${markerId})`);
-      }
-    }
-  },
-  /**
-   * Check if a tool is a line tool
-   * @param {string} toolName - Tool name to check
-   * @returns {boolean} True if tool is a line tool
-   */
-  isLineToolType(toolName) {
-    const lineTools = ['line', 'arrow'];
-    return lineTools.includes(toolName);
-  },
-  /**
-   * Get default settings for line elements
-   * @returns {Object} Default line settings
-   */
-  getLineDefaults() {
-    return {
-      strokeWidth: 2,
-      fillColor: 'transparent',
-      fillStyle: 'solid'
-    };
-  },
-  /**
-   * Calculate line length
-   * @param {Object} element - Line or arrow element
-   * @returns {number} Length in pixels
-   */
-  getLineLength(element) {
-    if (!this.isLineToolType(element.type)) return 0;
-    const dx = element.width;
-    const dy = element.height;
-    return Math.sqrt(dx * dx + dy * dy);
-  },
-  /**
-   * Calculate line angle in degrees
-   * @param {Object} element - Line or arrow element
-   * @returns {number} Angle in degrees (0-360)
-   */
-  getLineAngle(element) {
-    if (!this.isLineToolType(element.type)) return 0;
-    const angleRad = Math.atan2(element.height, element.width);
-    const angleDeg = angleRad * (180 / Math.PI);
-    return angleDeg;
-  },
-  /**
-   * Set line angle while maintaining length
-   * @param {Object} element - Line or arrow element
-   * @param {number} angleDeg - Desired angle in degrees
-   */
-  setLineAngle(element, angleDeg) {
-    if (!this.isLineToolType(element.type)) return;
-    const length = this.getLineLength(element);
-    const angleRad = angleDeg * (Math.PI / 180);
-    element.width = length * Math.cos(angleRad);
-    element.height = length * Math.sin(angleRad);
-    this.updateSVGElement(element);
-  },
-  /**
-   * Set line length while maintaining angle
-   * @param {Object} element - Line or arrow element
-   * @param {number} length - Desired length in pixels
-   */
-  setLineLength(element, length) {
-    if (!this.isLineToolType(element.type)) return;
-    const currentLength = this.getLineLength(element);
-    if (currentLength === 0) return;
-    const scale = length / currentLength;
-    element.width *= scale;
-    element.height *= scale;
-    this.updateSVGElement(element);
   }
 };
 ;// ./src/js/modules/tools/TextTool.js
@@ -2813,87 +2156,6 @@ const TextToolMixin = {
 
     // Switch to select tool (will activate after editing finishes)
     this.setTool('select');
-  },
-  /**
-   * Create SVG text element
-   * @param {Object} element - Element object
-   * @returns {SVGTextElement} Created SVG text element
-   */
-  createTextSVGElement(element) {
-    const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    svgElement.setAttribute('data-element-id', element.id);
-    svgElement.setAttribute('class', 'sww-element');
-    return svgElement;
-  },
-  /**
-   * Update text SVG attributes
-   * @param {Object} element - Element object with SVG reference
-   */
-  updateTextSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    const textContent = element.text || 'Text';
-    const lines = textContent.split('\n');
-
-    // Always position text with padding inside the boundary
-    const padding = 10;
-    const textX = element.x + padding; // Left padding
-    const textY = element.y + element.fontSize + padding; // Top padding + baseline
-
-    svg.setAttribute('x', textX);
-    svg.setAttribute('y', textY);
-    svg.setAttribute('font-size', element.fontSize);
-    svg.setAttribute('font-family', element.fontFamily);
-    svg.setAttribute('fill', element.textColor || element.strokeColor); // Use textColor for fill
-
-    // Show placeholder styling for empty text
-    if (!element.text || element.text.trim() === '') {
-      svg.setAttribute('opacity', '0.4');
-      svg.setAttribute('font-style', 'italic');
-    } else {
-      svg.setAttribute('font-style', 'normal');
-    }
-
-    // Text can have stroke for outline effect
-    if (element.strokeWidth > 0) {
-      svg.setAttribute('stroke', element.strokeColor);
-      svg.setAttribute('stroke-width', element.strokeWidth);
-    } else {
-      svg.removeAttribute('stroke');
-      svg.removeAttribute('stroke-width');
-    }
-
-    // Clear existing content
-    svg.innerHTML = '';
-
-    // Add each line as a tspan with proper alignment
-    lines.forEach((line, index) => {
-      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-
-      // Calculate X position based on alignment
-      let lineX = textX;
-      if (element.textAlign && element.width) {
-        const lineWidth = this.measureText(line, element.fontSize, element.fontFamily).width;
-        const availableWidth = element.width - padding * 2; // Account for padding
-
-        switch (element.textAlign) {
-          case 'center':
-            lineX = element.x + element.width / 2 - lineWidth / 2;
-            break;
-          case 'right':
-            lineX = element.x + element.width - padding - lineWidth;
-            break;
-          case 'left':
-          default:
-            lineX = textX;
-        }
-      }
-      tspan.setAttribute('x', lineX);
-      tspan.setAttribute('dy', index === 0 ? 0 : element.fontSize * 1.3); // Line height
-      // Use non-breaking space (char code 160) for empty lines - regular spaces are collapsed by SVG
-      tspan.textContent = line || String.fromCharCode(160);
-      svg.appendChild(tspan);
-    });
   },
   /**
    * Convert SVG coordinates to screen coordinates
@@ -2997,26 +2259,6 @@ const TextToolMixin = {
             </div>
         `;
     return hintOverlay;
-  },
-  /**
-   * Measure text dimensions
-   * @param {string} text - Text to measure
-   * @param {number} fontSize - Font size in pixels
-   * @param {string} fontFamily - Font family name
-   * @returns {Object} {width, height} in pixels
-   */
-  measureText(text, fontSize, fontFamily) {
-    // Create temporary canvas for measurement
-    if (!this.textMeasurementCanvas) {
-      this.textMeasurementCanvas = document.createElement('canvas');
-    }
-    const ctx = this.textMeasurementCanvas.getContext('2d');
-    ctx.font = `${fontSize}px ${fontFamily}`;
-    const metrics = ctx.measureText(text);
-    return {
-      width: metrics.width,
-      height: fontSize * 1.3 // Approximate line height
-    };
   },
   /**
    * Adjust text to fit within element bounds (word wrapping)
@@ -3144,6 +2386,8 @@ const TextToolMixin = {
       textEditor.style.textAlign = element.textAlign;
     }
     document.body.appendChild(textEditor);
+    // Track for cleanup on destroy()
+    this._activeTextEditor = textEditor;
 
     // Create keyboard shortcuts hint overlay
     const hintOverlay = document.createElement('div');
@@ -3162,6 +2406,8 @@ const TextToolMixin = {
             </div>
         `;
     document.body.appendChild(hintOverlay);
+    // Track for cleanup on destroy()
+    this._activeTextEditorHint = hintOverlay;
 
     // Focus and select all text
     setTimeout(() => {
@@ -3227,8 +2473,15 @@ const TextToolMixin = {
           element.svgElement.style.opacity = '1';
         }
         this.updateSVGElement(element);
+
+        // Record the committed text as its own undo step (only when it changed)
+        if (cleanedText !== originalText) {
+          this.saveStateToHistory('editText');
+        }
         if (textEditor.parentNode) textEditor.remove();
         if (hintOverlay.parentNode) hintOverlay.remove();
+        this._activeTextEditor = null;
+        this._activeTextEditorHint = null;
         if (handleClickOutside) {
           document.removeEventListener('click', handleClickOutside);
         }
@@ -3251,6 +2504,8 @@ const TextToolMixin = {
         }
         if (textEditor.parentNode) textEditor.remove();
         if (hintOverlay.parentNode) hintOverlay.remove();
+        this._activeTextEditor = null;
+        this._activeTextEditorHint = null;
         if (handleClickOutside) {
           document.removeEventListener('click', handleClickOutside);
         }
@@ -3321,34 +2576,11 @@ const TextToolMixin = {
 ;// ./src/js/modules/tools/DrawTool.js
 /**
  * DrawTool.js - Freehand path drawing tool
- * 
- * Provides freehand drawing capabilities with path collection and rendering.
- * Handles pointer tracking, path point collection, and boundary calculation.
- * 
- * Responsibilities:
- * - Freehand path drawing with pointer tracking
- * - Point collection during drawing
- * - Path boundary calculation
- * - Relative coordinate conversion
- * - Path rendering and updates
- * 
- * Key Features:
- * - Smooth pointer tracking during drawing
- * - Automatic bounding box calculation
- * - Relative point storage for transformations
- * - Grid snapping support
- * - Real-time path updates
- * 
- * Dependencies:
- * - createElement() - Element creation
- * - snapToGridPoint() - Grid snapping
- * - addSVGElementToDOM() - SVG element attachment
- * - updateSVGElement() - SVG rendering
- * - addElement() - Element registration
- * - saveStateToHistory() - Undo/redo support
- * - selectElement() - Element selection
- * - clearSelection() - Selection clearing
- * 
+ *
+ * Provides the entry point for freehand drawing. Pointer tracking is routed
+ * through core/eventHandlers.js (updateCurrentElement / finishCurrentElement),
+ * and path rendering is handled by rendering/SVGRenderer.js.
+ *
  * @module DrawTool
  * @since Phase 3 - Tool System Extraction
  */
@@ -3360,7 +2592,7 @@ const DrawToolMixin = {
   /**
    * Handle freehand draw tool start (mousedown/pointerdown)
    * Creates a new path element and initializes point collection
-   * 
+   *
    * @param {Object} point - Starting point {x, y}
    */
   handleDrawStart(point) {
@@ -3370,284 +2602,15 @@ const DrawToolMixin = {
     this.currentElement = element;
     this.isDrawing = true;
     this.addSVGElementToDOM(element);
-  },
-  /**
-   * Handle freehand draw tool move (mousemove/pointermove)
-   * Adds points to the path during drawing
-   * This is called during updateCurrentElement() for the 'path' case
-   * 
-   * @param {Object} point - Current pointer position {x, y}
-   */
-  handleDrawMove(point) {
-    if (!this.currentElement || this.currentElement.type !== 'path') return;
-
-    // Add point to path
-    this.currentElement.points.push(point);
-
-    // Update the SVG rendering
-    this.updateSVGElement(this.currentElement);
-  },
-  /**
-   * Handle freehand draw tool end (mouseup/pointerup)
-   * Finalizes the path by calculating bounds and converting to relative coordinates
-   * This is called by finishCurrentElement() which handles path elements specially
-   * 
-   * The finalization process:
-   * 1. Calculate bounding box from all collected points
-   * 2. Update element x, y, width, height to match bounds
-   * 3. Convert all points to relative coordinates (relative to element origin)
-   * 4. Add element to scene and save to history
-   * 5. Select the newly created path
-   */
-  handleDrawEnd() {
-    // Path finalization is handled by finishCurrentElement()
-    // which has special logic for path elements
-    // This method exists for API consistency with other tools
-  },
-  /**
-   * Create SVG path element for freehand drawing
-   * 
-   * @param {Object} element - Element data with points array
-   * @returns {SVGPathElement} Created path element
-   */
-  createDrawSVGElement(element) {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    svg.setAttribute('data-element-id', element.id);
-    svg.setAttribute('class', 'sww-element');
-    element.svgElement = svg;
-    this.updateDrawSVG(element);
-    return svg;
-  },
-  /**
-   * Update SVG path element rendering
-   * Handles both absolute coordinates (during drawing) and relative coordinates (after finalization)
-   * 
-   * @param {Object} element - Element data with points array
-   */
-  updateDrawSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    if (element.points && element.points.length > 0) {
-      let pathData;
-
-      // During drawing (currentElement), points are in absolute coordinates
-      // After finalization, points are relative to element.x, element.y
-      if (this.currentElement && this.currentElement.id === element.id) {
-        // Drawing in progress - use absolute coordinates
-        pathData = this.pointsToPath(element.points);
-      } else {
-        // Finalized path - convert relative points to absolute for rendering
-        const absolutePoints = element.points.map(point => ({
-          x: point.x + element.x,
-          y: point.y + element.y
-        }));
-        pathData = this.pointsToPath(absolutePoints);
-      }
-      svg.setAttribute('d', pathData);
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('stroke', element.strokeColor);
-      svg.setAttribute('stroke-width', element.strokeWidth);
-      svg.setAttribute('stroke-linecap', 'round');
-      svg.setAttribute('stroke-linejoin', 'round');
-    }
-  },
-  /**
-   * Convert array of points to SVG path data string
-   * Uses simple line-to commands for now (future: bezier smoothing)
-   * 
-   * @param {Array<Object>} points - Array of {x, y} points
-   * @returns {string} SVG path data (e.g., "M 10 20 L 30 40 L 50 60")
-   */
-  pointsToPath(points) {
-    if (!points || points.length === 0) return '';
-
-    // Start with MoveTo command for first point
-    let path = `M ${points[0].x} ${points[0].y}`;
-
-    // Add LineTo commands for remaining points
-    for (let i = 1; i < points.length; i++) {
-      path += ` L ${points[i].x} ${points[i].y}`;
-    }
-    return path;
-  },
-  /**
-   * Calculate bounding box from array of points
-   * Used during path finalization to determine element bounds
-   * 
-   * @param {Array<Object>} points - Array of {x, y} points
-   * @returns {Object} Bounding box {minX, minY, maxX, maxY, width, height}
-   */
-  calculatePathBounds(points) {
-    if (!points || points.length === 0) {
-      return {
-        minX: 0,
-        minY: 0,
-        maxX: 0,
-        maxY: 0,
-        width: 0,
-        height: 0
-      };
-    }
-    let minX = points[0].x;
-    let minY = points[0].y;
-    let maxX = points[0].x;
-    let maxY = points[0].y;
-
-    // Find min and max coordinates
-    for (let i = 1; i < points.length; i++) {
-      const point = points[i];
-      minX = Math.min(minX, point.x);
-      minY = Math.min(minY, point.y);
-      maxX = Math.max(maxX, point.x);
-      maxY = Math.max(maxY, point.y);
-    }
-    return {
-      minX,
-      minY,
-      maxX,
-      maxY,
-      width: maxX - minX,
-      height: maxY - minY
-    };
-  },
-  /**
-   * Convert path points to relative coordinates
-   * Used during finalization to make points relative to element origin
-   * 
-   * @param {Array<Object>} points - Array of absolute {x, y} points
-   * @param {number} originX - Origin x coordinate (element.x)
-   * @param {number} originY - Origin y coordinate (element.y)
-   * @returns {Array<Object>} Array of relative {x, y} points
-   */
-  convertPointsToRelative(points, originX, originY) {
-    return points.map(point => ({
-      x: point.x - originX,
-      y: point.y - originY
-    }));
-  },
-  /**
-   * Finalize path element after drawing completes
-   * Calculates bounds and converts points to relative coordinates
-   * This is called from finishCurrentElement() for path elements
-   * 
-   * @param {Object} element - Path element with absolute points
-   */
-  finalizePathElement(element) {
-    if (!element.points || element.points.length === 0) return;
-
-    // Calculate bounding box from all points
-    const bounds = this.calculatePathBounds(element.points);
-
-    // Update element properties to reflect actual bounds
-    element.x = bounds.minX;
-    element.y = bounds.minY;
-    element.width = bounds.width;
-    element.height = bounds.height;
-
-    // Convert all points to relative coordinates
-    element.points = this.convertPointsToRelative(element.points, bounds.minX, bounds.minY);
   }
 };
-;// ./src/js/modules/utils/security.js
-const ALLOWED_TAGS = new Set(["a", "b", "blockquote", "br", "code", "del", "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "i", "li", "ol", "p", "pre", "s", "span", "strong", "table", "tbody", "td", "th", "thead", "tr", "u", "ul"]);
-const GLOBAL_ATTRIBUTES = new Set(["class"]);
-const TAG_ATTRIBUTES = {
-  a: new Set(["href", "title"]),
-  code: new Set(["class"]),
-  td: new Set(["colspan", "rowspan"]),
-  th: new Set(["colspan", "rowspan"])
-};
-function sanitizeUrl(value, {
-  allowDataImages = false,
-  allowedProtocols = ["http:", "https:", "mailto:", "tel:"]
-} = {}) {
-  if (typeof value !== "string" || !value.trim()) return "";
-  const candidate = value.trim();
-  if (candidate.startsWith("#") || candidate.startsWith("/")) return candidate;
-  if (allowDataImages && /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(candidate)) {
-    return candidate;
-  }
-  try {
-    const url = new URL(candidate, window.location.href);
-    return allowedProtocols.includes(url.protocol) ? candidate : "";
-  } catch {
-    return "";
-  }
-}
-function escapeHtml(value) {
-  return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-}
-function sanitizeHtml(html) {
-  const template = document.createElement("template");
-  template.innerHTML = html;
-  const elements = Array.from(template.content.querySelectorAll("*"));
-  for (const element of elements) {
-    const tagName = element.tagName.toLowerCase();
-    if (!ALLOWED_TAGS.has(tagName)) {
-      element.replaceWith(...element.childNodes);
-      continue;
-    }
-    for (const attribute of Array.from(element.attributes)) {
-      const name = attribute.name.toLowerCase();
-      const allowed = GLOBAL_ATTRIBUTES.has(name) || TAG_ATTRIBUTES[tagName]?.has(name);
-      if (!allowed || name.startsWith("on") || name === "style") {
-        element.removeAttribute(attribute.name);
-      }
-    }
-    if (tagName === "a") {
-      const href = sanitizeUrl(element.getAttribute("href") || "");
-      if (href) {
-        element.setAttribute("href", href);
-        element.setAttribute("rel", "noopener noreferrer");
-        element.setAttribute("target", "_blank");
-      } else {
-        element.removeAttribute("href");
-      }
-    }
-  }
-  return template.innerHTML;
-}
 ;// ./src/js/modules/tools/EmbedToolsMixin.js
-
-
 /**
  * EmbedToolsMixin.js - Embedded content tools (website, image, markdown)
  *
- * Provides tools for embedding external content using SVG foreignObject.
- * Handles website iframes, images, and markdown rendering with editing capabilities.
- *
- * Responsibilities:
- * - Website element creation with iframe embedding
- * - Image element creation with URL loading
- * - Markdown element creation with live rendering
- * - SVG foreignObject management for HTML content
- * - Content editing dialogs and inline editors
- * - Markdown parsing with Marked.js integration
- *
- * Key Features:
- * - Click-to-create centered on cursor
- * - Immediate configuration dialogs
- * - Website address bar UI with browser controls
- * - Image loading with cover fit
- * - Markdown live preview and editing
- * - Stroke, fill, and opacity support
- * - Gradient background support
- * - Double-click to edit functionality
- *
- * Dependencies:
- * - createElement() - Element creation
- * - snapToGridPoint() - Grid snapping
- * - addSVGElementToDOM() - SVG element attachment
- * - updateSVGElement() - SVG rendering
- * - saveStateToHistory() - Undo/redo support
- * - selectElement() - Element selection
- * - clearSelection() - Selection clearing
- * - setTool() - Tool switching
- * - editWebsiteElement() - Website URL editor (legacy)
- * - editImageElement() - Image URL editor (legacy)
- * - createCSSGradient() - Gradient CSS generator (legacy)
- * - parseMarkdown() - Markdown parser (legacy)
- * - marked - Marked.js library for markdown rendering
+ * Provides tool entry points for embedding external content. Element rendering
+ * is handled by rendering/SVGRenderer.js (foreignObject containers, markdown
+ * parsing, container styling) and editing dialogs by dialogs/Dialogs.js.
  *
  * @module EmbedToolsMixin
  * @since Phase 3 - Tool System Extraction
@@ -3757,300 +2720,6 @@ const EmbedToolsMixin = {
 
     // Switch back to select tool
     this.setTool("select");
-  },
-  /**
-   * Create SVG foreignObject element for website embedding
-   *
-   * @param {Object} element - Website element data
-   * @returns {SVGForeignObjectElement} Created foreignObject element
-   */
-  createWebsiteSVGElement(element) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
-    svg.setAttribute("data-element-id", element.id);
-    svg.setAttribute("class", "sww-element");
-    element.svgElement = svg;
-    this.updateWebsiteSVG(element);
-    return svg;
-  },
-  /**
-   * Update website SVG element rendering
-   * Renders iframe with address bar or placeholder
-   *
-   * @param {Object} element - Website element data
-   */
-  updateWebsiteSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    svg.setAttribute("x", element.x);
-    svg.setAttribute("y", element.y);
-    svg.setAttribute("width", Math.abs(element.width));
-    svg.setAttribute("height", Math.abs(element.height));
-
-    // Clear existing content
-    svg.innerHTML = "";
-    if (element.url && element.url.trim()) {
-      // Create website container with address bar
-      const container = document.createElement("div");
-      container.className = "sww-website-element";
-      container.style.width = "100%";
-      container.style.height = "100%";
-      this.applyStrokeAndFillToContainer(container, element);
-
-      // Create address bar
-      const addressBar = document.createElement("div");
-      addressBar.className = "sww-website-address-bar";
-
-      // URL display
-      const urlDisplay = document.createElement("div");
-      urlDisplay.className = "sww-website-url";
-      urlDisplay.textContent = element.url;
-      urlDisplay.title = "Double-click to edit URL";
-      addressBar.appendChild(urlDisplay);
-
-      // Create content area
-      const content = document.createElement("div");
-      content.className = "sww-website-content";
-      const iframe = document.createElement("iframe");
-      iframe.src = sanitizeUrl(element.url, {
-        allowedProtocols: ["http:", "https:"]
-      });
-      iframe.style.width = "100%";
-      iframe.style.height = "100%";
-      iframe.style.border = "none";
-      iframe.setAttribute("sandbox", this.options.iframeSandbox || "allow-forms allow-popups allow-scripts");
-      iframe.setAttribute("referrerpolicy", "no-referrer");
-      iframe.setAttribute("allow", this.options.iframeAllow || "");
-      content.appendChild(iframe);
-      container.appendChild(addressBar);
-      container.appendChild(content);
-      svg.appendChild(container);
-    } else {
-      // Show placeholder
-      const div = document.createElement("div");
-      div.className = "sww-website-placeholder";
-      div.style.width = "100%";
-      div.style.height = "100%";
-      this.applyStrokeAndFillToContainer(div, element);
-      div.innerHTML = '<i class="ss ss-globe-alt"></i><br>Double-click to set URL';
-      svg.appendChild(div);
-    }
-  },
-  /**
-   * Create SVG foreignObject element for image embedding
-   *
-   * @param {Object} element - Image element data
-   * @returns {SVGForeignObjectElement} Created foreignObject element
-   */
-  createImageSVGElement(element) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
-    svg.setAttribute("data-element-id", element.id);
-    svg.setAttribute("class", "sww-element");
-    element.svgElement = svg;
-    this.updateImageSVG(element);
-    return svg;
-  },
-  /**
-   * Update image SVG element rendering
-   * Renders image with cover fit or placeholder
-   *
-   * @param {Object} element - Image element data
-   */
-  updateImageSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    svg.setAttribute("x", element.x);
-    svg.setAttribute("y", element.y);
-    svg.setAttribute("width", Math.abs(element.width));
-    svg.setAttribute("height", Math.abs(element.height));
-
-    // Clear existing content
-    svg.innerHTML = "";
-    if (element.imageUrl && element.imageUrl.trim()) {
-      // Create image container
-      const div = document.createElement("div");
-      div.className = "sww-image-element";
-      div.style.width = "100%";
-      div.style.height = "100%";
-      this.applyStrokeAndFillToContainer(div, element);
-      const img = document.createElement("img");
-      img.src = sanitizeUrl(element.imageUrl, {
-        allowDataImages: true
-      });
-      img.style.width = "100%";
-      img.style.height = "100%";
-      img.style.objectFit = "cover";
-      div.appendChild(img);
-      svg.appendChild(div);
-    } else {
-      // Show placeholder
-      const div = document.createElement("div");
-      div.className = "sww-image-placeholder";
-      div.style.width = "100%";
-      div.style.height = "100%";
-      this.applyStrokeAndFillToContainer(div, element);
-      div.innerHTML = '<i class="ss ss-photo"></i><br>Double-click to set image';
-      svg.appendChild(div);
-    }
-  },
-  /**
-   * Create SVG foreignObject element for markdown rendering
-   *
-   * @param {Object} element - Markdown element data
-   * @returns {SVGForeignObjectElement} Created foreignObject element
-   */
-  createMarkdownSVGElement(element) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
-    svg.setAttribute("data-element-id", element.id);
-    svg.setAttribute("class", "sww-element");
-    element.svgElement = svg;
-    this.updateMarkdownSVG(element);
-    return svg;
-  },
-  /**
-   * Update markdown SVG element rendering
-   * Renders parsed markdown with live preview and editing
-   *
-   * @param {Object} element - Markdown element data
-   */
-  updateMarkdownSVG(element) {
-    const svg = element.svgElement;
-    if (!svg) return;
-    svg.setAttribute("x", element.x);
-    svg.setAttribute("y", element.y);
-    svg.setAttribute("width", Math.abs(element.width));
-    svg.setAttribute("height", Math.abs(element.height));
-
-    // Clear existing content
-    svg.innerHTML = "";
-
-    // Create markdown container
-    const div = document.createElement("div");
-    div.className = "sww-markdown-element-container sww-markdown-readonly";
-    div.style.width = "100%";
-    div.style.height = "100%";
-    div.style.position = "relative";
-    div.style.overflow = "auto";
-    this.applyStrokeAndFillToContainer(div, element);
-
-    // Create rendered markdown view
-    const renderedView = document.createElement("div");
-    renderedView.className = "sww-markdown-rendered";
-    renderedView.style.width = "100%";
-    renderedView.style.height = "100%";
-    renderedView.style.padding = "8px";
-    renderedView.style.color = element.textColor || element.strokeColor;
-    renderedView.style.fontSize = (element.fontSize || 12) + "px";
-    renderedView.style.fontFamily = element.fontFamily || "Arial, sans-serif";
-    renderedView.style.lineHeight = "1.4";
-    renderedView.style.boxSizing = "border-box";
-
-    // Parse and render markdown
-    const markdownText = element.markdown || "# Markdown Document\n\nDouble-click to edit...";
-    renderedView.innerHTML = this.parseMarkdown(markdownText);
-
-    // Create markdown editor (hidden by default)
-    const textarea = document.createElement("textarea");
-    textarea.className = "sww-markdown-editor";
-    textarea.value = markdownText;
-    textarea.placeholder = "Enter markdown here...";
-    textarea.style.width = "100%";
-    textarea.style.height = "100%";
-    textarea.style.padding = "8px";
-    textarea.style.backgroundColor = "transparent";
-    textarea.style.color = element.textColor || element.strokeColor;
-    textarea.style.border = "none";
-    textarea.style.fontSize = (element.fontSize || 12) + "px";
-    textarea.style.fontFamily = "Monaco, Menlo, Ubuntu Mono, monospace";
-    textarea.style.resize = "none";
-    textarea.style.outline = "none";
-    textarea.style.boxSizing = "border-box";
-
-    // Handle textarea events
-    textarea.addEventListener("input", e => {
-      element.markdown = e.target.value;
-      // Update rendered view in real-time
-      renderedView.innerHTML = this.parseMarkdown(e.target.value);
-    });
-    textarea.addEventListener("blur", () => {
-      // Switch back to rendered view using CSS classes
-      div.classList.remove("sww-markdown-editing");
-      div.classList.add("sww-markdown-readonly");
-      textarea.readOnly = true;
-      textarea.style.cursor = "default";
-
-      // Save state for undo/redo
-      this.saveStateToHistory("editMarkdown");
-    });
-    div.appendChild(renderedView);
-    div.appendChild(textarea);
-    svg.appendChild(div);
-  },
-  /**
-   * Apply stroke and fill styling to HTML container
-   * Used by website, image, and markdown elements
-   *
-   * @param {HTMLElement} container - Container div element
-   * @param {Object} element - Element data with styling properties
-   */
-  applyStrokeAndFillToContainer(container, element) {
-    // Apply stroke properties to the container
-    if (element.strokeWidth > 0) {
-      container.style.border = `${element.strokeWidth}px solid ${element.strokeColor}`;
-    } else {
-      container.style.border = "none";
-    }
-
-    // Apply fill style as background
-    if (element.fillStyle === "solid" && element.fillColor !== "transparent") {
-      container.style.backgroundColor = element.fillColor;
-      container.style.backgroundImage = "none";
-    } else if (element.fillStyle === "gradient") {
-      const cssGradient = this.createCSSGradient(element);
-      container.style.backgroundImage = cssGradient;
-      container.style.backgroundColor = "transparent";
-    } else if (element.fillStyle === "transparent") {
-      container.style.backgroundColor = "transparent";
-      container.style.backgroundImage = "none";
-    } else {
-      container.style.backgroundColor = "white";
-      container.style.backgroundImage = "none";
-    }
-
-    // Apply opacity
-    container.style.opacity = element.opacity;
-  },
-  /**
-   * Parse markdown text to HTML using Marked.js
-   * Falls back to simple line break conversion if Marked.js unavailable
-   *
-   * @param {string} text - Markdown text to parse
-   * @returns {string} Parsed HTML string
-   */
-  parseMarkdownInternal(text) {
-    if (!text) return "";
-
-    // Use marked.js library for parsing markdown
-    if (typeof marked !== "undefined") {
-      try {
-        // Configure marked options for security and functionality
-        marked.setOptions({
-          breaks: true,
-          // Support single line breaks
-          gfm: true,
-          // GitHub flavored markdown
-          sanitize: false,
-          // We'll trust the input since it's user content
-          smartLists: true,
-          // Better list handling
-          smartypants: false // Don't convert quotes
-        });
-        return marked.parse(text);
-      } catch (error) {
-        return text.replace(/\n/g, "<br>");
-      }
-    } else {
-      return text.replace(/\n/g, "<br>");
-    }
   }
 };
 ;// ./src/js/modules/tools/TableTool.js
@@ -4339,17 +3008,6 @@ const SelectionToolMixin = {
  */
 const SelectionManagerMixin = {
   /**
-   * Initialize selection system
-   * Called during instance initialization
-   */
-  initializeSelectionSystem() {
-    // Selection state is already initialized in SWWInstance constructor
-    // this.selectedElements = new Set();
-
-    // No additional initialization needed at this time
-    // Future: Custom event system for selection changes
-  },
-  /**
    * Select an element and add it to the selection
    * Handles group selection automatically
    * 
@@ -4598,48 +3256,13 @@ const SelectionManagerMixin = {
     this.syncPropertiesPanel();
     this.saveStateToHistory('moveElements');
   },
-  /**
-   * Get element by its unique ID
-   * 
-   * @param {string} elementId - Element ID to find
-   * @returns {Object|null} Element or null if not found
+  /*
+   * getElementById, selectElementById, deleteElementById and
+   * commitPropertiesPanelChanges live in modules/utilities/Utilities.js and
+   * modules/ui/PropertiesPanel.js respectively, which are applied after this
+   * mixin in sww.js and therefore win at runtime.
    */
-  getElementById(elementId) {
-    return this.elements.find(element => element.id === elementId) || null;
-  },
-  /**
-   * Select element by ID
-   * Clears existing selection first
-   * 
-   * @param {string} elementId - Element ID to select
-   * @returns {boolean} True if element found and selected
-   */
-  selectElementById(elementId) {
-    const element = this.getElementById(elementId);
-    if (element) {
-      this.clearSelection();
-      this.selectElement(element);
-      return true;
-    }
-    return false;
-  },
-  /**
-   * Delete element by ID
-   * Selects element first, then deletes it
-   * 
-   * @param {string} elementId - Element ID to delete
-   * @returns {boolean} True if element found and deleted
-   */
-  deleteElementById(elementId) {
-    const element = this.getElementById(elementId);
-    if (element) {
-      this.clearSelection();
-      this.selectElement(element);
-      this.deleteSelectedElements();
-      return true;
-    }
-    return false;
-  },
+
   /**
    * Check if an element is currently selected
    * 
@@ -4713,33 +3336,11 @@ const SelectionManagerMixin = {
   },
   /**
    * Check if selection contains any grouped elements
-   * 
+   *
    * @returns {boolean} True if any selected element has a groupId
    */
   hasGroupedElementsInSelection() {
     return Array.from(this.selectedElements).some(element => element.groupId);
-  },
-  /**
-   * Commit any pending changes in properties panel
-   * Forces blur on active input to trigger change events
-   * Called before clearing selection
-   */
-  commitPropertiesPanelChanges() {
-    if (!this.propertiesPanel) return;
-
-    // Force any focused input to trigger its change event
-    const activeElement = document.activeElement;
-    if (activeElement && activeElement.closest('.sww-properties-panel')) {
-      // If an input in the properties panel is active, blur it to trigger change event
-      activeElement.blur();
-      // Give a brief moment for the change event to process
-      setTimeout(() => {
-        // Re-focus the canvas or appropriate element if needed
-        if (this.svg) {
-          this.svg.focus();
-        }
-      }, 10);
-    }
   }
 };
 ;// ./src/js/modules/selection/SelectionBox.js
@@ -4780,18 +3381,6 @@ const SelectionManagerMixin = {
  * SelectionBox mixin - adds drag-to-select box capabilities
  */
 const SelectionBoxMixin = {
-  /**
-   * Initialize selection box system
-   * Called during instance initialization
-   */
-  initializeSelectionBox() {
-    // Selection box state is already initialized in SWWInstance constructor
-    // this.isCreatingSelectionBox = false;
-    // this.currentSelectionBox = null;
-    // this.selectionBoxStart = null;
-
-    // No additional initialization needed at this time
-  },
   /**
    * Start creating a selection box
    * Called on mousedown/pointerdown on empty canvas
@@ -5017,16 +3606,6 @@ const SelectionBoxMixin = {
  * SelectionHandles mixin - adds resize/rotate handle rendering capabilities
  */
 const SelectionHandlesMixin = {
-  /**
-   * Initialize selection handles system
-   * Called during instance initialization
-   */
-  initializeSelectionHandles() {
-    // State is initialized in constructor
-    // this.selectionUpdateScheduled = false;
-
-    // No additional initialization needed
-  },
   /**
    * Update selection handles for current selection
    * Throttled with requestAnimationFrame for performance
@@ -5495,8 +4074,8 @@ const ElementManipulationMixin = {
    */
   updateResize(point) {
     if (!this.isResizing || !this.dragStartPoint) return;
-    let dx = point.x - this.dragStartPoint.x;
-    let dy = point.y - this.dragStartPoint.y;
+    const baseDx = point.x - this.dragStartPoint.x;
+    const baseDy = point.y - this.dragStartPoint.y;
     this.selectedElements.forEach(element => {
       const startX = element.resizeStartX;
       const startY = element.resizeStartY;
@@ -5504,21 +4083,21 @@ const ElementManipulationMixin = {
       const startHeight = element.resizeStartHeight;
 
       // Transform dx/dy to account for element rotation
-      let localDx = dx;
-      let localDy = dy;
+      let localDx = baseDx;
+      let localDy = baseDy;
       if (element.rotation && element.rotation !== 0) {
         const angle = -element.rotation * Math.PI / 180; // Negative for inverse transformation
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
 
         // Rotate the delta vector to match element's local coordinate system
-        localDx = dx * cos - dy * sin;
-        localDy = dx * sin + dy * cos;
+        localDx = baseDx * cos - baseDy * sin;
+        localDy = baseDx * sin + baseDy * cos;
       }
 
-      // Use local deltas for resize calculations
-      dx = localDx;
-      dy = localDy;
+      // Use per-element local deltas (shadow the outer base deltas)
+      const dx = localDx;
+      const dy = localDy;
 
       // Store the original values in case we need to constrain
       let newX = element.x;
@@ -8170,96 +6749,10 @@ const ControlPanelMixin = {
   },
   /**
    * Show notification toast message
-   * @param {string} message - The message to display
-   * @param {string} type - Notification type: 'info', 'success', 'warning', 'error', 'copy', 'paste'
-   * @param {number} duration - How long to show notification in milliseconds
+   * Implemented in ui/Notifications.js, which is applied after this mixin
+   * in sww.js and therefore wins at runtime.
    */
-  showNotification(message, type = 'info', duration = 2000) {
-    // Remove any existing notifications
-    const existingNotification = this.container.querySelector('.sww-notification');
-    if (existingNotification) {
-      existingNotification.remove();
-    }
 
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `sww-notification sww-notification-${type}`;
-    notification.textContent = message;
-
-    // Add notification styles
-    Object.assign(notification.style, {
-      position: 'absolute',
-      top: '20px',
-      right: '20px',
-      padding: '12px 16px',
-      borderRadius: '6px',
-      fontSize: '14px',
-      fontWeight: '500',
-      zIndex: '10000',
-      pointerEvents: 'none',
-      transform: 'translateY(-10px)',
-      opacity: '0',
-      transition: 'all 0.3s ease',
-      maxWidth: '300px',
-      wordWrap: 'break-word'
-    });
-
-    // Set colors based on type
-    switch (type) {
-      case 'success':
-        notification.style.backgroundColor = '#e8f5e9';
-        notification.style.color = '#2e7d32';
-        notification.style.border = '1px solid #c8e6c9';
-        break;
-      case 'error':
-        notification.style.backgroundColor = '#ffebee';
-        notification.style.color = '#c62828';
-        notification.style.border = '1px solid #ffcdd2';
-        break;
-      case 'copy':
-        notification.style.backgroundColor = '#e3f2fd';
-        notification.style.color = '#1976d2';
-        notification.style.border = '1px solid #bbdefb';
-        break;
-      case 'paste':
-        notification.style.backgroundColor = '#e8f5e9';
-        notification.style.color = '#2e7d32';
-        notification.style.border = '1px solid #c8e6c9';
-        break;
-      case 'warning':
-        notification.style.backgroundColor = '#fff3e0';
-        notification.style.color = '#f57c00';
-        notification.style.border = '1px solid #ffcc80';
-        break;
-      default:
-        // info
-        notification.style.backgroundColor = '#f5f5f5';
-        notification.style.color = '#333';
-        notification.style.border = '1px solid #ddd';
-    }
-
-    // Add to container
-    this.container.appendChild(notification);
-
-    // Animate in
-    requestAnimationFrame(() => {
-      notification.style.transform = 'translateY(0)';
-      notification.style.opacity = '1';
-    });
-
-    // Auto remove after duration
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.style.transform = 'translateY(-10px)';
-        notification.style.opacity = '0';
-        setTimeout(() => {
-          if (notification.parentNode) {
-            notification.remove();
-          }
-        }, 300);
-      }
-    }, duration);
-  },
   /**
    * Clear all elements and reset canvas
    */
@@ -8282,61 +6775,6 @@ const ControlPanelMixin = {
 
     // Update control panel if it exists
     this.updateControlPanelLayers();
-  },
-  /**
-   * Cleanup all resources and event listeners
-   * Should be called when destroying the instance
-   */
-  cleanup() {
-    // Clean up all elements
-    this.elements.forEach(element => {
-      if (this.cleanupElement) {
-        this.cleanupElement(element);
-      }
-    });
-
-    // Clear collections
-    this.elements = [];
-    this.selectedElements.clear();
-    if (this.visibleElements) {
-      this.visibleElements.clear();
-    }
-    this.saveStateToHistory('clearAll');
-    if (this.spatialIndex) {
-      this.spatialIndex.clear();
-    }
-
-    // Clear DOM
-    if (this.elementsGroup) {
-      this.elementsGroup.innerHTML = '';
-    }
-    if (this.selectionGroup) {
-      this.selectionGroup.innerHTML = '';
-    }
-
-    // Clear history
-    this.historyStack = [];
-    this.historyIndex = -1;
-
-    // Remove event listeners
-    if (this.previewModeKeyHandler) {
-      document.removeEventListener('keydown', this.previewModeKeyHandler);
-      this.previewModeKeyHandler = null;
-    }
-    if (this.fullscreenChangeHandler) {
-      document.removeEventListener('keydown', this.fullscreenChangeHandler);
-      this.fullscreenChangeHandler = null;
-    }
-
-    // Exit preview mode if active
-    if (this.isPreviewMode) {
-      this.exitPreviewMode();
-    }
-
-    // Clean up fullscreen classes
-    if (this.isBrowserFrameFullscreen) {
-      this.disableBrowserFrameFullscreen();
-    }
   }
 };
 ;// ./src/js/modules/history/History.js
@@ -8368,8 +6806,12 @@ const HistoryMixin = {
       actionType: actionType,
       timestamp: Date.now()
     };
+
+    // Deduplicate consecutive identical states with a zero-allocation
+    // structural comparison (previously this serialized the whole scene
+    // to JSON twice per save — including on every keystroke/drag tick)
     const previousState = this.historyStack[this.historyIndex];
-    if (previousState && JSON.stringify(previousState.elements) === JSON.stringify(currentState.elements)) {
+    if (previousState && HistoryMixin._elementsEqual(previousState.elements, currentState.elements)) {
       return;
     }
 
@@ -8387,6 +6829,35 @@ const HistoryMixin = {
     }
     this.updateHistoryButtons();
     this.emitSceneChanged(actionType, Array.from(this.selectedElements, element => element.id));
+  },
+  /**
+   * Deep structural equality for plain scene-element data (no DOM/runtime keys).
+   * Zero-allocation alternative to JSON.stringify comparison.
+   * @private
+   * @param {*} a
+   * @param {*} b
+   * @returns {boolean}
+   */
+  _elementsEqual(a, b) {
+    if (a === b) return true;
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (!HistoryMixin._elementsEqual(a[i], b[i])) return false;
+      }
+      return true;
+    }
+    if (a === null || b === null || typeof a !== "object" || typeof b !== "object") {
+      return a === b;
+    }
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    if (aKeys.length !== bKeys.length) return false;
+    for (const key of aKeys) {
+      if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+      if (!HistoryMixin._elementsEqual(a[key], b[key])) return false;
+    }
+    return true;
   },
   /**
    * Undo last action
@@ -8626,35 +7097,11 @@ const ViewportMixin = {
     this.viewBox.y += dy;
     this.updateViewBox();
   },
-  /**
-   * Start panning operation
-   * @param {Object} point - Starting point
+  /*
+   * Panning (startPan/updatePan/finishPan) is implemented inline in
+   * core/eventHandlers.js (isPanning state + screen-space viewBox math).
    */
-  startPan(point) {
-    this.isPanning = true;
-    this.panStartPoint = point;
-    this.setCursor('grabbing');
-  },
-  /**
-   * Update panning during drag
-   * @param {Object} currentPoint - Current pointer position
-   */
-  updatePan(currentPoint) {
-    if (!this.isPanning || !this.lastPointerPosition) return;
-    const dx = currentPoint.x - this.lastPointerPosition.x;
-    const dy = currentPoint.y - this.lastPointerPosition.y;
-    this.viewBox.x -= dx;
-    this.viewBox.y -= dy;
-    this.updateViewBox();
-  },
-  /**
-   * Finish panning operation
-   */
-  finishPan() {
-    this.isPanning = false;
-    this.panStartPoint = null;
-    this.setCursor('default');
-  },
+
   /**
    * Update SVG viewBox attribute
    */
@@ -8886,8 +7333,10 @@ const ClipboardMixin = {
     // Create new elements from clipboard
     const pastedElements = [];
     this.clipboard.forEach(elementData => {
+      // Deep-clone so nested data (tableData, points, gradientStops) is not
+      // shared by reference with the clipboard copy
       const newElement = {
-        ...elementData,
+        ...this.serializeElement(elementData),
         id: this.generateId(),
         x: elementData.x + offsetX,
         y: elementData.y + offsetY
@@ -8897,11 +7346,11 @@ const ClipboardMixin = {
       const svgElement = this.createSVGElement(newElement);
       newElement.svgElement = svgElement;
       this.addElement(newElement);
-
-      // Select the new element
-      this.selectElement(newElement);
       pastedElements.push(newElement);
     });
+
+    // Select all pasted elements
+    this.selectMultiple(pastedElements);
 
     // Update clipboard positions for next paste (add small offset)
     this.clipboard.forEach(element => {
@@ -8946,11 +7395,11 @@ const ClipboardMixin = {
       const svgElement = this.createSVGElement(duplicate);
       duplicate.svgElement = svgElement;
       this.addElement(duplicate);
-
-      // Select the duplicate
-      this.selectElement(duplicate);
       duplicates.push(duplicate);
     });
+
+    // Select all duplicated elements
+    this.selectMultiple(duplicates);
     this.saveStateToHistory('duplicateElements');
     if (this.showNotification) {
       this.showNotification(`Duplicated ${duplicates.length} element${duplicates.length > 1 ? 's' : ''}`, 'paste');
@@ -9055,8 +7504,10 @@ const ClipboardMixin = {
     // Create new elements from clipboard
     const pastedElements = [];
     this.clipboard.forEach(elementData => {
+      // Deep-clone so nested data (tableData, points, gradientStops) is not
+      // shared by reference with the clipboard copy
       const newElement = {
-        ...elementData,
+        ...this.serializeElement(elementData),
         id: this.generateId(),
         x: elementData.x + offsetX,
         y: elementData.y + offsetY
@@ -9066,11 +7517,11 @@ const ClipboardMixin = {
       const svgElement = this.createSVGElement(newElement);
       newElement.svgElement = svgElement;
       this.addElement(newElement);
-
-      // Select the new element
-      this.selectElement(newElement);
       pastedElements.push(newElement);
     });
+
+    // Select all pasted elements
+    this.selectMultiple(pastedElements);
     this.saveStateToHistory('pasteElements');
     if (this.showNotification) {
       this.showNotification(`Pasted ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`, 'paste');
@@ -9099,6 +7550,29 @@ const ContextMenuMixin = {
   createContextMenu() {
     const menu = document.createElement("div");
     menu.className = "sww-context-menu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "Context menu");
+
+    // Keyboard support: ArrowUp/ArrowDown navigate items, Escape closes the menu
+    if (!menu.dataset.swwKeyboardBound) {
+      menu.addEventListener("keydown", e => {
+        const items = Array.from(menu.querySelectorAll('button[role="menuitem"]')).filter(btn => !btn.disabled);
+        if (!items.length) return;
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          e.stopPropagation();
+          const currentIndex = items.indexOf(document.activeElement);
+          const offset = e.key === "ArrowDown" ? 1 : -1;
+          const nextIndex = currentIndex === -1 ? e.key === "ArrowDown" ? 0 : items.length - 1 : (currentIndex + offset + items.length) % items.length;
+          items[nextIndex].focus();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          this.hideContextMenu();
+        }
+      });
+      menu.dataset.swwKeyboardBound = "true";
+    }
     const menuItems = [{
       id: "copy",
       icon: "ss ss-document-duplicate",
@@ -9174,11 +7648,17 @@ const ContextMenuMixin = {
       if (item.type === "separator") {
         const separator = document.createElement("div");
         separator.className = "sww-context-menu-separator";
+        separator.setAttribute("role", "separator");
         menu.appendChild(separator);
       } else {
         const menuItem = document.createElement("button");
         menuItem.className = "sww-context-menu-item";
-        menuItem.innerHTML = `<i class="${item.icon}"></i>${item.text}`;
+        menuItem.setAttribute("role", "menuitem");
+        menuItem.type = "button";
+        const icon = document.createElement("i");
+        icon.className = item.icon || "";
+        menuItem.appendChild(icon);
+        menuItem.appendChild(document.createTextNode(item.text || ""));
         menuItem.onclick = () => {
           this.hideContextMenu();
           item.action();
@@ -9229,7 +7709,15 @@ const ContextMenuMixin = {
    */
   hideContextMenu() {
     if (this.contextMenu) {
+      // Return focus to the canvas if focus was inside the menu
+      const focusInside = document.activeElement && this.contextMenu.contains(document.activeElement);
       this.contextMenu.style.display = "none";
+      if (focusInside) {
+        const focusTarget = this.svg || this.container;
+        if (focusTarget && typeof focusTarget.focus === "function") {
+          focusTarget.focus();
+        }
+      }
     }
   },
   /**
@@ -9332,14 +7820,19 @@ const ContextMenuMixin = {
     }
 
     // Check if item already exists
-    const existingItem = this.contextMenu.querySelector(`[data-action="${item.id}"]`);
+    const existingItem = Array.from(this.contextMenu.querySelectorAll("[data-action]")).find(el => el.dataset.action === item.id);
     if (existingItem) {
       console.warn(`Context menu item with id "${item.id}" already exists`);
       return;
     }
     const menuItem = document.createElement("button");
     menuItem.className = "sww-context-menu-item";
-    menuItem.innerHTML = `<i class="${item.icon}"></i>${item.text}`;
+    menuItem.setAttribute("role", "menuitem");
+    menuItem.type = "button";
+    const icon = document.createElement("i");
+    icon.className = item.icon || "";
+    menuItem.appendChild(icon);
+    menuItem.appendChild(document.createTextNode(item.text || ""));
     menuItem.onclick = () => {
       this.hideContextMenu();
       item.action();
@@ -9353,7 +7846,7 @@ const ContextMenuMixin = {
       this.contextMenu.appendChild(menuItem);
     } else if (item.position) {
       // Insert after specific item
-      const targetItem = this.contextMenu.querySelector(`[data-action="${item.position}"]`);
+      const targetItem = Array.from(this.contextMenu.querySelectorAll("[data-action]")).find(el => el.dataset.action === item.position);
       if (targetItem && targetItem.nextSibling) {
         this.contextMenu.insertBefore(menuItem, targetItem.nextSibling);
       } else {
@@ -9716,22 +8209,6 @@ const ElementActionsMixin = {
           break;
       }
     }
-  },
-  /**
-   * Select all elements
-   */
-  selectAll() {
-    this.clearSelection();
-    this.elements.forEach(element => {
-      if (!element.locked) {
-        this.selectedElements.add(element);
-      }
-    });
-    this.updateSelectionHandles();
-    if (this.syncPropertiesPanel) {
-      this.syncPropertiesPanel();
-    }
-    this.emitSelectionChanged();
   }
 };
 ;// ./src/js/modules/grid/Grid.js
@@ -10356,35 +8833,11 @@ const UtilitiesMixin = {
       height: maxY - minY
     };
   },
-  /**
-   * Measure text dimensions
-   * @param {string} text - Text to measure (supports multi-line)
-   * @param {number} fontSize - Font size in pixels
-   * @param {string} fontFamily - Font family name
-   * @returns {Object} Dimensions with width and height
+  /*
+   * measureText lives in rendering/SVGRenderer.js, which is applied after
+   * this mixin in sww.js and therefore wins at runtime.
    */
-  measureText(text, fontSize = 16, fontFamily = 'Arial') {
-    // Create a temporary canvas to measure text
-    if (!this.textMeasureCanvas) {
-      this.textMeasureCanvas = document.createElement('canvas');
-      this.textMeasureContext = this.textMeasureCanvas.getContext('2d');
-    }
-    const ctx = this.textMeasureContext;
-    ctx.font = `${fontSize}px ${fontFamily}`;
-    const lines = text.split('\n');
-    let maxWidth = 0;
-    for (const line of lines) {
-      const metrics = ctx.measureText(line);
-      maxWidth = Math.max(maxWidth, metrics.width);
-    }
-    const lineHeight = fontSize * 1.3; // Increased line height for better spacing
-    const height = lines.length * lineHeight;
-    return {
-      width: Math.max(maxWidth, 40),
-      // Increased minimum width
-      height: Math.max(height, fontSize * 1.3) // Better minimum height
-    };
-  },
+
   /**
    * Clean up element resources and event listeners
    * @param {Object} element - Element to clean up
@@ -10528,6 +8981,65 @@ const UtilitiesMixin = {
     }
   }
 };
+;// ./src/js/modules/utils/security.js
+const ALLOWED_TAGS = new Set(["a", "b", "blockquote", "br", "code", "del", "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "i", "li", "ol", "p", "pre", "s", "span", "strong", "table", "tbody", "td", "th", "thead", "tr", "u", "ul"]);
+const GLOBAL_ATTRIBUTES = new Set(["class"]);
+const TAG_ATTRIBUTES = {
+  a: new Set(["href", "title"]),
+  code: new Set(["class"]),
+  td: new Set(["colspan", "rowspan"]),
+  th: new Set(["colspan", "rowspan"])
+};
+function sanitizeUrl(value, {
+  allowDataImages = false,
+  allowedProtocols = ["http:", "https:", "mailto:", "tel:"]
+} = {}) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const candidate = value.trim();
+  if (candidate.startsWith("#") || candidate.startsWith("/")) return candidate;
+  if (allowDataImages && /^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(candidate)) {
+    return candidate;
+  }
+  try {
+    const url = new URL(candidate, window.location.href);
+    return allowedProtocols.includes(url.protocol) ? candidate : "";
+  } catch {
+    return "";
+  }
+}
+function escapeHtml(value) {
+  return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+function sanitizeHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  const elements = Array.from(template.content.querySelectorAll("*"));
+  for (const element of elements) {
+    const tagName = element.tagName.toLowerCase();
+    if (!ALLOWED_TAGS.has(tagName)) {
+      element.replaceWith(...element.childNodes);
+      continue;
+    }
+    for (const attribute of Array.from(element.attributes)) {
+      const name = attribute.name.toLowerCase();
+      const allowed = GLOBAL_ATTRIBUTES.has(name) || TAG_ATTRIBUTES[tagName]?.has(name);
+      if (!allowed || name.startsWith("on") || name === "style") {
+        element.removeAttribute(attribute.name);
+      }
+    }
+    if (tagName === "a") {
+      const href = sanitizeUrl(element.getAttribute("href") || "");
+      if (href) {
+        element.setAttribute("href", href);
+        element.setAttribute("rel", "noopener noreferrer");
+        element.setAttribute("target", "_blank");
+      } else {
+        element.removeAttribute("href");
+      }
+    }
+  }
+  return template.innerHTML;
+}
 ;// ./node_modules/marked/lib/marked.esm.js
 /**
  * marked v9.1.6 - a markdown parser
@@ -12857,7 +11369,7 @@ class Marked {
 }
 
 const markedInstance = new Marked();
-function marked_esm_marked(src, opt) {
+function marked(src, opt) {
     return markedInstance.parse(src, opt);
 }
 /**
@@ -12865,31 +11377,31 @@ function marked_esm_marked(src, opt) {
  *
  * @param options Hash of options
  */
-marked_esm_marked.options =
-    marked_esm_marked.setOptions = function (options) {
+marked.options =
+    marked.setOptions = function (options) {
         markedInstance.setOptions(options);
-        marked_esm_marked.defaults = markedInstance.defaults;
-        changeDefaults(marked_esm_marked.defaults);
-        return marked_esm_marked;
+        marked.defaults = markedInstance.defaults;
+        changeDefaults(marked.defaults);
+        return marked;
     };
 /**
  * Gets the original marked default options.
  */
-marked_esm_marked.getDefaults = _getDefaults;
-marked_esm_marked.defaults = _defaults;
+marked.getDefaults = _getDefaults;
+marked.defaults = _defaults;
 /**
  * Use Extension
  */
-marked_esm_marked.use = function (...args) {
+marked.use = function (...args) {
     markedInstance.use(...args);
-    marked_esm_marked.defaults = markedInstance.defaults;
-    changeDefaults(marked_esm_marked.defaults);
-    return marked_esm_marked;
+    marked.defaults = markedInstance.defaults;
+    changeDefaults(marked.defaults);
+    return marked;
 };
 /**
  * Run callback for every token
  */
-marked_esm_marked.walkTokens = function (tokens, callback) {
+marked.walkTokens = function (tokens, callback) {
     return markedInstance.walkTokens(tokens, callback);
 };
 /**
@@ -12899,25 +11411,25 @@ marked_esm_marked.walkTokens = function (tokens, callback) {
  * @param options Hash of options
  * @return String of compiled HTML
  */
-marked_esm_marked.parseInline = markedInstance.parseInline;
+marked.parseInline = markedInstance.parseInline;
 /**
  * Expose
  */
-marked_esm_marked.Parser = _Parser;
-marked_esm_marked.parser = _Parser.parse;
-marked_esm_marked.Renderer = _Renderer;
-marked_esm_marked.TextRenderer = _TextRenderer;
-marked_esm_marked.Lexer = _Lexer;
-marked_esm_marked.lexer = _Lexer.lex;
-marked_esm_marked.Tokenizer = _Tokenizer;
-marked_esm_marked.Hooks = _Hooks;
-marked_esm_marked.parse = marked_esm_marked;
-const options = marked_esm_marked.options;
-const setOptions = marked_esm_marked.setOptions;
-const use = marked_esm_marked.use;
-const walkTokens = marked_esm_marked.walkTokens;
-const parseInline = marked_esm_marked.parseInline;
-const parse = (/* unused pure expression or super */ null && (marked_esm_marked));
+marked.Parser = _Parser;
+marked.parser = _Parser.parse;
+marked.Renderer = _Renderer;
+marked.TextRenderer = _TextRenderer;
+marked.Lexer = _Lexer;
+marked.lexer = _Lexer.lex;
+marked.Tokenizer = _Tokenizer;
+marked.Hooks = _Hooks;
+marked.parse = marked;
+const options = marked.options;
+const setOptions = marked.setOptions;
+const use = marked.use;
+const walkTokens = marked.walkTokens;
+const parseInline = marked.parseInline;
+const parse = (/* unused pure expression or super */ null && (marked));
 const parser = _Parser.parse;
 const lexer = _Lexer.lex;
 
@@ -13014,8 +11526,8 @@ const SVGRendererMixin = {
       svg.setAttribute("fill", element.fillColor);
     } else if (element.fillStyle === "hachure") {
       // Create hatch pattern
-      svg.setAttribute("fill", "url(#hatch)");
-      this.createHatchPattern(element.fillColor);
+      const hatchId = this.createHatchPattern(element.fillColor);
+      svg.setAttribute("fill", `url(#${hatchId})`);
     } else if (element.fillStyle === "gradient") {
       // Create gradient
       const gradientId = this.createGradient(element);
@@ -13318,9 +11830,14 @@ const SVGRendererMixin = {
       const content = document.createElement("div");
       content.className = "sww-website-content";
       const iframe = document.createElement("iframe");
-      iframe.src = sanitizeUrl(element.url, {
+      const safeUrl = sanitizeUrl(element.url, {
         allowedProtocols: ["http:", "https:"]
       });
+      // Only set src when the URL passed sanitization; assigning "" would
+      // navigate the iframe to the host page itself
+      if (safeUrl) {
+        iframe.src = safeUrl;
+      }
       iframe.style.width = "100%";
       iframe.style.height = "100%";
       iframe.style.border = "none";
@@ -13615,21 +12132,34 @@ const SVGRendererMixin = {
     container.style.opacity = element.opacity;
   },
   /**
-   * Create hatch pattern for fills
-   * @param {string} color - Pattern color
+   * Lazily create the per-instance defs element used for markers, patterns
+   * and gradients. All def IDs are namespaced per instance so multiple
+   * whiteboards on one page never share (or lose) paint servers.
+   * @private
+   * @returns {SVGDefsElement} The instance's dedicated defs element
    */
-  createHatchPattern(color) {
-    if (document.getElementById("hatch")) return;
-
-    // Ensure we have a dedicated defs element for markers and patterns (not the grid defs)
-    if (!this.markerDefs) {
+  _getMarkerDefs() {
+    if (!this._swwDefsNs) {
+      this._swwDefsNs = String(this.generateId()).replace(/^sww-/, "");
+    }
+    if (!this.markerDefs || !this.markerDefs.isConnected) {
       this.markerDefs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-      this.markerDefs.setAttribute("id", "sww-marker-defs");
+      this.markerDefs.setAttribute("id", `sww-marker-defs-${this._swwDefsNs}`);
       this.svg.appendChild(this.markerDefs);
     }
-    const defs = this.markerDefs;
+    return this.markerDefs;
+  },
+  /**
+   * Create hatch pattern for fills
+   * @param {string} color - Pattern color
+   * @returns {string} Pattern ID
+   */
+  createHatchPattern(color) {
+    const defs = this._getMarkerDefs();
+    const patternId = `hatch-${this._swwDefsNs}`;
+    if (document.getElementById(patternId)) return patternId;
     const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
-    pattern.setAttribute("id", "hatch");
+    pattern.setAttribute("id", patternId);
     pattern.setAttribute("patternUnits", "userSpaceOnUse");
     pattern.setAttribute("width", "8");
     pattern.setAttribute("height", "8");
@@ -13639,6 +12169,7 @@ const SVGRendererMixin = {
     path.setAttribute("stroke-width", "1");
     pattern.appendChild(path);
     defs.appendChild(pattern);
+    return patternId;
   },
   /**
    * Create arrow marker for line ends
@@ -13646,17 +12177,10 @@ const SVGRendererMixin = {
    * @returns {string} Marker ID
    */
   createArrowMarker(strokeColor = "#000000") {
-    // Create unique marker ID for each color
-    const markerId = `arrowhead-${strokeColor.replace("#", "")}`;
+    // Create unique marker ID per instance and color
+    const markerId = `arrowhead-${this._swwDefsNs}-${strokeColor.replace("#", "")}`;
     if (document.getElementById(markerId)) return markerId;
-
-    // Ensure we have a dedicated defs element for markers (not the grid defs)
-    if (!this.markerDefs) {
-      this.markerDefs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-      this.markerDefs.setAttribute("id", "sww-marker-defs");
-      this.svg.appendChild(this.markerDefs);
-    }
-    const defs = this.markerDefs;
+    const defs = this._getMarkerDefs();
     const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
     marker.setAttribute("id", markerId);
     marker.setAttribute("markerWidth", "10");
@@ -13678,15 +12202,8 @@ const SVGRendererMixin = {
    * @returns {string} Gradient ID
    */
   createGradient(element) {
-    const gradientId = `gradient-${element.id}`;
-
-    // Ensure we have a dedicated defs element for markers and patterns (not the grid defs)
-    if (!this.markerDefs) {
-      this.markerDefs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-      this.markerDefs.setAttribute("id", "sww-marker-defs");
-      this.svg.appendChild(this.markerDefs);
-    }
-    const defs = this.markerDefs;
+    const gradientId = `gradient-${this._swwDefsNs}-${element.id}`;
+    const defs = this._getMarkerDefs();
 
     // Remove existing gradient if it exists
     const existingGradient = defs.querySelector(`#${gradientId}`);
@@ -13751,10 +12268,10 @@ const SVGRendererMixin = {
     if (!text) return "";
 
     // Use marked.js library for parsing markdown
-    if (typeof marked_esm_marked !== "undefined") {
+    if (typeof marked !== "undefined") {
       try {
         // Marked parses markdown; sanitizeHtml enforces the rendering policy.
-        marked_esm_marked.setOptions({
+        marked.setOptions({
           breaks: true,
           // Support single line breaks
           gfm: true,
@@ -13763,7 +12280,7 @@ const SVGRendererMixin = {
           // Better list handling
           smartypants: false // Don't convert quotes
         });
-        return sanitizeHtml(marked_esm_marked.parse(text));
+        return sanitizeHtml(marked.parse(text));
       } catch (error) {
         return escapeHtml(text).replace(/\n/g, "<br>");
       }
@@ -13893,6 +12410,15 @@ const NotificationsMixin = {
       maxWidth: '300px',
       wordWrap: 'break-word'
     });
+
+    // Accessibility: live region announcements
+    if (type === 'error' || type === 'warning') {
+      notification.setAttribute('role', 'alert');
+      notification.setAttribute('aria-live', 'assertive');
+    } else {
+      notification.setAttribute('role', 'status');
+      notification.setAttribute('aria-live', 'polite');
+    }
 
     // Set colors based on type
     switch (type) {
@@ -14053,11 +12579,10 @@ const ThemeManagerMixin = {
 ;// ./src/js/sww.js
 /**
  * SenangWebs Whiteboard (SWW) - Modular Entry Point
- * Version: 1.1.1
+ * Version is injected at build time via __SWW_VERSION__ (see package.json).
  */
 
 // Import modular components
-
 
 
 
@@ -14097,7 +12622,6 @@ Object.assign(SWWInstance.SWWInstance.prototype, InitializationMixin);
 Object.assign(SWWInstance.SWWInstance.prototype, ElementManagementMixin);
 Object.assign(SWWInstance.SWWInstance.prototype, SceneStateMixin);
 Object.assign(SWWInstance.SWWInstance.prototype, CanvasMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ToolbarMixin);
 Object.assign(SWWInstance.SWWInstance.prototype, EventHandlersMixin);
 Object.assign(SWWInstance.SWWInstance.prototype, ToolManagerMixin);
 Object.assign(SWWInstance.SWWInstance.prototype, ShapeToolsMixin);
@@ -14148,12 +12672,8 @@ const SWW = {
   getInstance(container) {
     return container._swwInstance || null;
   },
-  version: "1.2.0"
+  version: "1.2.2"
 };
-
-// REMOVED: Legacy import no longer needed!
-// All functionality now provided by modular mixins
-// import './sww-legacy.js';
 
 // Expose to global scope for browser usage
 if (typeof window !== "undefined") {
@@ -14166,3 +12686,4 @@ __webpack_exports__ = __webpack_exports__["default"];
 /******/ })()
 ;
 });
+//# sourceMappingURL=sww.js.map

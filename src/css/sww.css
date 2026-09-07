@@ -1,10 +1,10 @@
 /**
  * SenangWebs Whiteboard (SWW) - CSS Styles
- * Version: 1.1.1
+ * Version: see package.json (__SWW_VERSION__ is injected into the JS bundle)
  */
 
-/* Import SenangStart Icons */
-@import "~@bookklik/senangstart-icons/dist/senangstart.min.css";
+/* SenangStart Icons — trimmed subset (AUTO-GENERATED src/css/icons.css, regenerate via `npm run icons:build`) */
+@import "./icons.css";
 
 /* CSS Variables for Theme Colors */
 :root {
@@ -1923,4 +1923,16 @@ marker {
 
 .sww-canvas.default {
   cursor: default;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sww-notification,
+  .sww-context-menu,
+  .sww-preview-overlay,
+  .sww-export-dialog,
+  .sww-modal-overlay {
+    animation: none !important;
+    transition: none !important;
+  }
 }

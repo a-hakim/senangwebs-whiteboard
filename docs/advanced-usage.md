@@ -1,5 +1,17 @@
 # Advanced Usage
 
+### Runtime Requirements
+
+- **The stylesheet is mandatory.** `sww.css` provides the layout, panel styling
+  and `touch-action: none` on the canvas — without it, touch drawing and the
+  UI will not behave correctly.
+- **Multiple instances per page are supported.** Grid patterns, arrow markers,
+  hatch patterns and gradients are namespaced per instance, and each instance
+  cleans up its own DOM on `destroy()`.
+- **Loading untrusted scene files is safe by design.** `loadScene()` whitelists
+  element types, coerces numbers, blocks prototype-pollution keys, and rejects
+  non-CSS color values (hex, `rgb()/hsl()`, or named colors only).
+
 ### Custom Element Creation
 
 ```javascript

@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    name: Test & Build (node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    continue-on-error: false
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # npm test runs scripts/check-package.js first, which validates the
+      # committed dist/ artifacts (entry points, production build, version
+      # match against package.json) before running the core tests.
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  artifact-drift-check:
+    name: Committed dist/ matches fresh build
+    runs-on: ubuntu-latest
+    continue-on-error: false
+
+    steps:
+      # Disable autocrlf BEFORE checkout so committed dist/ files are not
+      # rewritten with LF->CRLF conversions, which would cause false diffs.
+      - name: Disable git autocrlf
+        run: git config --global core.autocrlf false
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Fail if rebuilt dist/ drifts from committed artifacts
+        run: git diff --exit-code -- dist

@@ -38,18 +38,6 @@
  */
 export const SelectionManagerMixin = {
     /**
-     * Initialize selection system
-     * Called during instance initialization
-     */
-    initializeSelectionSystem() {
-        // Selection state is already initialized in SWWInstance constructor
-        // this.selectedElements = new Set();
-        
-        // No additional initialization needed at this time
-        // Future: Custom event system for selection changes
-    },
-
-    /**
      * Select an element and add it to the selection
      * Handles group selection automatically
      * 
@@ -313,50 +301,12 @@ export const SelectionManagerMixin = {
         this.saveStateToHistory('moveElements');
     },
 
-    /**
-     * Get element by its unique ID
-     * 
-     * @param {string} elementId - Element ID to find
-     * @returns {Object|null} Element or null if not found
+    /*
+     * getElementById, selectElementById, deleteElementById and
+     * commitPropertiesPanelChanges live in modules/utilities/Utilities.js and
+     * modules/ui/PropertiesPanel.js respectively, which are applied after this
+     * mixin in sww.js and therefore win at runtime.
      */
-    getElementById(elementId) {
-        return this.elements.find(element => element.id === elementId) || null;
-    },
-
-    /**
-     * Select element by ID
-     * Clears existing selection first
-     * 
-     * @param {string} elementId - Element ID to select
-     * @returns {boolean} True if element found and selected
-     */
-    selectElementById(elementId) {
-        const element = this.getElementById(elementId);
-        if (element) {
-            this.clearSelection();
-            this.selectElement(element);
-            return true;
-        }
-        return false;
-    },
-
-    /**
-     * Delete element by ID
-     * Selects element first, then deletes it
-     * 
-     * @param {string} elementId - Element ID to delete
-     * @returns {boolean} True if element found and deleted
-     */
-    deleteElementById(elementId) {
-        const element = this.getElementById(elementId);
-        if (element) {
-            this.clearSelection();
-            this.selectElement(element);
-            this.deleteSelectedElements();
-            return true;
-        }
-        return false;
-    },
 
     /**
      * Check if an element is currently selected
@@ -439,33 +389,10 @@ export const SelectionManagerMixin = {
 
     /**
      * Check if selection contains any grouped elements
-     * 
+     *
      * @returns {boolean} True if any selected element has a groupId
      */
     hasGroupedElementsInSelection() {
         return Array.from(this.selectedElements).some(element => element.groupId);
-    },
-
-    /**
-     * Commit any pending changes in properties panel
-     * Forces blur on active input to trigger change events
-     * Called before clearing selection
-     */
-    commitPropertiesPanelChanges() {
-        if (!this.propertiesPanel) return;
-
-        // Force any focused input to trigger its change event
-        const activeElement = document.activeElement;
-        if (activeElement && activeElement.closest('.sww-properties-panel')) {
-            // If an input in the properties panel is active, blur it to trigger change event
-            activeElement.blur();
-            // Give a brief moment for the change event to process
-            setTimeout(() => {
-                // Re-focus the canvas or appropriate element if needed
-                if (this.svg) {
-                    this.svg.focus();
-                }
-            }, 10);
-        }
     }
 };

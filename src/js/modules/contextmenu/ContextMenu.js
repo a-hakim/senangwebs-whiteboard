@@ -17,6 +17,37 @@ export const ContextMenuMixin = {
   createContextMenu() {
     const menu = document.createElement("div");
     menu.className = "sww-context-menu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "Context menu");
+
+    // Keyboard support: ArrowUp/ArrowDown navigate items, Escape closes the menu
+    if (!menu.dataset.swwKeyboardBound) {
+      menu.addEventListener("keydown", (e) => {
+        const items = Array.from(
+          menu.querySelectorAll('button[role="menuitem"]')
+        ).filter((btn) => !btn.disabled);
+        if (!items.length) return;
+
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          e.stopPropagation();
+          const currentIndex = items.indexOf(document.activeElement);
+          const offset = e.key === "ArrowDown" ? 1 : -1;
+          const nextIndex =
+            currentIndex === -1
+              ? e.key === "ArrowDown"
+                ? 0
+                : items.length - 1
+              : (currentIndex + offset + items.length) % items.length;
+          items[nextIndex].focus();
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          this.hideContextMenu();
+        }
+      });
+      menu.dataset.swwKeyboardBound = "true";
+    }
 
     const menuItems = [
       {
@@ -96,11 +127,17 @@ export const ContextMenuMixin = {
       if (item.type === "separator") {
         const separator = document.createElement("div");
         separator.className = "sww-context-menu-separator";
+        separator.setAttribute("role", "separator");
         menu.appendChild(separator);
       } else {
         const menuItem = document.createElement("button");
         menuItem.className = "sww-context-menu-item";
-        menuItem.innerHTML = `<i class="${item.icon}"></i>${item.text}`;
+        menuItem.setAttribute("role", "menuitem");
+        menuItem.type = "button";
+        const icon = document.createElement("i");
+        icon.className = item.icon || "";
+        menuItem.appendChild(icon);
+        menuItem.appendChild(document.createTextNode(item.text || ""));
         menuItem.onclick = () => {
           this.hideContextMenu();
           item.action();
@@ -158,7 +195,17 @@ export const ContextMenuMixin = {
    */
   hideContextMenu() {
     if (this.contextMenu) {
+      // Return focus to the canvas if focus was inside the menu
+      const focusInside =
+        document.activeElement &&
+        this.contextMenu.contains(document.activeElement);
       this.contextMenu.style.display = "none";
+      if (focusInside) {
+        const focusTarget = this.svg || this.container;
+        if (focusTarget && typeof focusTarget.focus === "function") {
+          focusTarget.focus();
+        }
+      }
     }
   },
 
@@ -296,9 +343,9 @@ export const ContextMenuMixin = {
     }
 
     // Check if item already exists
-    const existingItem = this.contextMenu.querySelector(
-      `[data-action="${item.id}"]`
-    );
+    const existingItem = Array.from(
+      this.contextMenu.querySelectorAll("[data-action]")
+    ).find((el) => el.dataset.action === item.id);
     if (existingItem) {
       console.warn(`Context menu item with id "${item.id}" already exists`);
       return;
@@ -306,7 +353,12 @@ export const ContextMenuMixin = {
 
     const menuItem = document.createElement("button");
     menuItem.className = "sww-context-menu-item";
-    menuItem.innerHTML = `<i class="${item.icon}"></i>${item.text}`;
+    menuItem.setAttribute("role", "menuitem");
+    menuItem.type = "button";
+    const icon = document.createElement("i");
+    icon.className = item.icon || "";
+    menuItem.appendChild(icon);
+    menuItem.appendChild(document.createTextNode(item.text || ""));
     menuItem.onclick = () => {
       this.hideContextMenu();
       item.action();
@@ -320,9 +372,9 @@ export const ContextMenuMixin = {
       this.contextMenu.appendChild(menuItem);
     } else if (item.position) {
       // Insert after specific item
-      const targetItem = this.contextMenu.querySelector(
-        `[data-action="${item.position}"]`
-      );
+      const targetItem = Array.from(
+        this.contextMenu.querySelectorAll("[data-action]")
+      ).find((el) => el.dataset.action === item.position);
       if (targetItem && targetItem.nextSibling) {
         this.contextMenu.insertBefore(menuItem, targetItem.nextSibling);
       } else {

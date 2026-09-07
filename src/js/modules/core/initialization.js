@@ -89,29 +89,9 @@ export const InitializationMixin = {
 
     /**
      * Set up performance monitoring for large scenes
-     * Activates optimized render loop for scenes with >200 elements
      */
     setupPerformanceMonitoring() {
         this.updateVisibleElements();
-    },
-
-    /**
-     * Create optimized render loop for large scenes
-     * Limits FPS to 30 and uses LOD rendering
-     */
-    setupOptimizedRenderLoop() {
-        this.updateVisibleElements();
-    },
-
-    /**
-     * Perform optimized render pass
-     * Only renders visible elements with level-of-detail optimization
-     */
-    performOptimizedRender() {
-        // Only render visible elements with LOD
-        this.visibleElements.forEach(element => {
-            this.updateSVGElementWithLOD(element);
-        });
     },
 
     /**
@@ -233,6 +213,12 @@ export const InitializationMixin = {
         this.eventController?.abort();
         this.resizeObserver?.disconnect();
         this.exitPreviewMode?.();
+
+        // Remove any orphaned editors/overlays appended to document.body
+        // (inline text editor, its hint overlay) that survive the container teardown
+        this._activeTextEditor?.remove();
+        this._activeTextEditorHint?.remove();
+
         this.elements.forEach((element) => this.cleanupElement(element));
         this.pendingAnimationFrames.forEach((frameId) => cancelAnimationFrame(frameId));
         this.pendingAnimationFrames.clear();

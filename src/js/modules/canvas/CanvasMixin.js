@@ -37,9 +37,6 @@ export const CanvasMixin = {
         
         this.container.appendChild(this.svg);
         
-        // Create toolbar
-        this.createToolbar();
-        
         // Create properties panel
         this.createPropertiesPanel();
         
@@ -66,82 +63,11 @@ export const CanvasMixin = {
         this.updateGridVisibility();
     },
 
-    /**
-     * Create grid pattern for snap-to-grid functionality
+    /*
+     * Grid pattern creation and visibility (createGrid, updateGridVisibility,
+     * showGrid, hideGrid) live in modules/grid/Grid.js, which is applied after
+     * this mixin in sww.js and therefore wins at runtime.
      */
-    createGrid() {
-        // Remove existing grid if it exists
-        if (this.gridPattern) {
-            this.gridPattern.remove();
-        }
-        if (this.gridRect) {
-            this.gridRect.remove();
-        }
-        if (this.gridDefs) {
-            this.gridDefs.remove();
-        }
-        
-        this.gridDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        this.gridPattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-        this.gridPatternId = this.gridPatternId || `sww-grid-${this.generateId()}`;
-        this.gridPattern.setAttribute('id', this.gridPatternId);
-        this.gridPattern.setAttribute('width', this.options.gridSize);
-        this.gridPattern.setAttribute('height', this.options.gridSize);
-        this.gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
-        
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', `M ${this.options.gridSize} 0 L 0 0 0 ${this.options.gridSize}`);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', '#e0e0e0');
-        path.setAttribute('stroke-width', '1');
-        
-        this.gridPattern.appendChild(path);
-        this.gridDefs.appendChild(this.gridPattern);
-        this.svg.insertBefore(this.gridDefs, this.elementsGroup || null);
-        
-        this.gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        this.gridRect.setAttribute('x', this.viewBox.x - 5000);
-        this.gridRect.setAttribute('y', this.viewBox.y - 5000);
-        this.gridRect.setAttribute('width', 10000);
-        this.gridRect.setAttribute('height', 10000);
-        this.gridRect.setAttribute('fill', `url(#${this.gridPatternId})`);
-        this.svg.insertBefore(this.gridRect, this.elementsGroup || null);
-    },
-
-    /**
-     * Update grid visibility based on snapToGrid state
-     */
-    updateGridVisibility() {
-        if (this.snapToGrid) {
-            this.showGrid();
-        } else {
-            this.hideGrid();
-        }
-    },
-
-    /**
-     * Show grid pattern
-     */
-    showGrid() {
-        if (!this.gridRect && !this.gridDefs && !this.gridPattern) {
-            this.createGrid();
-        } else if (this.gridRect && this.gridDefs) {
-            this.gridRect.style.display = 'block';
-            this.gridDefs.style.display = 'block';
-        }
-    },
-
-    /**
-     * Hide grid pattern
-     */
-    hideGrid() {
-        if (this.gridRect) {
-            this.gridRect.style.display = 'none';
-        }
-        if (this.gridDefs) {
-            this.gridDefs.style.display = 'none';
-        }
-    },
 
     /**
      * Update viewBox attribute on SVG

@@ -40,6 +40,7 @@ class RemoveStyleScriptPlugin {
 function createConfig({ minified = false, mode = 'production', format = 'umd' } = {}) {
   const suffix = minified ? '.min' : '';
   const isEsm = format === 'esm';
+  const isDev = mode === 'development';
 
   return {
     name: isEsm ? 'esm' : (minified ? 'minified' : 'unminified'),
@@ -52,7 +53,9 @@ function createConfig({ minified = false, mode = 'production', format = 'umd' } 
     },
     output: {
       filename: isEsm ? '[name].esm.mjs' : `[name]${suffix}.js`,
-      path: path.resolve(__dirname, 'dist'),
+      // Development builds go to a separate directory so they can never
+      // clobber the production artifacts in dist/ (the npm entry points)
+      path: path.resolve(__dirname, isDev ? 'dist-dev' : 'dist'),
       library: isEsm ? {
         type: 'module'
       } : {
@@ -111,7 +114,8 @@ function createConfig({ minified = false, mode = 'production', format = 'umd' } 
     ],
     performance: {
       hints: false
-    }
+    },
+    devtool: isDev ? 'eval-source-map' : 'source-map'
   };
 }
 

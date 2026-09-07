@@ -55,6 +55,29 @@ function finiteNumber(value, fallback) {
   return Number.isFinite(Number(value)) ? Number(value) : fallback;
 }
 
+// Safe CSS color values only: hex, rgb(a)/hsl(a) functions, or plain named
+// colors. Rejects anything else (e.g. url(...) beacons or malformed values)
+// coming from imported scene files.
+const CSS_COLOR_PATTERN = /^#[0-9a-f]{3,8}$|^(?:rgb|rgba|hsl|hsla)\([^()]*\)$|^[a-z]+$/i;
+
+function safeColor(value, fallback) {
+  if (typeof value !== "string") return fallback;
+  const color = value.trim();
+  if (color.length === 0 || color.length > 64) return fallback;
+  return CSS_COLOR_PATTERN.test(color) ? color : fallback;
+}
+
+function safeGradientStops(value) {
+  if (!Array.isArray(value)) return undefined;
+  const stops = value
+    .filter((stop) => stop && typeof stop === "object")
+    .map((stop) => ({
+      color: safeColor(stop.color, "#000000"),
+      offset: finiteNumber(stop.offset, 0),
+    }));
+  return stops.length > 0 ? stops : undefined;
+}
+
 function normalizeElement(rawElement, generateId) {
   if (!rawElement || typeof rawElement !== "object" || !ELEMENT_TYPES.has(rawElement.type)) {
     throw new TypeError("Scene contains an unsupported element type.");
@@ -75,21 +98,25 @@ function normalizeElement(rawElement, generateId) {
   element.opacity = Math.max(0, Math.min(1, finiteNumber(element.opacity, 1)));
   element.fontSize = finiteNumber(element.fontSize, 16);
   element.rotation = finiteNumber(element.rotation, 0);
-  element.strokeColor =
-    typeof element.strokeColor === "string" ? element.strokeColor : "#000000";
-  element.fillColor =
-    typeof element.fillColor === "string" ? element.fillColor : "#ffffff";
+  element.strokeColor = safeColor(element.strokeColor, "#000000");
+  element.fillColor = safeColor(element.fillColor, "#ffffff");
   element.fillStyle =
     typeof element.fillStyle === "string" ? element.fillStyle : "solid";
   element.fontFamily =
     typeof element.fontFamily === "string" ? element.fontFamily : "Arial";
   element.textAlign =
     typeof element.textAlign === "string" ? element.textAlign : "left";
-  element.textColor =
-    typeof element.textColor === "string" ? element.textColor : "#000000";
+  element.textColor = safeColor(element.textColor, "#000000");
   element.locked = Boolean(element.locked);
   element.visible = element.visible !== false;
   element.groupId = element.groupId || null;
+
+  const gradientStops = safeGradientStops(element.gradientStops);
+  if (gradientStops) {
+    element.gradientStops = gradientStops;
+  } else if (element.gradientStops !== undefined) {
+    delete element.gradientStops;
+  }
 
   if (element.type === "path" && !Array.isArray(element.points)) {
     element.points = [];

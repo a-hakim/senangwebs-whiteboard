@@ -87,6 +87,10 @@ Events are dispatched from the whiteboard container.
 - `sww:selectionChanged` - Selection changed. Detail includes
   `selectedElements` and `selectedElementIds`.
 
+**Undo scope:** element changes, additions and deletions are undoable. Pan and
+zoom adjustments are viewport settings and are intentionally not part of the
+undo history.
+
 #### `clearAll()`
 
 Clears all elements from the canvas. Creates undo history entry.

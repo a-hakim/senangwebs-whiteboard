@@ -299,39 +299,10 @@ export const UtilitiesMixin = {
         };
     },
 
-    /**
-     * Measure text dimensions
-     * @param {string} text - Text to measure (supports multi-line)
-     * @param {number} fontSize - Font size in pixels
-     * @param {string} fontFamily - Font family name
-     * @returns {Object} Dimensions with width and height
+    /*
+     * measureText lives in rendering/SVGRenderer.js, which is applied after
+     * this mixin in sww.js and therefore wins at runtime.
      */
-    measureText(text, fontSize = 16, fontFamily = 'Arial') {
-        // Create a temporary canvas to measure text
-        if (!this.textMeasureCanvas) {
-            this.textMeasureCanvas = document.createElement('canvas');
-            this.textMeasureContext = this.textMeasureCanvas.getContext('2d');
-        }
-        
-        const ctx = this.textMeasureContext;
-        ctx.font = `${fontSize}px ${fontFamily}`;
-        
-        const lines = text.split('\n');
-        let maxWidth = 0;
-        
-        for (const line of lines) {
-            const metrics = ctx.measureText(line);
-            maxWidth = Math.max(maxWidth, metrics.width);
-        }
-        
-        const lineHeight = fontSize * 1.3; // Increased line height for better spacing
-        const height = lines.length * lineHeight;
-        
-        return {
-            width: Math.max(maxWidth, 40), // Increased minimum width
-            height: Math.max(height, fontSize * 1.3) // Better minimum height
-        };
-    },
 
     /**
      * Clean up element resources and event listeners

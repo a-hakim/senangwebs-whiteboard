@@ -41,6 +41,15 @@ export const NotificationsMixin = {
             wordWrap: 'break-word'
         });
         
+        // Accessibility: live region announcements
+        if (type === 'error' || type === 'warning') {
+            notification.setAttribute('role', 'alert');
+            notification.setAttribute('aria-live', 'assertive');
+        } else {
+            notification.setAttribute('role', 'status');
+            notification.setAttribute('aria-live', 'polite');
+        }
+
         // Set colors based on type
         switch (type) {
             case 'copy':

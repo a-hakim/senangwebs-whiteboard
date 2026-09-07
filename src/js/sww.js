@@ -1,6 +1,6 @@
 ﻿/**
  * SenangWebs Whiteboard (SWW) - Modular Entry Point
- * Version: 1.1.1
+ * Version is injected at build time via __SWW_VERSION__ (see package.json).
  */
 
 // Import modular components
@@ -9,7 +9,6 @@ import { InitializationMixin } from "./modules/core/initialization.js";
 import { ElementManagementMixin } from "./modules/core/elementManagement.js";
 import { SceneStateMixin } from "./modules/core/SceneState.js";
 import { CanvasMixin } from "./modules/canvas/CanvasMixin.js";
-import { ToolbarMixin } from "./modules/ui/ToolbarMixin.js";
 import { EventHandlersMixin } from "./modules/core/eventHandlers.js";
 import { ToolManagerMixin } from "./modules/tools/ToolManager.js";
 import { ShapeToolsMixin } from "./modules/tools/ShapeToolsMixin.js";
@@ -44,7 +43,6 @@ Object.assign(SWWInstance.prototype, InitializationMixin);
 Object.assign(SWWInstance.prototype, ElementManagementMixin);
 Object.assign(SWWInstance.prototype, SceneStateMixin);
 Object.assign(SWWInstance.prototype, CanvasMixin);
-Object.assign(SWWInstance.prototype, ToolbarMixin);
 Object.assign(SWWInstance.prototype, EventHandlersMixin);
 Object.assign(SWWInstance.prototype, ToolManagerMixin);
 Object.assign(SWWInstance.prototype, ShapeToolsMixin);
@@ -99,10 +97,6 @@ const SWW = {
 
   version: __SWW_VERSION__,
 };
-
-// REMOVED: Legacy import no longer needed!
-// All functionality now provided by modular mixins
-// import './sww-legacy.js';
 
 // Expose to global scope for browser usage
 if (typeof window !== "undefined") {

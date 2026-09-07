@@ -39,6 +39,14 @@ for (const artifact of distributionArtifacts) {
 }
 
 const bundle = fs.readFileSync(path.join(root, packageJson.main), "utf8");
+
+// Guard against development builds leaking into the published entry point
+// (dev builds use the webpack "eval" devtool and are not production-safe)
+assert.ok(
+  !bundle.includes('ATTENTION: The "eval" devtool'),
+  "dist/sww.js is a development (eval) build. Run `npm run build` to produce production artifacts.",
+);
+
 assert.match(
   bundle,
   new RegExp(`version:\\s*["']${packageJson.version.replace(/\./g, "\\.")}["']`),

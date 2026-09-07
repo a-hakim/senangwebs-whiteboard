@@ -303,25 +303,5 @@ export const ElementActionsMixin = {
                     break;
             }
         }
-    },
-
-    /**
-     * Select all elements
-     */
-    selectAll() {
-        this.clearSelection();
-        
-        this.elements.forEach(element => {
-            if (!element.locked) {
-                this.selectedElements.add(element);
-            }
-        });
-        
-        this.updateSelectionHandles();
-        
-        if (this.syncPropertiesPanel) {
-            this.syncPropertiesPanel();
-        }
-        this.emitSelectionChanged();
     }
 };
