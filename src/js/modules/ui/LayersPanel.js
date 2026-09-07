@@ -35,8 +35,7 @@ export const LayersPanelMixin = {
 
     // If element is being hidden and is selected, deselect it
     if (!element.visible && this.selectedElements.has(element)) {
-      this.selectedElements.delete(element);
-      this.updateSelectionHandles();
+      this.deselectElement(element);
     }
     this.saveStateToHistory("visibility");
 
@@ -67,8 +66,7 @@ export const LayersPanelMixin = {
 
     // If element is being locked and is selected, deselect it
     if (element.locked && this.selectedElements.has(element)) {
-      this.selectedElements.delete(element);
-      this.updateSelectionHandles();
+      this.deselectElement(element);
     }
     this.saveStateToHistory("lock");
 

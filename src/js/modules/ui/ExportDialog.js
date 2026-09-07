@@ -11,11 +11,16 @@
 
 export const ExportDialogMixin = {
   createExportSVG(options = {}) {
+    this.closeActiveTableEditor?.(true);
     const mode = options.mode || "all";
     const padding = Number.isFinite(options.padding) ? options.padding : 20;
     const clonedSVG = this.svg.cloneNode(true);
 
     clonedSVG.querySelector(".sww-selection")?.remove();
+    clonedSVG.querySelectorAll('.sww-table-cell').forEach((cell) => {
+      cell.classList.remove('sww-table-cell-selected');
+      cell.removeAttribute('tabindex');
+    });
     clonedSVG
       .querySelectorAll(
         ".sww-selection-handle, .sww-rotation-handle, .sww-table-toolbar"

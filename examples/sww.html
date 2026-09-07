@@ -141,47 +141,31 @@
           style="display: none"
         >
           <div class="sww-layer-header">
-            <span>Layers (<span id="layer-count">0</span>)</span>
-            <div class="sww-layer-actions">
-              <button
-                class="sww-layer-action-btn"
-                onclick="swwInstance.selectAll()"
-                title="Select All"
-              >
-                <i class="ss ss-check"></i>
+            <div class="sww-layer-heading">
+              <h3>Layers <span class="sww-layer-count" id="layer-count">0</span></h3>
+              <span class="sww-layer-selection-count" id="layer-selection-count" aria-live="polite">None selected</span>
+            </div>
+            <div class="sww-layer-bulk-actions" role="group" aria-label="Layer selection actions">
+              <button type="button" id="layers-select-all" class="sww-layer-action-btn sww-layer-text-action" onclick="swwInstance.selectAll()" title="Select all layers">
+                <i class="ss ss-check" aria-hidden="true"></i><span>Select all</span>
               </button>
-              <button
-                class="sww-layer-action-btn"
-                onclick="swwInstance.clearSelection()"
-                title="Clear Selection"
-              >
-                <i class="ss ss-square"></i>
+              <button type="button" id="layers-clear-selection" class="sww-layer-action-btn sww-layer-text-action" onclick="swwInstance.clearSelection()" title="Clear selection" disabled>
+                <span>Clear</span>
               </button>
-              <button
-                class="sww-layer-action-btn"
-                onclick="swwInstance.copySelected(); swwInstance.pasteClipboard();"
-                title="Duplicate"
-              >
-                <i class="ss ss-document-duplicate"></i>
+              <span class="sww-layer-action-spacer"></span>
+              <button type="button" id="layers-duplicate" class="sww-layer-action-btn" onclick="swwInstance.copySelected(); swwInstance.pasteClipboard();" title="Duplicate selected layers" aria-label="Duplicate selected layers" disabled>
+                <i class="ss ss-document-duplicate" aria-hidden="true"></i>
               </button>
-              <button
-                class="sww-layer-action-btn"
-                onclick="swwInstance.deleteSelectedElements()"
-                title="Delete Selected"
-              >
-                <i class="ss ss-trash"></i>
+              <button type="button" id="layers-delete" class="sww-layer-action-btn sww-layer-delete" onclick="swwInstance.deleteSelectedElements()" title="Delete selected layers" aria-label="Delete selected layers" disabled>
+                <i class="ss ss-trash" aria-hidden="true"></i>
               </button>
             </div>
           </div>
-
-          <div class="sww-layers-container" id="sww-layers-list">
-            <div
-              id="no-layers-message"
-              class="sww-info-text"
-              style="text-align: center; padding: 20px"
-            >
-              No elements in the scene.<br />
-              Add elements using the tools to see them here.
+          <div class="sww-layers-container" id="sww-layers-list" role="list" aria-label="Scene layers">
+            <div class="sww-layers-empty">
+              <i class="ss ss-layer-stacks" aria-hidden="true"></i>
+              <strong>No layers yet</strong>
+              <span>Add a shape, table, or drawing to get started.</span>
             </div>
           </div>
         </div>
@@ -346,7 +330,7 @@
               `sww-${targetMenu}-section`
             );
             if (targetSection) {
-              targetSection.style.display = "block";
+              targetSection.style.display = targetMenu === "layers" ? "flex" : "block";
 
               // Layers panel updates automatically when elements change
             }
@@ -391,76 +375,104 @@
        * Called by LayersPanel.js via window.swwControlPanel.updateLayers()
        */
       function updateLayers() {
-        if (!swwInstance || !swwInstance.elements) {
-          return;
-        }
-
+        if (!swwInstance || !Array.isArray(swwInstance.elements)) return;
         const layersList = document.getElementById("sww-layers-list");
-        const layerCount = document.getElementById("layer-count");
+        if (!layersList) return;
         const elements = swwInstance.elements;
-
-        // Update count
-        if (layerCount) {
-          layerCount.textContent = elements.length;
+        const selectedElements = swwInstance.selectedElements;
+        const selectedCount = selectedElements.size;
+        document.getElementById("layer-count").textContent = elements.length;
+        document.getElementById("layer-selection-count").textContent = selectedCount
+          ? selectedCount + " selected" : "None selected";
+        document.getElementById("layers-select-all").disabled = !elements.some(element => !element.locked && element.visible !== false);
+        for (const id of ["layers-clear-selection", "layers-duplicate", "layers-delete"]) {
+          document.getElementById(id).disabled = selectedCount === 0;
         }
 
-        // Update layers list
-        if (!layersList) {
-          return;
+        // Keep keyboard focus and scroll position when scene events refresh rows.
+        const focused = layersList.contains(document.activeElement) ? document.activeElement : null;
+        const focusedId = focused?.closest("[data-element-id]")?.dataset.elementId;
+        const focusedAction = focused?.dataset.layerAction;
+        const scrollTop = layersList.scrollTop;
+        const fragment = document.createDocumentFragment();
+        if (elements.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "sww-layers-empty";
+          empty.innerHTML = '<i class="ss ss-layer-stacks" aria-hidden="true"></i><strong>No layers yet</strong><span>Add a shape, table, or drawing to get started.</span>';
+          fragment.appendChild(empty);
         }
-
-        if (!Array.isArray(elements) || elements.length === 0) {
-          layersList.innerHTML =
-            '<div style="text-align: center; padding: 20px 10px; color: var(--sww-panel-text); opacity: 0.6;">No elements in the scene. Add elements using the tools to see them here.</div>';
-          return;
+        elements.forEach((element, index) => {
+          if (!element?.id || !element?.type) return;
+          const selected = selectedElements.has(element);
+          const hidden = element.visible === false;
+          const locked = !!element.locked;
+          const name = element.type.charAt(0).toUpperCase() + element.type.slice(1) + " " + (index + 1);
+          const row = document.createElement("div");
+          row.className = "sww-layer-item";
+          row.classList.toggle("selected", selected);
+          row.classList.toggle("is-hidden", hidden);
+          row.classList.toggle("locked", locked);
+          row.dataset.elementId = element.id;
+          row.setAttribute("role", "listitem");
+          const select = document.createElement("button");
+          select.type = "button";
+          select.className = "sww-layer-info";
+          select.dataset.layerAction = "select";
+          select.setAttribute("aria-pressed", String(selected));
+          select.title = "Select " + name;
+          const icon = document.createElement("span");
+          icon.className = "sww-layer-icon";
+          const glyph = document.createElement("i");
+          glyph.className = "ss ss-" + getLayerIcon(element.type);
+          glyph.setAttribute("aria-hidden", "true");
+          icon.appendChild(glyph);
+          const text = document.createElement("span");
+          text.className = "sww-layer-label";
+          const label = document.createElement("span");
+          label.className = "sww-layer-name";
+          label.textContent = name;
+          text.appendChild(label);
+          if (hidden || locked) {
+            const status = document.createElement("span");
+            status.className = "sww-layer-status";
+            status.textContent = [hidden && "Hidden", locked && "Locked"].filter(Boolean).join(" ? ");
+            text.appendChild(status);
+          }
+          select.append(icon, text);
+          select.addEventListener("click", () => selectLayerElement(element.id));
+          const actions = document.createElement("div");
+          actions.className = "sww-layer-actions";
+          for (const [action, iconName, actionLabel, handler, pressed] of [
+            ["visibility", hidden ? "eye-slash" : "eye", hidden ? "Show" : "Hide", toggleLayerVisibility, hidden],
+            ["lock", locked ? "lock-closed" : "lock-open", locked ? "Unlock" : "Lock", toggleLayerLock, locked],
+            ["delete", "trash", "Delete", deleteLayerElement],
+          ]) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "sww-layer-action-btn" + (action === "delete" ? " sww-layer-delete" : "");
+            button.dataset.layerAction = action;
+            button.title = actionLabel + " " + name;
+            const toggleLabel = action === "visibility" ? "Hide" : action === "lock" ? "Lock" : actionLabel;
+            button.setAttribute("aria-label", toggleLabel + " " + name);
+            if (pressed !== undefined) button.setAttribute("aria-pressed", String(pressed));
+            const actionIcon = document.createElement("i");
+            actionIcon.className = "ss ss-" + iconName;
+            actionIcon.setAttribute("aria-hidden", "true");
+            button.appendChild(actionIcon);
+            button.addEventListener("click", () => handler(element.id));
+            actions.appendChild(button);
+          }
+          row.append(select, actions);
+          fragment.appendChild(row);
+        });
+        layersList.replaceChildren(fragment);
+        layersList.scrollTop = scrollTop;
+        if (focusedId && focusedAction) {
+          const row = [...layersList.children].find(item => item.dataset.elementId === focusedId);
+          const target = row?.querySelector('[data-layer-action="' + focusedAction + '"]');
+          if (target) target.focus({ preventScroll: true });
+          else layersList.querySelector(".sww-layer-info")?.focus({ preventScroll: true });
         }
-
-        const selectedElements = swwInstance.selectedElements || new Set();
-
-        layersList.innerHTML = elements
-          .map((element, index) => {
-            if (!element || !element.id || !element.type) return "";
-
-            const isSelected = selectedElements.has(element.id);
-            const isHidden = element.hidden || false;
-            const isLocked = element.locked || false;
-
-            return `
-                    <div class="sww-layer-item ${
-                      isSelected ? "selected" : ""
-                    }" data-element-id="${element.id}">
-                        <div class="sww-layer-info" onclick="selectLayerElement('${
-                          element.id
-                        }')">
-                            <i class="ss ss-${getLayerIcon(element.type)}"></i>
-                            <span>${element.type} ${index + 1}</span>
-                        </div>
-                        <div class="sww-layer-actions">
-                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); toggleLayerVisibility('${
-                              element.id
-                            }')" title="${isHidden ? "Show" : "Hide"}">
-                                <i class="ss ss-${
-                                  isHidden ? "eye-slash" : "eye"
-                                }"></i>
-                            </button>
-                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); toggleLayerLock('${
-                              element.id
-                            }')" title="${isLocked ? "Unlock" : "Lock"}">
-                                <i class="ss ss-${
-                                  isLocked ? "lock-closed" : "lock-open"
-                                }"></i>
-                            </button>
-                            <button class="sww-layer-action-btn" onclick="event.stopPropagation(); deleteLayerElement('${
-                              element.id
-                            }')" title="Delete">
-                                <i class="ss ss-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-          })
-          .filter((html) => html)
-          .join("");
       }
 
       /**

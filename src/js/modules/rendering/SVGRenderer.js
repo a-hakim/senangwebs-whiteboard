@@ -635,159 +635,88 @@ export const SVGRendererMixin = {
   },
 
   /**
-   * Update table SVG element with edge-based hover controls
+   * Render the table grid while preserving the editor, focus, and scroll position.
    * @private
    */
   _updateTable(element, svg) {
-    svg.setAttribute("x", element.x);
-    svg.setAttribute("y", element.y);
-    svg.setAttribute("width", Math.abs(element.width));
-    svg.setAttribute("height", Math.abs(element.height));
+    const previousScroll = svg.querySelector('.sww-table-scroll');
+    const scrollLeft = previousScroll?.scrollLeft || 0;
+    const scrollTop = previousScroll?.scrollTop || 0;
+    const hadFocus = svg.contains(document.activeElement);
+    const editor = this.activeTableEditor?.element === element ? this.activeTableEditor : null;
+    if (editor) editor.suspended = true;
 
-    svg.innerHTML = "";
+    svg.setAttribute('x', element.width < 0 ? element.x + element.width : element.x);
+    svg.setAttribute('y', element.height < 0 ? element.y + element.height : element.y);
+    svg.setAttribute('width', Math.abs(element.width));
+    svg.setAttribute('height', Math.abs(element.height));
+    svg.replaceChildren();
 
-    var container = document.createElement("div");
-    container.className = "sww-table-element";
-    container.style.width = "100%";
-    container.style.height = "100%";
-    container.style.display = "flex";
-    container.style.flexDirection = "column";
-    container.style.overflow = "hidden";
-
+    const container = document.createElement('div');
+    container.className = 'sww-table-element';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.fontSize = (element.fontSize || 16) + 'px';
+    container.style.fontFamily = element.fontFamily || 'Arial, sans-serif';
+    container.style.color = element.textColor || '#000000';
     this._applyContainerStyles(container, element);
+    // The parent SVG already applies the element opacity.
+    container.style.opacity = '1';
 
-    var tableData = element.tableData || {
-      headers: ["Header 1", "Header 2", "Header 3"],
-      rows: [["", "", ""], ["", "", ""]],
+    const tableData = element.tableData || {
+      headers: ['Header 1', 'Header 2', 'Header 3'],
+      rows: [['', '', ''], ['', '', '']],
     };
+    const scrollWrapper = document.createElement('div');
+    scrollWrapper.className = 'sww-table-scroll';
+    const table = document.createElement('table');
+    table.className = 'sww-table';
+    table.setAttribute('aria-label', 'Editable table');
+    table.style.minWidth = (tableData.headers.length * 120) + 'px';
+    table.style.minHeight = ((tableData.rows.length + 1) * 36) + 'px';
 
-    var scrollWrapper = document.createElement("div");
-    scrollWrapper.className = "sww-table-scroll";
-    scrollWrapper.style.flex = "1";
-    scrollWrapper.style.overflow = "auto";
-
-    var table = document.createElement("table");
-    table.className = "sww-table";
-    var bindCellEditing = function (cellElement, rowIndex, colIndex) {
-      if (!this.editTableCell) return;
-
-      cellElement.addEventListener("pointerdown", function (e) {
-        e.stopPropagation();
-      });
-      cellElement.addEventListener("click", function (e) {
-        e.stopPropagation();
-
-        if (this.currentTool === "select" && element && this.selectElement) {
-          if (!this.selectedElements || !this.selectedElements.has(element)) {
-            this.clearSelection?.();
-            this.selectElement(element);
-          }
-        }
-
-        if (e.detail < 2) return;
-
-        e.preventDefault();
-        this.editTableCell(element, rowIndex, colIndex, cellElement);
-      }.bind(this));
-    }.bind(this);
-
-    var thead = document.createElement("thead");
-    var headerRow = document.createElement("tr");
-    headerRow.className = "sww-table-header-row";
-
-    tableData.headers.forEach(function (header, colIndex) {
-      var th = document.createElement("th");
-      th.className = "sww-table-cell sww-table-header";
-      th.setAttribute("data-row", "header");
-      th.setAttribute("data-col-index", colIndex);
-      th.textContent = header;
-      bindCellEditing(th, "header", colIndex);
-      headerRow.appendChild(th);
-    }, this);
-
+    const makeCell = (tag, value, rowIndex, colIndex) => {
+      const cell = document.createElement(tag);
+      cell.className = 'sww-table-cell' + (tag === 'th' ? ' sww-table-header' : '');
+      if (rowIndex === 'header') {
+        cell.dataset.row = 'header';
+        cell.scope = 'col';
+      } else cell.dataset.rowIndex = rowIndex;
+      cell.dataset.colIndex = colIndex;
+      cell.title = value;
+      cell.textContent = value;
+      this.bindTableCell?.(element, rowIndex, colIndex, cell);
+      if (editor && editor.rowIndex === rowIndex && editor.colIndex === colIndex) {
+        cell.replaceChildren(editor.input);
+      }
+      return cell;
+    };
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    headerRow.className = 'sww-table-header-row';
+    tableData.headers.forEach((header, col) => headerRow.appendChild(makeCell('th', header, 'header', col)));
     thead.appendChild(headerRow);
     table.appendChild(thead);
-
-    var tbody = document.createElement("tbody");
-    tableData.rows.forEach(function (row, rowIndex) {
-      var tr = document.createElement("tr");
-      tr.className = "sww-table-row";
-      row.forEach(function (cell, colIndex) {
-        var td = document.createElement("td");
-        td.className = "sww-table-cell";
-        td.setAttribute("data-row-index", rowIndex);
-        td.setAttribute("data-col-index", colIndex);
-        td.textContent = cell;
-        bindCellEditing(td, rowIndex, colIndex);
-        tr.appendChild(td);
-      }, this);
+    const tbody = document.createElement('tbody');
+    tableData.rows.forEach((row, rowIndex) => {
+      const tr = document.createElement('tr');
+      tr.className = 'sww-table-row';
+      row.forEach((value, col) => tr.appendChild(makeCell('td', value, rowIndex, col)));
       tbody.appendChild(tr);
-    }, this);
+    });
     table.appendChild(tbody);
-
     scrollWrapper.appendChild(table);
-
-    var toolbar = document.createElement("div");
-    toolbar.className = "sww-table-toolbar";
-
-    var canRemoveRow = tableData.rows.length > 1;
-    var canRemoveCol = tableData.headers.length > 1;
-
-    var addRowBtn = document.createElement("button");
-    addRowBtn.className = "sww-table-toolbar-btn";
-    addRowBtn.type = "button";
-    addRowBtn.setAttribute("data-table-action", "add-row");
-    addRowBtn.setAttribute("data-element-id", element.id);
-    addRowBtn.title = "Add row";
-    addRowBtn.innerHTML = '<i class="ss ss-plus"></i> <span>Row</span>';
-
-    var removeRowBtn = document.createElement("button");
-    removeRowBtn.className = "sww-table-toolbar-btn";
-    removeRowBtn.type = "button";
-    removeRowBtn.setAttribute("data-table-action", "remove-row");
-    removeRowBtn.setAttribute("data-element-id", element.id);
-    removeRowBtn.title = "Remove row";
-    removeRowBtn.innerHTML = '<i class="ss ss-minus"></i> <span>Row</span>';
-    if (!canRemoveRow) removeRowBtn.disabled = true;
-
-    var addColBtn = document.createElement("button");
-    addColBtn.className = "sww-table-toolbar-btn";
-    addColBtn.type = "button";
-    addColBtn.setAttribute("data-table-action", "add-column");
-    addColBtn.setAttribute("data-element-id", element.id);
-    addColBtn.title = "Add column";
-    addColBtn.innerHTML = '<i class="ss ss-plus"></i> <span>Col</span>';
-
-    var removeColBtn = document.createElement("button");
-    removeColBtn.className = "sww-table-toolbar-btn";
-    removeColBtn.type = "button";
-    removeColBtn.setAttribute("data-table-action", "remove-column");
-    removeColBtn.setAttribute("data-element-id", element.id);
-    removeColBtn.title = "Remove column";
-    removeColBtn.innerHTML = '<i class="ss ss-minus"></i> <span>Col</span>';
-    if (!canRemoveCol) removeColBtn.disabled = true;
-
-    toolbar.appendChild(addRowBtn);
-    toolbar.appendChild(removeRowBtn);
-    toolbar.appendChild(addColBtn);
-    toolbar.appendChild(removeColBtn);
-
-    [addRowBtn, removeRowBtn, addColBtn, removeColBtn].forEach(function (button) {
-      button.addEventListener("pointerdown", function (e) {
-        e.stopPropagation();
-      });
-      button.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (button.disabled || !this.handleTableAction) return;
-        this.handleTableAction(element, button.getAttribute("data-table-action"));
-      }.bind(this));
-    }, this);
-
     container.appendChild(scrollWrapper);
-    container.appendChild(toolbar);
-
     svg.appendChild(container);
+    scrollWrapper.scrollLeft = scrollLeft;
+    scrollWrapper.scrollTop = scrollTop;
+    this.refreshTableCellSelection?.(element);
+    if (hadFocus) {
+      if (editor) editor.input.focus({ preventScroll: true });
+      else this.getActiveTableCellElement?.()?.focus({ preventScroll: true });
+    }
+    if (editor) editor.suspended = false;
+    this.scheduleTableToolbarPosition?.();
   },
 
   /**

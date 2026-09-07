@@ -8,9 +8,10 @@ import { PerformanceUtils } from '../utils/PerformanceUtils.js';
 export const EventHandlersMixin = {
     isInteractiveTableTarget(target) {
         if (!target || !target.closest) return false;
-        return Boolean(
-            target.closest('.sww-table-cell, .sww-table-cell-input, .sww-table-toolbar-btn')
-        );
+        const cell = target.closest('.sww-table-cell, .sww-table-cell-input');
+        const elementId = cell?.closest('[data-element-id]')?.getAttribute('data-element-id');
+        const element = elementId && this.elementsById.get(elementId);
+        return !!element && this.canInteractWithTable(element);
     },
 
     /**

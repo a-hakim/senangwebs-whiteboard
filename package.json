@@ -28,7 +28,7 @@
     "*.css"
   ],
   "scripts": {
-    "test": "node scripts/check-package.js && node scripts/test-core.js",
+    "test": "node scripts/check-package.js && node scripts/test-core.js && node scripts/test-table-tools.js",
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch",
     "icons:build": "node scripts/generate-icon-subset.js",

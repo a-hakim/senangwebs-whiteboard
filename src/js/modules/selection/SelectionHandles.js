@@ -45,6 +45,7 @@ export const SelectionHandlesMixin = {
      * Shows selection boxes and resize/rotate handles
      */
     updateSelectionHandles() {
+        this.syncTableTools?.();
         // Only update if selection update isn't already scheduled
         if (this.selectionUpdateScheduled) return;
 

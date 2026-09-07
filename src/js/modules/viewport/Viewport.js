@@ -179,6 +179,7 @@ export const ViewportMixin = {
     updateViewBox() {
         if (!this.svg) return;
         this.svg.setAttribute('viewBox', `${this.viewBox.x} ${this.viewBox.y} ${this.viewBox.width} ${this.viewBox.height}`);
+        this.scheduleTableToolbarPosition?.();
         
         // Update visible elements for performance optimization
         if (this.elements.length > 100 && this.updateVisibleElements) {

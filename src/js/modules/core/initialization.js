@@ -17,6 +17,7 @@ export const InitializationMixin = {
         this.container._swwInstance = this;
         this.createUI();
         this.setupEventListeners();
+        this.setupTableTools();
         
         // Apply theme colors
         this.applyThemeColors();
@@ -208,6 +209,7 @@ export const InitializationMixin = {
     destroy() {
         if (this.isDestroyed) return;
         this.isDestroyed = true;
+        this.destroyTableTools();
 
         clearTimeout(this.initializationTimer);
         this.eventController?.abort();
