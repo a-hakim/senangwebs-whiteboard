@@ -49,7 +49,7 @@ npm run dev
 
 The library has **no runtime dependencies** — these are bundled during the build process:
 
-- **@bookklik/senangstart-icons** (^1.0.14) - Icon library for UI elements (only the icons the library uses are bundled — regenerate with `npm run icons:build`)
+- **@bookklik/senangstart-icons** (^1.0.17) - Icon library for UI elements (only the icons the library uses are bundled — regenerate with `npm run icons:build`)
 - **marked** (^9.0.0) - Markdown parser for document elements
 
 ### Build Output

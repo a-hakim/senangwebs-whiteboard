@@ -4,6 +4,8 @@
  * Handles dark/light theme switching and color management
  */
 
+import { THEME_COLORS } from '../utils/constants.js';
+
 export const ThemeManagerMixin = {
     /**
      * Set panel display mode (dark/light theme)
@@ -16,36 +18,19 @@ export const ThemeManagerMixin = {
             return;
         }
         
+        const previousColors = THEME_COLORS[this.options.panelMode] || THEME_COLORS.dark;
         this.options.panelMode = mode;
         
         // Update default colors based on the new mode if custom colors weren't explicitly set
-        const defaultColors = mode === 'light' ? {
-            panelBackgroundColor: '#ffffff',
-            panelTextColor: '#1f2937',
-            accentColor: '#3b82f6',
-            secondaryAccentColor: '#2563eb',
-            panelBorder: '#e5e7eb',
-            panelHover: '#f3f4f6',
-            panelActive: '#e5e7eb'
-        } : {
-            panelBackgroundColor: '#18181b',
-            panelTextColor: '#ffffff',
-            accentColor: '#00FF99',
-            secondaryAccentColor: '#007370',
-            panelBorder: '#27272a',
-            panelHover: '#27272a',
-            panelActive: '#3f3f46'
-        };
+        const defaultColors = THEME_COLORS[mode];
         
         // Only update colors if they match the previous mode's defaults
         // This preserves custom colors that were explicitly set
-        this.options.panelBackgroundColor = defaultColors.panelBackgroundColor;
-        this.options.panelTextColor = defaultColors.panelTextColor;
-        this.options.accentColor = defaultColors.accentColor;
-        this.options.secondaryAccentColor = defaultColors.secondaryAccentColor;
-        this.options.panelBorder = defaultColors.panelBorder;
-        this.options.panelHover = defaultColors.panelHover;
-        this.options.panelActive = defaultColors.panelActive;
+        for (const [key, value] of Object.entries(defaultColors)) {
+            if (this.options[key] === undefined || this.options[key] === previousColors[key]) {
+                this.options[key] = value;
+            }
+        }
         
         // Re-apply theme colors
         this.applyThemeColors();

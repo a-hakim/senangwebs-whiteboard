@@ -42,13 +42,19 @@ export const THEME_COLORS = {
         panelBackgroundColor: '#18181b',
         panelTextColor: '#ffffff',
         accentColor: '#00FF99',
-        secondaryAccentColor: '#007370'
+        secondaryAccentColor: '#007370',
+        panelBorder: '#27272a',
+        panelHover: '#27272a',
+        panelActive: '#3f3f46'
     },
     light: {
         panelBackgroundColor: '#ffffff',
         panelTextColor: '#1f2937',
         accentColor: '#3b82f6',
-        secondaryAccentColor: '#2563eb'
+        secondaryAccentColor: '#2563eb',
+        panelBorder: '#e5e7eb',
+        panelHover: '#f3f4f6',
+        panelActive: '#e5e7eb'
     }
 };
 

@@ -33,6 +33,7 @@ export const EventHandlersMixin = {
         
         // Debounced viewport update for scroll/zoom
         const debouncedViewportUpdate = PerformanceUtils.debounce(() => this.updateVisibleElements(), 100);
+        this.eventController.signal.addEventListener('abort', () => debouncedViewportUpdate.cancel(), { once: true });
         
         this.svg.addEventListener('pointerdown', (e) => {
             if (this.isInteractiveTableTarget(e.target)) {
@@ -122,65 +123,41 @@ export const EventHandlersMixin = {
             activeElement.tagName === 'INPUT' || 
             activeElement.tagName === 'TEXTAREA' || 
             activeElement.tagName === 'SELECT' ||
-            activeElement.contentEditable === 'true'
+            activeElement.isContentEditable ||
+            activeElement.closest?.('[contenteditable]:not([contenteditable="false"])')
         );
         
         if (isEditingInput || this.isPreviewMode) {
             return;
         }
         
+        const key = e.key.toLowerCase();
+        const commandKey = e.ctrlKey || e.metaKey;
+
         if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
             this.deleteSelectedElements();
         } else if (e.key === 'Escape') {
             this.clearSelection();
-        } else if (e.ctrlKey && e.key === 'a') {
+        } else if (commandKey && key === 'a') {
             e.preventDefault();
             this.selectAll();
-        } else if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+        } else if (commandKey && key === 'z' && !e.shiftKey) {
             e.preventDefault();
             this.undo();
-        } else if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'Z')) {
+        } else if (commandKey && (key === 'y' || (e.shiftKey && key === 'z'))) {
             e.preventDefault();
             this.redo();
-        } else if (e.ctrlKey && e.key === 'c') {
+        } else if (commandKey && key === 'c') {
             e.preventDefault();
             this.copySelected();
-        } else if (e.ctrlKey && e.key === 'v') {
+        } else if (commandKey && key === 'v') {
             e.preventDefault();
             this.pasteClipboard();
         } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             e.preventDefault();
             this.moveSelectedElements(e.key, e.shiftKey);
         }
-    },
-
-    /**
-     * Handle mouse wheel for zooming
-     */
-    handleWheel(e) {
-        if (!e.ctrlKey && !e.metaKey) {
-            // Allow normal scroll behavior when Ctrl is not pressed
-            return;
-        }
-        
-        e.preventDefault();
-        const point = this.getPointerPosition(e);
-        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-        
-        this.zoom *= zoomFactor;
-        this.zoom = Math.max(0.1, Math.min(5, this.zoom));
-        
-        const newWidth = this.viewBox.width / zoomFactor;
-        const newHeight = this.viewBox.height / zoomFactor;
-        const dx = (this.viewBox.width - newWidth) * (point.x - this.viewBox.x) / this.viewBox.width;
-        const dy = (this.viewBox.height - newHeight) * (point.y - this.viewBox.y) / this.viewBox.height;
-        
-        this.viewBox.x += dx;
-        this.viewBox.y += dy;
-        this.viewBox.width = newWidth;
-        this.viewBox.height = newHeight;
-        
-        this.updateViewBox();
     },
 
     /**
@@ -501,6 +478,7 @@ export const EventHandlersMixin = {
         if (isTextElement) {
             // Use setTimeout to ensure the tool change is complete
             setTimeout(() => {
+                if (this.isDestroyed || this.elementsById.get(finishedElement.id) !== finishedElement) return;
                 this.startTextEditing(finishedElement);
             }, 10);
         }

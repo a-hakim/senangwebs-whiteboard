@@ -161,10 +161,14 @@ export const InitializationMixin = {
      * Implements viewport culling for performance
      */
     updateVisibleElements() {
-        if (this.viewportUpdateScheduled) return;
+        if (this.isDestroyed || this.viewportUpdateScheduled) return;
         
         this.viewportUpdateScheduled = true;
         PerformanceUtils.requestAnimationFrame(() => {
+            if (this.isDestroyed) {
+                this.viewportUpdateScheduled = false;
+                return;
+            }
             const buffer = 100; // Extra pixels around viewport
             const viewBounds = {
                 x: this.viewBox.x - buffer,
@@ -214,6 +218,7 @@ export const InitializationMixin = {
         clearTimeout(this.initializationTimer);
         this.eventController?.abort();
         this.resizeObserver?.disconnect();
+        this.debouncedViewportUpdate?.cancel();
         this.exitPreviewMode?.();
 
         // Remove any orphaned editors/overlays appended to document.body

@@ -42,12 +42,16 @@ export const ElementManagementMixin = {
             this.elements.splice(index, 1);
             this.elementsById.delete(element.id);
             this.spatialIndex.remove(element);
+            this.visibleElements.delete(element);
             this.syncTableTools?.();
             
             // Clean up SVG element
             if (element.svgElement && element.svgElement.parentNode) {
                 element.svgElement.parentNode.removeChild(element.svgElement);
             }
+            element.boundaryRect?.remove();
+            element.pendingBoundaryRect?.remove();
+            this.cleanupElement(element);
             
             this.updateControlPanelLayers();
         }

@@ -30,7 +30,7 @@
 
 ### Tool Settings
 
-All tools support these customizable properties:
+Available settings depend on the element type:
 
 - **Stroke**: Color, width, and style
 - **Fill**: Solid colors, gradients (linear/radial), hatch patterns, transparency
@@ -38,3 +38,24 @@ All tools support these customizable properties:
 - **Text**: Font family (10 choices), size, color, alignment
 - **Gradients**: Multi-stop gradients with color and position controls
 - **Grid Snapping**: Optional snap-to-grid with customizable grid size
+
+### Contextual Properties Pane
+
+The pane opens for one selected, ungrouped element and only shows applicable
+controls. It remains hidden for no selection, multiple selection, and groups.
+
+- **Shapes**: Stroke, fill style, opacity, dimensions, and rotation.
+- **Lines and arrows**: Stroke, opacity, dimensions, and rotation; no fill controls.
+  Dimension edits preserve endpoint direction and allow zero-width/height lines.
+- **Freehand paths**: Stroke, opacity, and rotation. Use canvas resize handles to
+  scale paths; numeric dimensions are hidden because they do not scale path points.
+- **Text**: Stroke/outline, opacity, dimensions, rotation, font size/family, text
+  color, and alignment; no shape-fill controls.
+- **Images and websites**: Border stroke, opacity, dimensions, and rotation;
+  no fill or typography controls.
+- **Markdown and tables**: Stroke, fill style, opacity, dimensions, rotation,
+  font size/family, and text color. Alignment is only offered for text elements.
+
+Fill color appears for solid or imported hatch fills. Gradient type and stops
+appear only for a gradient fill. Transparent fills show neither. Property changes
+also refresh the spatial index so subsequent hit testing uses the new bounds.

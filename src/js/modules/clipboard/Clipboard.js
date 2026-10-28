@@ -231,7 +231,7 @@ export const ClipboardMixin = {
      * @returns {Array} Array of clipboard elements
      */
     getClipboardContent() {
-        return this.clipboard ? [...this.clipboard] : [];
+        return this.clipboard ? this.clipboard.map(element => this.serializeElement(element)) : [];
     },
 
     /**
@@ -244,7 +244,7 @@ export const ClipboardMixin = {
             return;
         }
         
-        this.clipboard = elements.map(element => this.serializeElement(element));
+        this.clipboard = elements.map(element => this.deserializeElement(element));
         
         // Update context menu state if available
         if (this.updateContextMenuState) {

@@ -103,7 +103,10 @@ export class SWWInstance {
         this.previewModeLockedElements = [];
         
         // Tool settings
-        this.toolSettings = { ...DEFAULT_TOOL_SETTINGS };
+        this.toolSettings = {
+            ...DEFAULT_TOOL_SETTINGS,
+            gradientStops: DEFAULT_TOOL_SETTINGS.gradientStops.map(stop => ({ ...stop }))
+        };
         
         // Performance optimization properties
         this.spatialIndex = new SpatialIndex(100);

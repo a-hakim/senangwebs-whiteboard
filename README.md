@@ -190,16 +190,18 @@ For detailed API documentation, see [docs/api-reference.md](docs/api-reference.m
 
 ### Keyboard Controls
 
-- **Ctrl+Z** / **Ctrl+Y**: Undo / Redo
-- **Ctrl+A**: Select all
-- **Ctrl+C** / **Ctrl+V**: Copy / Paste
-- **Delete**: Delete selected elements
+- **Ctrl/Cmd+Z**: Undo
+- **Ctrl/Cmd+Y** or **Ctrl/Cmd+Shift+Z**: Redo
+- **Ctrl/Cmd+A**: Select all
+- **Ctrl/Cmd+C** / **Ctrl/Cmd+V**: Copy / Paste
+- **Delete** / **Backspace**: Delete selected elements
 - **Escape**: Clear selection or exit preview mode
 - **Arrow Keys**: Move selected elements (Shift for grid-aligned movement)
-- **+** / **-**: Zoom in / out
-- **G**: Toggle grid
-- **P**: Toggle preview mode
-- **1-5**: Quick tool selection
+- **Ctrl/Cmd+Mouse Wheel**: Zoom toward the pointer
+
+Canvas shortcuts apply while the whiteboard is focused and do not override text
+editing. Use the toolbar or API for tool selection, grid toggling, and entering
+preview mode.
 
 ### Performance Features
 

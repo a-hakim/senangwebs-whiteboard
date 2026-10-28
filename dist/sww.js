@@ -10,15 +10,33 @@
 })(this, () => {
 return /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
-/******/ 	var __webpack_modules__ = ({
-
-/***/ 638
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
+/******/ 	// The require scope
+/******/ 	var __webpack_require__ = {};
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
 
 // EXPORTS
 __webpack_require__.d(__webpack_exports__, {
-  SWWInstance: () => (/* binding */ SWWInstance)
+  "default": () => (/* binding */ sww)
 });
 
 ;// ./src/js/modules/utils/SpatialIndex.js
@@ -166,13 +184,19 @@ const THEME_COLORS = {
     panelBackgroundColor: '#18181b',
     panelTextColor: '#ffffff',
     accentColor: '#00FF99',
-    secondaryAccentColor: '#007370'
+    secondaryAccentColor: '#007370',
+    panelBorder: '#27272a',
+    panelHover: '#27272a',
+    panelActive: '#3f3f46'
   },
   light: {
     panelBackgroundColor: '#ffffff',
     panelTextColor: '#1f2937',
     accentColor: '#3b82f6',
-    secondaryAccentColor: '#2563eb'
+    secondaryAccentColor: '#2563eb',
+    panelBorder: '#e5e7eb',
+    panelHover: '#f3f4f6',
+    panelActive: '#e5e7eb'
   }
 };
 
@@ -299,7 +323,10 @@ class SWWInstance {
 
     // Tool settings
     this.toolSettings = {
-      ...DEFAULT_TOOL_SETTINGS
+      ...DEFAULT_TOOL_SETTINGS,
+      gradientStops: DEFAULT_TOOL_SETTINGS.gradientStops.map(stop => ({
+        ...stop
+      }))
     };
 
     // Performance optimization properties
@@ -318,63 +345,6 @@ class SWWInstance {
     // The actual initialization logic is in the initialization mixin
   }
 }
-
-/***/ }
-
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/ 	
-/************************************************************************/
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__webpack_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
-/************************************************************************/
-var __webpack_exports__ = {};
-
-// EXPORTS
-__webpack_require__.d(__webpack_exports__, {
-  "default": () => (/* binding */ sww)
-});
-
-// EXTERNAL MODULE: ./src/js/modules/core/SWWInstance.js + 2 modules
-var SWWInstance = __webpack_require__(638);
 ;// ./src/js/modules/utils/PerformanceUtils.js
 /**
  * Performance utility classes for handling large number of elements
@@ -394,10 +364,12 @@ class PerformanceUtils {
   }
   static debounce(func, delay) {
     let timeoutId;
-    return function (...args) {
+    const debounced = function (...args) {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
+    debounced.cancel = () => clearTimeout(timeoutId);
+    return debounced;
   }
   static requestAnimationFrame(func) {
     return window.requestAnimationFrame(func);
@@ -559,9 +531,13 @@ const InitializationMixin = {
    * Implements viewport culling for performance
    */
   updateVisibleElements() {
-    if (this.viewportUpdateScheduled) return;
+    if (this.isDestroyed || this.viewportUpdateScheduled) return;
     this.viewportUpdateScheduled = true;
     PerformanceUtils.requestAnimationFrame(() => {
+      if (this.isDestroyed) {
+        this.viewportUpdateScheduled = false;
+        return;
+      }
       const buffer = 100; // Extra pixels around viewport
       const viewBounds = {
         x: this.viewBox.x - buffer,
@@ -603,6 +579,7 @@ const InitializationMixin = {
     clearTimeout(this.initializationTimer);
     this.eventController?.abort();
     this.resizeObserver?.disconnect();
+    this.debouncedViewportUpdate?.cancel();
     this.exitPreviewMode?.();
 
     // Remove any orphaned editors/overlays appended to document.body
@@ -673,12 +650,16 @@ const ElementManagementMixin = {
       this.elements.splice(index, 1);
       this.elementsById.delete(element.id);
       this.spatialIndex.remove(element);
+      this.visibleElements.delete(element);
       this.syncTableTools?.();
 
       // Clean up SVG element
       if (element.svgElement && element.svgElement.parentNode) {
         element.svgElement.parentNode.removeChild(element.svgElement);
       }
+      element.boundaryRect?.remove();
+      element.pendingBoundaryRect?.remove();
+      this.cleanupElement(element);
       this.updateControlPanelLayers();
     }
   },
@@ -813,7 +794,7 @@ const ElementManagementMixin = {
 ;// ./src/js/modules/core/SceneState.js
 const SCENE_VERSION = 1;
 const ELEMENT_TYPES = new Set(["rectangle", "ellipse", "diamond", "parallelogram", "star", "line", "arrow", "path", "text", "website", "image", "markdown", "table"]);
-const RUNTIME_ELEMENT_KEYS = new Set(["svgElement", "boundaryRect", "pendingBoundaryRect", "_mouseDownHandler", "_touchStartHandler", "dragStartX", "dragStartY", "resizeStartX", "resizeStartY", "resizeStartWidth", "resizeStartHeight", "rotateStartAngle"]);
+const RUNTIME_ELEMENT_KEYS = new Set(["svgElement", "boundaryRect", "pendingBoundaryRect", "_mouseDownHandler", "_touchStartHandler", "dragStartX", "dragStartY", "resizeStartX", "resizeStartY", "resizeStartWidth", "resizeStartHeight", "resizeStartPoints", "rotateStartAngle"]);
 const UNSAFE_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 function cloneSerializable(value) {
   if (value === null || ["string", "number", "boolean"].includes(typeof value)) {
@@ -980,7 +961,7 @@ const SceneStateMixin = {
       elements,
       viewBox,
       zoom: Math.max(0.1, Math.min(5, finiteNumber(sceneData.zoom, 1))),
-      backgroundColor: typeof sceneData.backgroundColor === "string" ? sceneData.backgroundColor : this.options.backgroundColor,
+      backgroundColor: safeColor(sceneData.backgroundColor, this.options.backgroundColor),
       gridSize: Math.max(1, finiteNumber(sceneData.gridSize, this.options.gridSize)),
       showGrid: sceneData.showGrid === undefined ? this.snapToGrid : Boolean(sceneData.showGrid),
       selectedElementIds: Array.isArray(sceneData.selectedElementIds) ? sceneData.selectedElementIds.filter(id => typeof id === "string") : []
@@ -1003,6 +984,7 @@ const SceneStateMixin = {
     this.zoom = scene.zoom;
     this.options.backgroundColor = scene.backgroundColor;
     this.options.gridSize = scene.gridSize;
+    this.options.showGrid = scene.showGrid;
     this.snapToGrid = scene.showGrid;
     for (const element of scene.elements) {
       element.svgElement = this.createSVGElement(element);
@@ -1022,6 +1004,7 @@ const SceneStateMixin = {
     }
     this.createGrid();
     this.updateGridVisibility();
+    this.updateGridButtonState();
     this.updateSelectionHandles();
     this.syncPropertiesPanel();
     this.updateVisibleElements();
@@ -1151,6 +1134,9 @@ const EventHandlersMixin = {
 
     // Debounced viewport update for scroll/zoom
     const debouncedViewportUpdate = PerformanceUtils.debounce(() => this.updateVisibleElements(), 100);
+    this.eventController.signal.addEventListener('abort', () => debouncedViewportUpdate.cancel(), {
+      once: true
+    });
     this.svg.addEventListener('pointerdown', e => {
       if (this.isInteractiveTableTarget(e.target)) {
         return;
@@ -1239,56 +1225,36 @@ const EventHandlersMixin = {
    */
   handleKeyDown(e) {
     const activeElement = document.activeElement;
-    const isEditingInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT' || activeElement.contentEditable === 'true');
+    const isEditingInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT' || activeElement.isContentEditable || activeElement.closest?.('[contenteditable]:not([contenteditable="false"])'));
     if (isEditingInput || this.isPreviewMode) {
       return;
     }
+    const key = e.key.toLowerCase();
+    const commandKey = e.ctrlKey || e.metaKey;
     if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
       this.deleteSelectedElements();
     } else if (e.key === 'Escape') {
       this.clearSelection();
-    } else if (e.ctrlKey && e.key === 'a') {
+    } else if (commandKey && key === 'a') {
       e.preventDefault();
       this.selectAll();
-    } else if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+    } else if (commandKey && key === 'z' && !e.shiftKey) {
       e.preventDefault();
       this.undo();
-    } else if (e.ctrlKey && e.key === 'y' || e.ctrlKey && e.shiftKey && e.key === 'Z') {
+    } else if (commandKey && (key === 'y' || e.shiftKey && key === 'z')) {
       e.preventDefault();
       this.redo();
-    } else if (e.ctrlKey && e.key === 'c') {
+    } else if (commandKey && key === 'c') {
       e.preventDefault();
       this.copySelected();
-    } else if (e.ctrlKey && e.key === 'v') {
+    } else if (commandKey && key === 'v') {
       e.preventDefault();
       this.pasteClipboard();
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
       this.moveSelectedElements(e.key, e.shiftKey);
     }
-  },
-  /**
-   * Handle mouse wheel for zooming
-   */
-  handleWheel(e) {
-    if (!e.ctrlKey && !e.metaKey) {
-      // Allow normal scroll behavior when Ctrl is not pressed
-      return;
-    }
-    e.preventDefault();
-    const point = this.getPointerPosition(e);
-    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    this.zoom *= zoomFactor;
-    this.zoom = Math.max(0.1, Math.min(5, this.zoom));
-    const newWidth = this.viewBox.width / zoomFactor;
-    const newHeight = this.viewBox.height / zoomFactor;
-    const dx = (this.viewBox.width - newWidth) * (point.x - this.viewBox.x) / this.viewBox.width;
-    const dy = (this.viewBox.height - newHeight) * (point.y - this.viewBox.y) / this.viewBox.height;
-    this.viewBox.x += dx;
-    this.viewBox.y += dy;
-    this.viewBox.width = newWidth;
-    this.viewBox.height = newHeight;
-    this.updateViewBox();
   },
   /**
    * Get pointer position in SVG coordinates
@@ -1592,6 +1558,7 @@ const EventHandlersMixin = {
     if (isTextElement) {
       // Use setTimeout to ensure the tool change is complete
       setTimeout(() => {
+        if (this.isDestroyed || this.elementsById.get(finishedElement.id) !== finishedElement) return;
         this.startTextEditing(finishedElement);
       }, 10);
     }
@@ -4934,12 +4901,24 @@ const ElementManipulationMixin = {
     this.svg.style.cursor = 'default';
   }
 };
+;// ./src/js/modules/ui/propertyCapabilities.js
+const COMMON_PROPERTIES = ["opacity", "width", "height", "rotation"];
+const STROKE_PROPERTIES = ["strokeColor", "strokeWidth"];
+const FILL_PROPERTIES = ["fillStyle", "fillColor", "gradientType", "gradientStops"];
+const FONT_PROPERTIES = ["fontSize", "fontFamily", "textColor"];
+const SHAPE_PROPERTIES = [...COMMON_PROPERTIES, ...STROKE_PROPERTIES, ...FILL_PROPERTIES];
+const ELEMENT_PROPERTIES = new Map([...["rectangle", "ellipse", "diamond", "parallelogram", "star"].map(type => [type, new Set(SHAPE_PROPERTIES)]), ...["line", "arrow", "image", "website"].map(type => [type, new Set([...COMMON_PROPERTIES, ...STROKE_PROPERTIES])]), ["path", new Set(["opacity", "rotation", ...STROKE_PROPERTIES])], ["text", new Set([...COMMON_PROPERTIES, ...STROKE_PROPERTIES, ...FONT_PROPERTIES, "textAlign"])], ...["markdown", "table"].map(type => [type, new Set([...SHAPE_PROPERTIES, ...FONT_PROPERTIES])])]);
+function supportsElementProperty(element, propertyName) {
+  return ELEMENT_PROPERTIES.get(element?.type)?.has(propertyName) || false;
+}
 ;// ./src/js/modules/ui/PropertiesPanel.js
 /**
  * PropertiesPanel.js
  * Real-time property editing panel for selected elements
  * Part of Phase 5: UI Panels
  */
+
+
 
 const PropertiesPanelMixin = {
   /**
@@ -4966,6 +4945,7 @@ const PropertiesPanelMixin = {
     // Stroke color
     const strokeGroup = document.createElement("div");
     strokeGroup.className = "sww-property-group";
+    strokeGroup.dataset.property = "strokeColor";
     const strokeLabel = document.createElement("label");
     strokeLabel.className = "sww-property-label";
     strokeLabel.textContent = "Stroke Color";
@@ -5020,6 +5000,7 @@ const PropertiesPanelMixin = {
     // Stroke width
     const widthGroup = document.createElement("div");
     widthGroup.className = "sww-property-group";
+    widthGroup.dataset.property = "strokeWidth";
     const widthLabel = document.createElement("label");
     widthLabel.className = "sww-property-label";
     widthLabel.textContent = "Stroke Width";
@@ -5032,6 +5013,7 @@ const PropertiesPanelMixin = {
     widthInput.value = this.toolSettings.strokeWidth;
     widthInput.addEventListener("input", e => {
       let value = parseInt(e.target.value);
+      if (!Number.isFinite(value)) return;
       // Validate input range
       if (value < 0) value = 0;
       if (value > 20) value = 20;
@@ -5053,6 +5035,7 @@ const PropertiesPanelMixin = {
     // Fill color
     const fillGroup = document.createElement("div");
     fillGroup.className = "sww-property-group";
+    fillGroup.dataset.property = "fillColor";
     const fillLabel = document.createElement("label");
     fillLabel.className = "sww-property-label";
     fillLabel.textContent = "Fill Color";
@@ -5107,6 +5090,7 @@ const PropertiesPanelMixin = {
     // Fill style
     const fillStyleGroup = document.createElement("div");
     fillStyleGroup.className = "sww-property-group";
+    fillStyleGroup.dataset.property = "fillStyle";
     const fillStyleLabel = document.createElement("label");
     fillStyleLabel.className = "sww-property-label";
     fillStyleLabel.textContent = "Fill Style";
@@ -5142,6 +5126,7 @@ const PropertiesPanelMixin = {
     // Gradient Controls
     const gradientGroup = document.createElement("div");
     gradientGroup.className = "sww-property-group sww-gradient-group";
+    gradientGroup.dataset.property = "gradientType";
     gradientGroup.classList.toggle("visible", this.toolSettings.fillStyle === "gradient");
     gradientGroup.classList.toggle("hidden", this.toolSettings.fillStyle !== "gradient");
 
@@ -5202,6 +5187,7 @@ const PropertiesPanelMixin = {
     // Opacity
     const opacityGroup = document.createElement("div");
     opacityGroup.className = "sww-property-group";
+    opacityGroup.dataset.property = "opacity";
     const opacityLabel = document.createElement("label");
     opacityLabel.className = "sww-property-label";
     opacityLabel.textContent = "Opacity";
@@ -5214,6 +5200,7 @@ const PropertiesPanelMixin = {
     opacityInput.value = Math.round(this.toolSettings.opacity * 100);
     opacityInput.addEventListener("input", e => {
       let value = parseInt(e.target.value);
+      if (!Number.isFinite(value)) return;
       // Validate input range
       if (value < 0) value = 0;
       if (value > 100) value = 100;
@@ -5238,6 +5225,7 @@ const PropertiesPanelMixin = {
     // Width property
     const elementWidthGroup = document.createElement("div");
     elementWidthGroup.className = "sww-property-group";
+    elementWidthGroup.dataset.property = "width";
     const elementWidthLabel = document.createElement("label");
     elementWidthLabel.className = "sww-property-label";
     elementWidthLabel.textContent = "Width";
@@ -5252,7 +5240,8 @@ const PropertiesPanelMixin = {
     elementWidthUnit.textContent = "px";
     elementWidthInput.addEventListener("input", e => {
       let value = parseInt(e.target.value);
-      if (value < 1) value = 1;
+      if (!Number.isFinite(value)) return;
+      value = Math.max(Number(e.target.min), value);
       e.target.value = value;
 
       // Update width property for selected elements
@@ -5268,6 +5257,7 @@ const PropertiesPanelMixin = {
     // Height property
     const elementHeightGroup = document.createElement("div");
     elementHeightGroup.className = "sww-property-group";
+    elementHeightGroup.dataset.property = "height";
     const elementHeightLabel = document.createElement("label");
     elementHeightLabel.className = "sww-property-label";
     elementHeightLabel.textContent = "Height";
@@ -5282,7 +5272,8 @@ const PropertiesPanelMixin = {
     elementHeightUnit.textContent = "px";
     elementHeightInput.addEventListener("input", e => {
       let value = parseInt(e.target.value);
-      if (value < 1) value = 1;
+      if (!Number.isFinite(value)) return;
+      value = Math.max(Number(e.target.min), value);
       e.target.value = value;
 
       // Update height property for selected elements
@@ -5298,6 +5289,7 @@ const PropertiesPanelMixin = {
     // Rotation property
     const rotationGroup = document.createElement("div");
     rotationGroup.className = "sww-property-group";
+    rotationGroup.dataset.property = "rotation";
     const rotationLabel = document.createElement("label");
     rotationLabel.className = "sww-property-label";
     rotationLabel.textContent = "Rotation";
@@ -5313,6 +5305,7 @@ const PropertiesPanelMixin = {
     rotationUnit.textContent = "°";
     rotationInput.addEventListener("input", e => {
       let value = parseInt(e.target.value);
+      if (!Number.isFinite(value)) return;
       // Normalize rotation to -360 to 360 range
       if (value < -360) value = -360;
       if (value > 360) value = 360;
@@ -5333,6 +5326,7 @@ const PropertiesPanelMixin = {
     textSection.className = "sww-text-properties sww-text-section hidden";
     const fontSizeGroup = document.createElement("div");
     fontSizeGroup.className = "sww-property-group";
+    fontSizeGroup.dataset.property = "fontSize";
     const fontSizeLabel = document.createElement("label");
     fontSizeLabel.className = "sww-property-label";
     fontSizeLabel.textContent = "Font Size";
@@ -5348,6 +5342,7 @@ const PropertiesPanelMixin = {
     fontSizeUnit.textContent = "px";
     fontSizeInput.addEventListener("input", e => {
       let value = parseInt(e.target.value);
+      if (!Number.isFinite(value)) return;
       // Validate input range
       if (value < 8) value = 8;
       if (value > 72) value = 72;
@@ -5368,23 +5363,19 @@ const PropertiesPanelMixin = {
     // Font family
     const fontFamilyGroup = document.createElement("div");
     fontFamilyGroup.className = "sww-property-group";
+    fontFamilyGroup.dataset.property = "fontFamily";
     const fontFamilyLabel = document.createElement("label");
     fontFamilyLabel.className = "sww-property-label";
     fontFamilyLabel.textContent = "Font Family";
     const fontFamilySelect = document.createElement("select");
     fontFamilySelect.className = "sww-select-input";
-
-    // Import SWWInstance to access FONT_FAMILIES constant
-    Promise.resolve(/* import() */).then(__webpack_require__.bind(__webpack_require__, 638)).then(module => {
-      const SWWInstance = module.SWWInstance;
-      SWWInstance.FONT_FAMILIES.forEach(font => {
-        const option = document.createElement("option");
-        option.value = font.value;
-        option.textContent = font.text;
-        option.className = "sww-font-family-option";
-        option.style.fontFamily = font.value;
-        fontFamilySelect.appendChild(option);
-      });
+    FONT_FAMILIES.forEach(font => {
+      const option = document.createElement("option");
+      option.value = font.value;
+      option.textContent = font.text;
+      option.className = "sww-font-family-option";
+      option.style.fontFamily = font.value;
+      fontFamilySelect.appendChild(option);
     });
     fontFamilySelect.value = this.toolSettings.fontFamily;
     fontFamilySelect.addEventListener("change", e => {
@@ -5398,6 +5389,7 @@ const PropertiesPanelMixin = {
     // Text color (separate from stroke color for clarity)
     const textColorGroup = document.createElement("div");
     textColorGroup.className = "sww-property-group";
+    textColorGroup.dataset.property = "textColor";
     const textColorLabel = document.createElement("label");
     textColorLabel.className = "sww-property-label";
     textColorLabel.textContent = "Text Color";
@@ -5452,6 +5444,7 @@ const PropertiesPanelMixin = {
     // Text alignment
     const textAlignGroup = document.createElement("div");
     textAlignGroup.className = "sww-property-group";
+    textAlignGroup.dataset.property = "textAlign";
     const textAlignLabel = document.createElement("label");
     textAlignLabel.className = "sww-property-label";
     textAlignLabel.textContent = "Text Align";
@@ -5518,6 +5511,7 @@ const PropertiesPanelMixin = {
     panel.appendChild(textSection);
     this.container.appendChild(panel);
     this.propertiesPanel = panel;
+    this.updatePropertiesVisibility();
   },
   /**
    * Sync properties panel with selected element
@@ -5564,9 +5558,7 @@ const PropertiesPanelMixin = {
           }
         }
       }
-
-      // Update gradient controls visibility for no selection (use tool settings)
-      this.updateGradientControlsVisibility();
+      this.updatePropertiesVisibility();
       return;
     }
 
@@ -5613,11 +5605,9 @@ const PropertiesPanelMixin = {
       }
 
       // Update gradient properties
-      if (firstElement.gradientType) {
-        const gradientTypeSelect = this.propertiesPanel.querySelector(".sww-gradient-group select");
-        if (gradientTypeSelect) {
-          gradientTypeSelect.value = firstElement.gradientType;
-        }
+      const gradientTypeSelect = this.propertiesPanel.querySelector(".sww-gradient-group select");
+      if (gradientTypeSelect) {
+        gradientTypeSelect.value = firstElement.gradientType || "linear";
       }
 
       // Update gradient controls visibility and stops
@@ -5625,22 +5615,21 @@ const PropertiesPanelMixin = {
       this.updateGradientStopsUI();
 
       // Update opacity input (number input with max 100)
-      const opacityInput = this.propertiesPanel.querySelector('input[type="number"][min="0"][max="100"]');
+      const opacityInput = this.propertiesPanel.querySelector('[data-property="opacity"] input');
       if (opacityInput) {
-        opacityInput.value = Math.round((firstElement.opacity || 1) * 100);
+        opacityInput.value = Math.round((firstElement.opacity ?? 1) * 100);
       }
 
       // Update width input
-      const widthInputs = this.propertiesPanel.querySelectorAll('input[type="number"][min="1"]');
-      const widthInput = widthInputs[0]; // First input with min="1" should be width
+      const widthInput = this.propertiesPanel.querySelector('[data-property="width"] input');
       if (widthInput) {
-        widthInput.value = Math.abs(firstElement.width) || 100;
+        widthInput.value = Math.abs(firstElement.width ?? 100);
       }
 
       // Update height input
-      const heightInput = widthInputs[1]; // Second input with min="1" should be height
+      const heightInput = this.propertiesPanel.querySelector('[data-property="height"] input');
       if (heightInput) {
-        heightInput.value = Math.abs(firstElement.height) || 100;
+        heightInput.value = Math.abs(firstElement.height ?? 100);
       }
 
       // Update rotation input
@@ -5651,17 +5640,12 @@ const PropertiesPanelMixin = {
 
       // Update text properties visibility and values
       this.updateTextPropertiesVisibility();
-
-      // Update text-specific properties if it's a text or markdown element
-      if (firstElement.type === "text" || firstElement.type === "markdown") {
-        // Update font family select (for both text and markdown elements)
+      if (supportsElementProperty(firstElement, "fontFamily")) {
         const fontFamilySelect = this.propertiesPanel.querySelector(".sww-text-properties select");
         if (fontFamilySelect) {
           fontFamilySelect.value = firstElement.fontFamily || "Arial";
         }
-
-        // Only show text color for markdown elements, all text properties for text elements
-        if (firstElement.type === "text") {
+        if (supportsElementProperty(firstElement, "fontSize")) {
           // Update font size input
           const fontSizeInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="number"][min="8"][max="72"]');
           if (fontSizeInput) {
@@ -5679,15 +5663,11 @@ const PropertiesPanelMixin = {
             }
           });
         }
-
-        // Update text color input (for both text and markdown elements)
         const textColorInput = this.propertiesPanel.querySelector('.sww-text-properties input[type="color"]');
         if (textColorInput) {
           const textColorValue = firstElement.textColor || firstElement.strokeColor || "#000000";
           textColorInput.value = textColorValue;
         }
-
-        // Update text color hex input (for both text and markdown elements)
         const textColorHexInputs = this.propertiesPanel.querySelectorAll(".sww-text-properties .sww-hex-input");
         const textColorHexInput = textColorHexInputs[textColorHexInputs.length - 1]; // Last hex input should be text color
         if (textColorHexInput) {
@@ -5717,19 +5697,17 @@ const PropertiesPanelMixin = {
 
     // Update width if requested or if no specific properties specified
     if (properties.length === 0 || properties.includes("width")) {
-      const widthInputs = this.propertiesPanel.querySelectorAll('input[type="number"][min="1"]');
-      const widthInput = widthInputs[0]; // First input with min="1" should be width
+      const widthInput = this.propertiesPanel.querySelector('[data-property="width"] input');
       if (widthInput) {
-        widthInput.value = Math.abs(firstElement.width) || 100;
+        widthInput.value = Math.abs(firstElement.width ?? 100);
       }
     }
 
     // Update height if requested or if no specific properties specified
     if (properties.length === 0 || properties.includes("height")) {
-      const widthInputs = this.propertiesPanel.querySelectorAll('input[type="number"][min="1"]');
-      const heightInput = widthInputs[1]; // Second input with min="1" should be height
+      const heightInput = this.propertiesPanel.querySelector('[data-property="height"] input');
       if (heightInput) {
-        heightInput.value = Math.abs(firstElement.height) || 100;
+        heightInput.value = Math.abs(firstElement.height ?? 100);
       }
     }
 
@@ -5769,195 +5747,76 @@ const PropertiesPanelMixin = {
    */
   updateSelectedElementProperty(propertyName, value) {
     if (this.selectedElements.size === 0) return;
+    const numericProperties = ["fontSize", "strokeWidth", "opacity", "width", "height", "rotation"];
+    if (numericProperties.includes(propertyName) && !Number.isFinite(value)) return;
+    let changed = false;
     this.selectedElements.forEach(element => {
-      // Only update the specific property
-      if (propertyName === "fontSize" && element.type === "text") {
-        element.fontSize = value;
-      } else if (propertyName === "fontFamily" && (element.type === "text" || element.type === "markdown")) {
-        element.fontFamily = value;
-      } else if (propertyName === "textAlign" && element.type === "text") {
-        element.textAlign = value;
-      } else if (propertyName === "textColor" && (element.type === "text" || element.type === "markdown")) {
-        element.textColor = value;
-      } else if (propertyName === "strokeColor") {
-        element.strokeColor = value;
-      } else if (propertyName === "strokeWidth") {
-        element.strokeWidth = value;
-      } else if (propertyName === "fillColor") {
-        element.fillColor = value;
-      } else if (propertyName === "fillStyle") {
-        element.fillStyle = value;
-      } else if (propertyName === "opacity") {
-        element.opacity = value;
-      } else if (propertyName === "width") {
-        element.width = Math.abs(value); // Ensure positive width
-      } else if (propertyName === "height") {
-        element.height = Math.abs(value); // Ensure positive height
-      } else if (propertyName === "rotation") {
-        element.rotation = value;
-      } else if (propertyName === "gradientType") {
-        element.gradientType = value;
-      } else if (propertyName === "gradientStops") {
-        element.gradientStops = value;
+      if (!supportsElementProperty(element, propertyName) || element.locked) return;
+      let nextValue = value;
+      if (propertyName === "width" || propertyName === "height") {
+        const isLine = element.type === "line" || element.type === "arrow";
+        nextValue = Math.max(isLine ? 0 : 1, Math.abs(value));
+        if (isLine && element[propertyName] < 0) nextValue = -nextValue;
       }
+      if (element[propertyName] === nextValue) return;
+      element[propertyName] = nextValue;
       this.updateSVGElement(element);
+      this.updateElementInSpatialIndex(element);
+      changed = true;
     });
-
-    // Update selection handles after property change to reflect new dimensions
+    if (!changed) return;
     this.updateSelectionHandles();
-
-    // Save state after property change
+    this.updatePropertiesVisibility();
     this.saveStateToHistory("updateProperty");
-
-    // Update layers panel to reflect any changes
     this.updateControlPanelLayers();
   },
   /**
    * Update text properties section visibility based on selection
    */
   updateTextPropertiesVisibility() {
-    if (!this.propertiesPanel) return;
-    const textPropertiesSection = this.propertiesPanel.querySelector(".sww-text-properties");
-    if (!textPropertiesSection) return;
-
-    // Check if any selected elements are text, markdown, or image elements
-    const hasTextElements = Array.from(this.selectedElements).some(element => element.type === "text");
-    const hasMarkdownElements = Array.from(this.selectedElements).some(element => element.type === "markdown");
-    const hasImageElements = Array.from(this.selectedElements).some(element => element.type === "image");
-    const hasWebsiteElements = Array.from(this.selectedElements).some(element => element.type === "website");
-
-    // Show or hide text properties based on selection
-    if (hasTextElements || hasMarkdownElements) {
-      textPropertiesSection.classList.remove("hidden");
-      textPropertiesSection.classList.add("visible");
-
-      // Find property groups by their labels
-      const propertyGroups = textPropertiesSection.querySelectorAll(".sww-property-group");
-      propertyGroups.forEach(group => {
-        const label = group.querySelector(".sww-property-label");
-        if (label) {
-          const labelText = label.textContent.trim();
-          if (hasMarkdownElements && !hasTextElements) {
-            // For markdown elements only, hide font size and text align, but keep font family
-            if (labelText === "Font Size" || labelText === "Text Align") {
-              group.style.display = "none";
-            } else {
-              group.style.display = "flex";
-            }
-          } else {
-            // For text elements or mixed selection, show all properties
-            group.style.display = "flex";
-          }
-        }
-      });
-    } else {
-      textPropertiesSection.classList.remove("visible");
-      textPropertiesSection.classList.add("hidden");
-    }
-
-    // Handle fill properties visibility for image and website elements
-    if ((hasImageElements || hasWebsiteElements || hasTextElements) && !hasMarkdownElements) {
-      // For image, website, and text elements, hide fill color and fill style properties
-      const allPropertyGroups = this.propertiesPanel.querySelectorAll(".sww-property-group");
-      allPropertyGroups.forEach(group => {
-        const label = group.querySelector(".sww-property-label");
-        if (label) {
-          const labelText = label.textContent.trim();
-          if (labelText === "Fill Color" || labelText === "Fill Style") {
-            group.style.display = "none";
-          }
-        }
-      });
-
-      // For text elements, also hide gradient controls since they don't apply
-      if (hasTextElements) {
-        const gradientGroup = this.propertiesPanel.querySelector(".sww-gradient-group");
-        if (gradientGroup) {
-          gradientGroup.style.display = "none";
-        }
-      }
-    } else {
-      // For other elements or mixed selection, show fill style but handle fill color based on gradient
-      const allPropertyGroups = this.propertiesPanel.querySelectorAll(".sww-property-group");
-      allPropertyGroups.forEach(group => {
-        const label = group.querySelector(".sww-property-label");
-        if (label) {
-          const labelText = label.textContent.trim();
-          if (labelText === "Fill Style") {
-            group.style.display = "flex";
-          }
-        }
-      });
-
-      // Update gradient controls visibility (this will also handle fill color visibility)
-      if (!hasTextElements && !hasImageElements && !hasWebsiteElements) {
-        this.updateGradientControlsVisibility();
-      } else {
-        // For text/image/website elements, ensure gradient controls are hidden
-        const gradientGroup = this.propertiesPanel.querySelector(".sww-gradient-group");
-        if (gradientGroup) {
-          gradientGroup.style.display = "none";
-        }
-      }
-    }
+    this.updatePropertiesVisibility();
   },
-  /**
-   * Update gradient controls visibility based on fill style
-   */
   updateGradientControlsVisibility() {
-    if (!this.propertiesPanel) return;
-    const gradientGroup = this.propertiesPanel.querySelector(".sww-gradient-group");
-    if (!gradientGroup) return;
-
-    // Check if we have text elements selected (they don't support gradients)
-    const hasTextElements = Array.from(this.selectedElements).some(element => element.type === "text");
-
-    // Hide gradient controls for text elements
-    if (hasTextElements) {
-      gradientGroup.style.display = "none";
-      // Also hide fill color for text elements
-      this.updateFillColorVisibility(false);
-      return;
-    }
-
-    // Check the actual fill style of selected elements or tool settings
-    let isGradientStyle = false;
-    if (this.selectedElements.size > 0) {
-      // If elements are selected, check their fill style
-      isGradientStyle = Array.from(this.selectedElements).some(element => element.fillStyle === "gradient");
-    } else {
-      // If no elements selected, use tool settings
-      isGradientStyle = this.toolSettings.fillStyle === "gradient";
-    }
-    gradientGroup.style.display = isGradientStyle ? "block" : "none";
-
-    // Hide/show fill color controls based on gradient selection
-    this.updateFillColorVisibility(!isGradientStyle);
+    this.updatePropertiesVisibility();
   },
-  /**
-   * Update fill color visibility based on element type and gradient selection
-   */
   updateFillColorVisibility(shouldShow) {
+    this.updatePropertiesVisibility();
+    if (!shouldShow) {
+      const group = this.propertiesPanel?.querySelector('[data-property="fillColor"]');
+      if (group) group.style.display = "none";
+    }
+  },
+  updatePropertiesVisibility() {
     if (!this.propertiesPanel) return;
-
-    // Check if we have image, website, or text elements selected (they should hide fill color)
-    const hasImageElements = Array.from(this.selectedElements).some(element => element.type === "image");
-    const hasWebsiteElements = Array.from(this.selectedElements).some(element => element.type === "website");
-    const hasTextElements = Array.from(this.selectedElements).some(element => element.type === "text");
-    const hasMarkdownElements = Array.from(this.selectedElements).some(element => element.type === "markdown");
-
-    // Hide fill color for image/website/text elements, or when gradient is selected for other elements
-    const shouldHideFillColor = (hasImageElements || hasWebsiteElements || hasTextElements) && !hasMarkdownElements;
-    const finalShouldShow = shouldHideFillColor ? false : shouldShow;
-
-    // Find the fill color property group by looking for the "Fill Color" label
-    const allPropertyGroups = this.propertiesPanel.querySelectorAll(".sww-property-group");
-    allPropertyGroups.forEach(group => {
-      const label = group.querySelector(".sww-property-label");
-      if (label && label.textContent.trim() === "Fill Color") {
-        group.style.display = finalShouldShow ? "flex" : "none";
+    const selectedElement = this.selectedElements.values().next().value;
+    const element = this.selectedElements.size === 1 && !selectedElement.groupId ? selectedElement : null;
+    if (!element) this.propertiesPanel.classList.remove("visible");
+    const fillStyle = element?.fillStyle || "transparent";
+    this.propertiesPanel.querySelectorAll("[data-property]").forEach(group => {
+      const propertyName = group.dataset.property;
+      let visible = supportsElementProperty(element, propertyName);
+      if (propertyName === "fillColor") {
+        visible = visible && (fillStyle === "solid" || fillStyle === "hachure");
+      } else if (propertyName === "gradientType") {
+        visible = visible && fillStyle === "gradient";
+      }
+      group.style.display = visible ? propertyName === "gradientType" ? "block" : "flex" : "none";
+      if (propertyName === "gradientType") {
+        group.classList.toggle("visible", visible);
+        group.classList.toggle("hidden", !visible);
       }
     });
+    const textSection = this.propertiesPanel.querySelector(".sww-text-properties");
+    if (textSection) {
+      const visible = supportsElementProperty(element, "fontFamily");
+      textSection.classList.toggle("visible", visible);
+      textSection.classList.toggle("hidden", !visible);
+    }
+    const isLine = element?.type === "line" || element?.type === "arrow";
+    for (const propertyName of ["width", "height"]) {
+      const input = this.propertiesPanel.querySelector('[data-property="' + propertyName + '"] input');
+      if (input) input.min = isLine ? "0" : "1";
+    }
   },
   /**
    * Update gradient stops UI
@@ -7356,11 +7215,11 @@ const ViewportMixin = {
     }
     e.preventDefault();
     const point = this.getPointerPosition(e);
-    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-
-    // Update zoom level with constraints
-    this.zoom *= zoomFactor;
-    this.zoom = Math.max(0.1, Math.min(5, this.zoom));
+    if (e.deltaY === 0) return;
+    const nextZoom = Math.max(0.1, Math.min(5, this.zoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+    const zoomFactor = nextZoom / this.zoom;
+    if (zoomFactor === 1) return;
+    this.zoom = nextZoom;
 
     // Calculate new viewBox dimensions
     const newWidth = this.viewBox.width / zoomFactor;
@@ -7379,9 +7238,9 @@ const ViewportMixin = {
    * Zoom in (centered on current view)
    */
   zoomIn() {
-    const zoomFactor = 1.1;
-    this.zoom *= zoomFactor;
-    this.zoom = Math.max(0.1, Math.min(5, this.zoom));
+    const nextZoom = Math.max(0.1, Math.min(5, this.zoom * 1.1));
+    const zoomFactor = nextZoom / this.zoom;
+    this.zoom = nextZoom;
 
     // Center zoom on current viewBox center
     const centerX = this.viewBox.x + this.viewBox.width / 2;
@@ -7403,9 +7262,9 @@ const ViewportMixin = {
    * Zoom out (centered on current view)
    */
   zoomOut() {
-    const zoomFactor = 0.9;
-    this.zoom *= zoomFactor;
-    this.zoom = Math.max(0.1, Math.min(5, this.zoom));
+    const nextZoom = Math.max(0.1, Math.min(5, this.zoom * 0.9));
+    const zoomFactor = nextZoom / this.zoom;
+    this.zoom = nextZoom;
 
     // Center zoom on current viewBox center
     const centerX = this.viewBox.x + this.viewBox.width / 2;
@@ -7454,6 +7313,7 @@ const ViewportMixin = {
    * @param {number} zoomLevel - Target zoom level (0.1 to 5)
    */
   setZoom(zoomLevel) {
+    if (!Number.isFinite(zoomLevel)) return;
     // Constrain zoom level
     zoomLevel = Math.max(0.1, Math.min(5, zoomLevel));
     const zoomFactor = zoomLevel / this.zoom;
@@ -7826,7 +7686,7 @@ const ClipboardMixin = {
    * @returns {Array} Array of clipboard elements
    */
   getClipboardContent() {
-    return this.clipboard ? [...this.clipboard] : [];
+    return this.clipboard ? this.clipboard.map(element => this.serializeElement(element)) : [];
   },
   /**
    * Set clipboard content from external source
@@ -7837,7 +7697,7 @@ const ClipboardMixin = {
       console.warn('Clipboard content must be an array');
       return;
     }
-    this.clipboard = elements.map(element => this.serializeElement(element));
+    this.clipboard = elements.map(element => this.deserializeElement(element));
 
     // Update context menu state if available
     if (this.updateContextMenuState) {
@@ -12815,6 +12675,7 @@ const NotificationsMixin = {
  * Handles dark/light theme switching and color management
  */
 
+
 const ThemeManagerMixin = {
   /**
    * Set panel display mode (dark/light theme)
@@ -12826,36 +12687,19 @@ const ThemeManagerMixin = {
       console.warn('Invalid panel mode. Use "light" or "dark".');
       return;
     }
+    const previousColors = THEME_COLORS[this.options.panelMode] || THEME_COLORS.dark;
     this.options.panelMode = mode;
 
     // Update default colors based on the new mode if custom colors weren't explicitly set
-    const defaultColors = mode === 'light' ? {
-      panelBackgroundColor: '#ffffff',
-      panelTextColor: '#1f2937',
-      accentColor: '#3b82f6',
-      secondaryAccentColor: '#2563eb',
-      panelBorder: '#e5e7eb',
-      panelHover: '#f3f4f6',
-      panelActive: '#e5e7eb'
-    } : {
-      panelBackgroundColor: '#18181b',
-      panelTextColor: '#ffffff',
-      accentColor: '#00FF99',
-      secondaryAccentColor: '#007370',
-      panelBorder: '#27272a',
-      panelHover: '#27272a',
-      panelActive: '#3f3f46'
-    };
+    const defaultColors = THEME_COLORS[mode];
 
     // Only update colors if they match the previous mode's defaults
     // This preserves custom colors that were explicitly set
-    this.options.panelBackgroundColor = defaultColors.panelBackgroundColor;
-    this.options.panelTextColor = defaultColors.panelTextColor;
-    this.options.accentColor = defaultColors.accentColor;
-    this.options.secondaryAccentColor = defaultColors.secondaryAccentColor;
-    this.options.panelBorder = defaultColors.panelBorder;
-    this.options.panelHover = defaultColors.panelHover;
-    this.options.panelActive = defaultColors.panelActive;
+    for (const [key, value] of Object.entries(defaultColors)) {
+      if (this.options[key] === undefined || this.options[key] === previousColors[key]) {
+        this.options[key] = value;
+      }
+    }
 
     // Re-apply theme colors
     this.applyThemeColors();
@@ -12960,38 +12804,38 @@ const ThemeManagerMixin = {
 
 
 // Apply mixins to SWWInstance prototype
-Object.assign(SWWInstance.SWWInstance.prototype, InitializationMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ElementManagementMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, SceneStateMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, CanvasMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, EventHandlersMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ToolManagerMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ShapeToolsMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, LineToolsMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, TextToolMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, DrawToolMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, EmbedToolsMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, TableToolMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, SelectionToolMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, SelectionManagerMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, SelectionBoxMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, SelectionHandlesMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ElementManipulationMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, PropertiesPanelMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, LayersPanelMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ExportDialogMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ControlPanelMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, HistoryMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ViewportMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ClipboardMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ContextMenuMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ElementActionsMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, GridMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, DialogsMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, UtilitiesMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, SVGRendererMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, NotificationsMixin);
-Object.assign(SWWInstance.SWWInstance.prototype, ThemeManagerMixin);
+Object.assign(SWWInstance.prototype, InitializationMixin);
+Object.assign(SWWInstance.prototype, ElementManagementMixin);
+Object.assign(SWWInstance.prototype, SceneStateMixin);
+Object.assign(SWWInstance.prototype, CanvasMixin);
+Object.assign(SWWInstance.prototype, EventHandlersMixin);
+Object.assign(SWWInstance.prototype, ToolManagerMixin);
+Object.assign(SWWInstance.prototype, ShapeToolsMixin);
+Object.assign(SWWInstance.prototype, LineToolsMixin);
+Object.assign(SWWInstance.prototype, TextToolMixin);
+Object.assign(SWWInstance.prototype, DrawToolMixin);
+Object.assign(SWWInstance.prototype, EmbedToolsMixin);
+Object.assign(SWWInstance.prototype, TableToolMixin);
+Object.assign(SWWInstance.prototype, SelectionToolMixin);
+Object.assign(SWWInstance.prototype, SelectionManagerMixin);
+Object.assign(SWWInstance.prototype, SelectionBoxMixin);
+Object.assign(SWWInstance.prototype, SelectionHandlesMixin);
+Object.assign(SWWInstance.prototype, ElementManipulationMixin);
+Object.assign(SWWInstance.prototype, PropertiesPanelMixin);
+Object.assign(SWWInstance.prototype, LayersPanelMixin);
+Object.assign(SWWInstance.prototype, ExportDialogMixin);
+Object.assign(SWWInstance.prototype, ControlPanelMixin);
+Object.assign(SWWInstance.prototype, HistoryMixin);
+Object.assign(SWWInstance.prototype, ViewportMixin);
+Object.assign(SWWInstance.prototype, ClipboardMixin);
+Object.assign(SWWInstance.prototype, ContextMenuMixin);
+Object.assign(SWWInstance.prototype, ElementActionsMixin);
+Object.assign(SWWInstance.prototype, GridMixin);
+Object.assign(SWWInstance.prototype, DialogsMixin);
+Object.assign(SWWInstance.prototype, UtilitiesMixin);
+Object.assign(SWWInstance.prototype, SVGRendererMixin);
+Object.assign(SWWInstance.prototype, NotificationsMixin);
+Object.assign(SWWInstance.prototype, ThemeManagerMixin);
 
 // Create the SWW factory object
 const SWW = {
@@ -13002,7 +12846,7 @@ const SWW = {
    * @returns {SWWInstance} Whiteboard instance
    */
   init(container, options = {}) {
-    const instance = new SWWInstance.SWWInstance(container, options);
+    const instance = new SWWInstance(container, options);
     instance.init(); // Call init() after instance is created with all mixins applied
     return instance;
   },
@@ -13014,7 +12858,7 @@ const SWW = {
   getInstance(container) {
     return container._swwInstance || null;
   },
-  version: "1.2.2"
+  version: "1.3.0"
 };
 
 // Expose to global scope for browser usage

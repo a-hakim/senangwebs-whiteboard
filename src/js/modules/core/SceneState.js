@@ -26,6 +26,7 @@ const RUNTIME_ELEMENT_KEYS = new Set([
   "resizeStartY",
   "resizeStartWidth",
   "resizeStartHeight",
+  "resizeStartPoints",
   "rotateStartAngle",
 ]);
 const UNSAFE_KEYS = new Set(["__proto__", "prototype", "constructor"]);
@@ -220,10 +221,7 @@ export const SceneStateMixin = {
       elements,
       viewBox,
       zoom: Math.max(0.1, Math.min(5, finiteNumber(sceneData.zoom, 1))),
-      backgroundColor:
-        typeof sceneData.backgroundColor === "string"
-          ? sceneData.backgroundColor
-          : this.options.backgroundColor,
+      backgroundColor: safeColor(sceneData.backgroundColor, this.options.backgroundColor),
       gridSize: Math.max(1, finiteNumber(sceneData.gridSize, this.options.gridSize)),
       showGrid:
         sceneData.showGrid === undefined ? this.snapToGrid : Boolean(sceneData.showGrid),
@@ -249,6 +247,7 @@ export const SceneStateMixin = {
     this.zoom = scene.zoom;
     this.options.backgroundColor = scene.backgroundColor;
     this.options.gridSize = scene.gridSize;
+    this.options.showGrid = scene.showGrid;
     this.snapToGrid = scene.showGrid;
 
     for (const element of scene.elements) {
@@ -269,6 +268,7 @@ export const SceneStateMixin = {
     }
     this.createGrid();
     this.updateGridVisibility();
+    this.updateGridButtonState();
     this.updateSelectionHandles();
     this.syncPropertiesPanel();
     this.updateVisibleElements();

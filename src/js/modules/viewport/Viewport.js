@@ -25,11 +25,11 @@ export const ViewportMixin = {
         
         e.preventDefault();
         const point = this.getPointerPosition(e);
-        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-        
-        // Update zoom level with constraints
-        this.zoom *= zoomFactor;
-        this.zoom = Math.max(0.1, Math.min(5, this.zoom));
+        if (e.deltaY === 0) return;
+        const nextZoom = Math.max(0.1, Math.min(5, this.zoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+        const zoomFactor = nextZoom / this.zoom;
+        if (zoomFactor === 1) return;
+        this.zoom = nextZoom;
         
         // Calculate new viewBox dimensions
         const newWidth = this.viewBox.width / zoomFactor;
@@ -51,9 +51,9 @@ export const ViewportMixin = {
      * Zoom in (centered on current view)
      */
     zoomIn() {
-        const zoomFactor = 1.1;
-        this.zoom *= zoomFactor;
-        this.zoom = Math.max(0.1, Math.min(5, this.zoom));
+        const nextZoom = Math.max(0.1, Math.min(5, this.zoom * 1.1));
+        const zoomFactor = nextZoom / this.zoom;
+        this.zoom = nextZoom;
         
         // Center zoom on current viewBox center
         const centerX = this.viewBox.x + this.viewBox.width / 2;
@@ -79,9 +79,9 @@ export const ViewportMixin = {
      * Zoom out (centered on current view)
      */
     zoomOut() {
-        const zoomFactor = 0.9;
-        this.zoom *= zoomFactor;
-        this.zoom = Math.max(0.1, Math.min(5, this.zoom));
+        const nextZoom = Math.max(0.1, Math.min(5, this.zoom * 0.9));
+        const zoomFactor = nextZoom / this.zoom;
+        this.zoom = nextZoom;
         
         // Center zoom on current viewBox center
         const centerX = this.viewBox.x + this.viewBox.width / 2;
@@ -131,6 +131,7 @@ export const ViewportMixin = {
      * @param {number} zoomLevel - Target zoom level (0.1 to 5)
      */
     setZoom(zoomLevel) {
+        if (!Number.isFinite(zoomLevel)) return;
         // Constrain zoom level
         zoomLevel = Math.max(0.1, Math.min(5, zoomLevel));
         
